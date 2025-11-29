@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object.pk %}Editar{% else %}Registrar{% endif %} Costos - Sistema de Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-{% if object.pk %}edit{% else %}plus{% endif %} text-primary me-2"></i>
+                    {% if object.pk %}Editar{% else %}Registrar{% endif %} Costos del Viaje
+                </h1>
+                <a href="{% url 'costos:lista' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Viaje -->
+                        <div class="mb-3">
+                            <label for="{{ form.viaje.id_for_label }}" class="form-label">
+                                {{ form.viaje.label }} <span class="text-danger">*</span>
+                            </label>
+                            {{ form.viaje }}
+                            {% if form.viaje.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.viaje.errors }}
+                            </div>
+                            {% endif %}
+                            {% if form.viaje.help_text %}
+                            <small class="form-text text-muted">{{ form.viaje.help_text }}</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Mantenimiento -->
+                        <div class="mb-3">
+                            <label for="{{ form.mantenimiento.id_for_label }}" class="form-label">
+                                <i class="fas fa-tools text-warning me-2"></i>{{ form.mantenimiento.label }}
+                            </label>
+                            {{ form.mantenimiento }}
+                            {% if form.mantenimiento.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.mantenimiento.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Peajes -->
+                        <div class="mb-3">
+                            <label for="{{ form.peajes.id_for_label }}" class="form-label">
+                                <i class="fas fa-road text-info me-2"></i>{{ form.peajes.label }}
+                            </label>
+                            {{ form.peajes }}
+                            {% if form.peajes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.peajes.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Otros Costos -->
+                        <div class="mb-3">
+                            <label for="{{ form.otros_costos.id_for_label }}" class="form-label">
+                                <i class="fas fa-ellipsis-h text-secondary me-2"></i>{{ form.otros_costos.label }}
+                            </label>
+                            {{ form.otros_costos }}
+                            {% if form.otros_costos.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.otros_costos.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="mb-3">
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                                {{ form.observaciones.label }}
+                            </label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.observaciones.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Nota:</strong> El costo de combustible se calculará automáticamente al agregar puntos de recarga después de guardar este registro.
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'costos:lista' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

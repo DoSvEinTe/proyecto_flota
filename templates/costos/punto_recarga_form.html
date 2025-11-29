@@ -1,0 +1,350 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if object.pk %}Editar{% else %}Agregar{% endif %} Punto de Recarga - Sistema de Gestión de Flota{% endblock %}
+
+{% block extra_css %}
+<style>
+    #ubicacion_results {
+        position: relative;
+        z-index: 1000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border-radius: 0.375rem;
+    }
+    
+    #ubicacion_results .list-group-item {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    #ubicacion_results .list-group-item:hover {
+        background-color: #f3f4f6;
+        transform: translateX(5px);
+    }
+    
+    #id_ubicacion_search {
+        border: 2px solid #e5e7eb;
+        transition: border-color 0.2s;
+    }
+    
+    #id_ubicacion_search:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+</style>
+{% endblock extra_css %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-gas-pump text-danger me-2"></i>
+                    {% if object.pk %}Editar{% else %}Agregar{% endif %} Punto de Recarga
+                </h1>
+                <a href="{% url 'costos:detalle' costos_viaje.pk %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info del Viaje -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm bg-light">
+                <div class="card-body">
+                    <h6 class="mb-2"><strong>Viaje:</strong></h6>
+                    <p class="mb-1">
+                        <strong>Bus:</strong> {{ costos_viaje.viaje.bus.placa }} - {{ costos_viaje.viaje.bus.modelo }}
+                    </p>
+                    <p class="mb-1">
+                        <strong>Ruta:</strong> {{ costos_viaje.viaje.lugar_origen.nombre }} → {{ costos_viaje.viaje.lugar_destino.nombre }}
+                    </p>
+                    <p class="mb-0">
+                        <strong>Kilometraje Inicial del Bus:</strong> {{ costos_viaje.viaje.bus.kilometraje_inicial }} km
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Orden -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.orden.id_for_label }}" class="form-label">
+                                        {{ form.orden.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.orden }}
+                                    {% if form.orden.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.orden.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.orden.help_text %}
+                                    <small class="form-text text-muted">{{ form.orden.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Kilometraje -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.kilometraje.id_for_label }}" class="form-label">
+                                        {{ form.kilometraje.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.kilometraje }}
+                                    {% if form.kilometraje.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.kilometraje.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.kilometraje.help_text %}
+                                    <small class="form-text text-muted">{{ form.kilometraje.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Litros Cargados -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.litros_cargados.id_for_label }}" class="form-label">
+                                        {{ form.litros_cargados.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.litros_cargados }}
+                                    {% if form.litros_cargados.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.litros_cargados.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.litros_cargados.help_text %}
+                                    <small class="form-text text-muted">{{ form.litros_cargados.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Precio Combustible -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.precio_combustible.id_for_label }}" class="form-label">
+                                        {{ form.precio_combustible.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.precio_combustible }}
+                                    {% if form.precio_combustible.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.precio_combustible.errors }}
+                                    </div>
+                                    {% endif %}
+                                    {% if form.precio_combustible.help_text %}
+                                    <small class="form-text text-muted">{{ form.precio_combustible.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ubicación -->
+                        <div class="mb-3">
+                            <label for="{{ form.ubicacion.id_for_label }}" class="form-label">
+                                <i class="fas fa-map-marker-alt text-danger me-2"></i>{{ form.ubicacion.label }}
+                            </label>
+                            <input type="text" 
+                                   id="id_ubicacion_search" 
+                                   class="form-control mb-2" 
+                                   placeholder="Buscar gasolinera..." 
+                                   autocomplete="off">
+                            <small class="text-muted d-block mb-2">
+                                <i class="fas fa-info-circle me-1"></i>Escribe para buscar gasolineras cercanas o ingresa manualmente abajo
+                            </small>
+                            {{ form.ubicacion }}
+                            {% if form.ubicacion.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ubicacion.errors }}
+                            </div>
+                            {% endif %}
+                            <div id="ubicacion_results" class="list-group mt-2" style="display: none; max-height: 300px; overflow-y: auto;"></div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="mb-3">
+                            <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                                {{ form.observaciones.label }}
+                            </label>
+                            {{ form.observaciones }}
+                            {% if form.observaciones.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.observaciones.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="fas fa-calculator me-2"></i>
+                            <strong>Cálculo automático:</strong> Los kilómetros recorridos y el costo total se calcularán automáticamente al guardar.
+                        </div>
+
+                        <div class="d-flex gap-2 justify-content-end">
+                            <a href="{% url 'costos:detalle' costos_viaje.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('id_ubicacion_search');
+    const ubicacionInput = document.getElementById('id_ubicacion');
+    const resultsDiv = document.getElementById('ubicacion_results');
+    let searchTimeout;
+
+    // Función para buscar gasolineras usando Nominatim (OpenStreetMap)
+    async function buscarGasolineras(query) {
+        if (query.length < 3) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+
+        try {
+            // Buscar gasolineras en Chile usando Nominatim
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?` +
+                `format=json&` +
+                `q=${encodeURIComponent(query + ' gasolinera chile')}&` +
+                `countrycodes=cl&` +
+                `limit=10&` +
+                `addressdetails=1`
+            );
+            
+            const places = await response.json();
+            
+            if (places.length > 0) {
+                mostrarResultados(places);
+            } else {
+                resultsDiv.innerHTML = '<div class="list-group-item text-muted">No se encontraron gasolineras</div>';
+                resultsDiv.style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Error al buscar gasolineras:', error);
+            resultsDiv.innerHTML = '<div class="list-group-item text-danger">Error al buscar. Intenta de nuevo.</div>';
+            resultsDiv.style.display = 'block';
+        }
+    }
+
+    // Función para mostrar los resultados
+    function mostrarResultados(places) {
+        resultsDiv.innerHTML = '';
+        
+        places.forEach(place => {
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'list-group-item list-group-item-action';
+            
+            const displayName = place.display_name || place.name;
+            const address = place.address ? 
+                `${place.address.road || ''} ${place.address.house_number || ''}, ${place.address.city || place.address.town || place.address.village || ''}`.trim() : 
+                displayName;
+            
+            item.innerHTML = `
+                <div class="d-flex w-100 justify-content-between">
+                    <div>
+                        <i class="fas fa-gas-pump text-danger me-2"></i>
+                        <strong>${place.name || 'Gasolinera'}</strong>
+                    </div>
+                </div>
+                <small class="text-muted">${address}</small>
+            `;
+            
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                ubicacionInput.value = `${place.name || 'Gasolinera'} - ${address}`;
+                searchInput.value = place.name || '';
+                resultsDiv.style.display = 'none';
+            });
+            
+            resultsDiv.appendChild(item);
+        });
+        
+        resultsDiv.style.display = 'block';
+    }
+
+    // Event listener para el input de búsqueda
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length >= 3) {
+            searchTimeout = setTimeout(() => {
+                buscarGasolineras(query);
+            }, 500); // Esperar 500ms después de que el usuario deje de escribir
+        } else {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (e.target !== searchInput && e.target !== resultsDiv) {
+            resultsDiv.style.display = 'none';
+        }
+    });
+
+    // También buscar gasolineras populares de Chile
+    searchInput.addEventListener('focus', function() {
+        if (this.value === '') {
+            // Mostrar gasolineras populares de Chile como sugerencias
+            resultsDiv.innerHTML = `
+                <div class="list-group-item">
+                    <strong><i class="fas fa-star text-warning me-2"></i>Sugerencias:</strong>
+                </div>
+                <a href="#" class="list-group-item list-group-item-action" data-name="Copec">
+                    <i class="fas fa-gas-pump text-danger me-2"></i>Copec
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-name="Shell">
+                    <i class="fas fa-gas-pump text-warning me-2"></i>Shell
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-name="Petrobras">
+                    <i class="fas fa-gas-pump text-success me-2"></i>Petrobras
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-name="Esso">
+                    <i class="fas fa-gas-pump text-primary me-2"></i>Esso
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" data-name="Terpel">
+                    <i class="fas fa-gas-pump text-info me-2"></i>Terpel
+                </a>
+            `;
+            
+            // Agregar evento a las sugerencias
+            resultsDiv.querySelectorAll('a[data-name]').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    searchInput.value = this.dataset.name;
+                    buscarGasolineras(this.dataset.name);
+                });
+            });
+            
+            resultsDiv.style.display = 'block';
+        }
+    });
+});
+</script>
+{% endblock %}

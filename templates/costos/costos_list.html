@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lista de Costos - Sistema de Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-list text-primary me-2"></i>
+                    Lista de Costos de Viajes
+                </h1>
+                <a href="{% url 'costos:crear' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Registrar Costos
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    {% if costos_list %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Bus</th>
+                                    <th>Viaje</th>
+                                    <th>Fecha</th>
+                                    <th>Puntos Recarga</th>
+                                    <th>Combustible</th>
+                                    <th>Otros Costos</th>
+                                    <th>Costo Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for costos in costos_list %}
+                                <tr>
+                                    <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
+                                    <td>
+                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
+                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
+                                    </td>
+                                    <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
+                                    </td>
+                                    <td>CLP ${{ costos.combustible|floatformat:0 }}</td>
+                                    <td>CLP ${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</td>
+                                    <td><strong>CLP ${{ costos.costo_total|floatformat:0 }}</strong></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'costos:detalle' costos.pk %}" 
+                                               class="btn btn-outline-primary" title="Ver">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'costos:editar' costos.pk %}" 
+                                               class="btn btn-outline-warning" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'costos:eliminar' costos.pk %}" 
+                                               class="btn btn-outline-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if is_paginated %}
+                    <nav aria-label="Paginación">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                            </li>
+                            {% endif %}
+
+                            <li class="page-item active">
+                                <span class="page-link">
+                                    Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                </span>
+                            </li>
+
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay costos registrados. Haz clic en "Registrar Costos" para comenzar.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

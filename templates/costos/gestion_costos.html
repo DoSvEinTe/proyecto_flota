@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestión de Costos - Sistema de Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">
+                <i class="fas fa-dollar-sign text-success me-2"></i>
+                Gestión de Costos de Viajes
+            </h1>
+        </div>
+    </div>
+
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-receipt fa-2x text-primary"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="mb-0">{{ total_viajes_con_costos }}</h3>
+                            <p class="text-muted mb-0">Viajes con Costos Registrados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-opacity-10 rounded-3 p-3">
+                                <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="mb-0">{{ viajes_sin_costos.count }}</h3>
+                            <p class="text-muted mb-0">Viajes sin Costos Asignados</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="{% url 'costos:crear' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>Registrar Costos de Viaje
+                        </a>
+                        <a href="{% url 'costos:lista' %}" class="btn btn-outline-primary">
+                            <i class="fas fa-list me-2"></i>Ver Todos los Costos
+                        </a>
+                        <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-exclamation-circle me-2"></i>Viajes Pendientes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Viajes sin Costos -->
+    {% if viajes_sin_costos %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
+                        Viajes Pendientes de Registro de Costos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Bus</th>
+                                    <th>Origen → Destino</th>
+                                    <th>Conductor</th>
+                                    <th>Fecha Salida</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for viaje in viajes_sin_costos %}
+                                <tr>
+                                    <td><strong>{{ viaje.bus.placa }}</strong></td>
+                                    <td>{{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</td>
+                                    <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                    <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ viaje.estado }}">
+                                            {{ viaje.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'costos:crear' %}?viaje={{ viaje.id }}" 
+                                               class="btn btn-primary" title="Registrar Costos">
+                                                <i class="fas fa-plus me-1"></i>Registrar
+                                            </a>
+                                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" 
+                                               class="btn btn-outline-danger" 
+                                               title="Descargar formulario PDF"
+                                               target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Últimos Costos Registrados -->
+    {% if ultimos_costos %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>
+                        Últimos Costos Registrados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Bus</th>
+                                    <th>Viaje</th>
+                                    <th>Puntos Recarga</th>
+                                    <th>Combustible</th>
+                                    <th>Costo Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for costos in ultimos_costos %}
+                                <tr>
+                                    <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
+                                    <td>
+                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
+                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
+                                        <br>
+                                        <small class="text-muted">{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ costos.puntos_recarga.count }} puntos
+                                        </span>
+                                    </td>
+                                    <td>CLP ${{ costos.combustible|floatformat:0 }}</td>
+                                    <td><strong>CLP ${{ costos.costo_total|floatformat:0 }}</strong></td>
+                                    <td>
+                                        <a href="{% url 'costos:detalle' costos.pk %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <a href="{% url 'costos:lista' %}" class="btn btn-sm btn-outline-primary">
+                        Ver Todos <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

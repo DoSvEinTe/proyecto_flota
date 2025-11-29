@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Detalles de Costos - Sistema de Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-file-invoice-dollar text-success me-2"></i>
+                    Detalles de Costos del Viaje
+                </h1>
+                <div>
+                    <a href="{% url 'costos:lista' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Viaje -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-bus me-2"></i>Información del Viaje</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <p class="mb-2"><strong>Bus:</strong> {{ costos.viaje.bus.placa }}</p>
+                            <p class="mb-2"><strong>Modelo:</strong> {{ costos.viaje.bus.modelo }}</p>
+                            <p class="mb-0"><strong>Km Inicial:</strong> {{ costos.viaje.bus.kilometraje_inicial }} km</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-2"><strong>Origen:</strong> {{ costos.viaje.lugar_origen.nombre }}</p>
+                            <p class="mb-2"><strong>Destino:</strong> {{ costos.viaje.lugar_destino.nombre }}</p>
+                            <p class="mb-0"><strong>Conductor:</strong> {{ costos.viaje.conductor.nombre }} {{ costos.viaje.conductor.apellido }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-2"><strong>Salida:</strong> {{ costos.viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
+                            <p class="mb-2"><strong>Llegada Est.:</strong> {{ costos.viaje.fecha_llegada_estimada|date:"d/m/Y H:i" }}</p>
+                            <p class="mb-0"><strong>Estado:</strong> 
+                                <span class="badge bg-{{ costos.viaje.estado }}">
+                                    {{ costos.viaje.get_estado_display }}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-2">
+                                <strong>Distancia Estimada:</strong> 
+                                {% if costos.viaje.distancia_km %}
+                                    {{ costos.viaje.distancia_km|floatformat:2 }} km
+                                    <a href="#" id="recalcular-distancia" class="btn btn-sm btn-outline-info ms-2" title="Recalcular">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </a>
+                                {% else %}
+                                    <a href="#" id="calcular-distancia" class="btn btn-sm btn-success">
+                                        <i class="fas fa-calculator me-1"></i>Calcular
+                                    </a>
+                                {% endif %}
+                            </p>
+                            <p class="mb-2"><strong>Total Km Recorridos:</strong> {{ total_kilometros|floatformat:2 }} km</p>
+                            <p class="mb-2"><strong>Total Litros:</strong> {{ total_litros|floatformat:2 }} L</p>
+                            {% if total_litros > 0 %}
+                            <p class="mb-0"><strong>Consumo promedio:</strong> {{ total_litros|floatformat:2 }} L / {{ total_kilometros|floatformat:2 }} km</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Puntos de Recarga -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-gas-pump me-2 text-danger"></i>Puntos de Recarga de Combustible</h5>
+                    <a href="{% url 'costos:agregar_punto' costos.pk %}" class="btn btn-sm btn-success">
+                        <i class="fas fa-plus me-2"></i>Agregar Punto de Recarga
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if puntos_recarga %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Orden</th>
+                                    <th>Ubicación</th>
+                                    <th>Kilometraje</th>
+                                    <th>Km Recorridos</th>
+                                    <th>Litros Cargados</th>
+                                    <th>Precio/Litro</th>
+                                    <th>Costo Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for punto in puntos_recarga %}
+                                <tr>
+                                    <td><span class="badge bg-primary">{{ punto.orden }}</span></td>
+                                    <td>
+                                        <strong>{{ punto.ubicacion|default:"Sin especificar" }}</strong>
+                                        {% if punto.observaciones %}
+                                        <br><small class="text-muted">{{ punto.observaciones|truncatewords:10 }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ punto.kilometraje|floatformat:2 }} km</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ punto.kilometros_recorridos|floatformat:2 }} km</span>
+                                    </td>
+                                    <td>{{ punto.litros_cargados|floatformat:2 }} L</td>
+                                    <td>CLP ${{ punto.precio_combustible|floatformat:0 }}</td>
+                                    <td><strong>CLP ${{ punto.costo_total|floatformat:0 }}</strong></td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'costos:editar_punto' punto.pk %}" 
+                                               class="btn btn-outline-primary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="{% url 'costos:eliminar_punto' punto.pk %}" 
+                                               class="btn btn-outline-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                <tr class="table-success">
+                                    <td colspan="3" class="text-end"><strong>TOTALES:</strong></td>
+                                    <td><strong>{{ total_kilometros|floatformat:2 }} km</strong></td>
+                                    <td><strong>{{ total_litros|floatformat:2 }} L</strong></td>
+                                    <td colspan="2" class="text-end"><strong>CLP ${{ costos.combustible|floatformat:0 }}</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        No hay puntos de recarga registrados. Haz clic en "Agregar Punto de Recarga" para comenzar.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de Costos -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="fas fa-calculator me-2 text-success"></i>Resumen de Costos</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless mb-0">
+                        <tbody>
+                            <tr>
+                                <td><i class="fas fa-gas-pump text-danger me-2"></i>Combustible:</td>
+                                <td class="text-end"><strong>CLP ${{ costos.combustible|floatformat:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-tools text-warning me-2"></i>Mantenimiento:</td>
+                                <td class="text-end"><strong>CLP ${{ costos.mantenimiento|floatformat:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-road text-info me-2"></i>Peajes:</td>
+                                <td class="text-end"><strong>CLP ${{ costos.peajes|floatformat:0 }}</strong></td>
+                            </tr>
+                            <tr>
+                                <td><i class="fas fa-ellipsis-h text-secondary me-2"></i>Otros Costos:</td>
+                                <td class="text-end"><strong>CLP ${{ costos.otros_costos|floatformat:0 }}</strong></td>
+                            </tr>
+                            <tr class="border-top">
+                                <td><strong><i class="fas fa-dollar-sign text-success me-2"></i>COSTO TOTAL:</strong></td>
+                                <td class="text-end">
+                                    <h4 class="mb-0 text-success">CLP ${{ costos.costo_total|floatformat:0 }}</h4>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    {% if costos.observaciones %}
+                    <hr>
+                    <p class="mb-0"><strong>Observaciones:</strong></p>
+                    <p class="text-muted">{{ costos.observaciones }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Acciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'costos:editar' costos.pk %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Editar Costos
+                        </a>
+                        <a href="{% url 'costos:agregar_punto' costos.pk %}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Agregar Punto de Recarga
+                        </a>
+                        <a href="{% url 'costos:eliminar' costos.pk %}" class="btn btn-danger">
+                            <i class="fas fa-trash me-2"></i>Eliminar Costos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calcularBtn = document.getElementById('calcular-distancia');
+    const recalcularBtn = document.getElementById('recalcular-distancia');
+    
+    function calcularDistancia() {
+        const viajeId = {{ costos.viaje.id }};
+        const btn = event.target.closest('a');
+        const originalHtml = btn.innerHTML;
+        
+        // Mostrar loading
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculando...';
+        btn.classList.add('disabled');
+        
+        // Hacer petición AJAX
+        fetch(`/costos/viaje/${viajeId}/calcular-distancia/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => Promise.reject(err));
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                alert(`✓ ${data.mensaje}`);
+                // Recargar la página para mostrar la distancia actualizada
+                location.reload();
+            } else {
+                alert(`✗ Error: ${data.error || 'No se pudo calcular la distancia'}`);
+                btn.innerHTML = originalHtml;
+                btn.classList.remove('disabled');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const errorMsg = error.error || 'Error al calcular la distancia. Asegúrate de que los lugares tengan coordenadas configuradas.';
+            alert(`✗ ${errorMsg}`);
+            btn.innerHTML = originalHtml;
+            btn.classList.remove('disabled');
+        });
+    }
+    
+    if (calcularBtn) {
+        calcularBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            calcularDistancia();
+        });
+    }
+    
+    if (recalcularBtn) {
+        recalcularBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            calcularDistancia();
+        });
+    }
+});
+</script>
+{% endblock %}
