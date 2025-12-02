@@ -1,0 +1,10 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Eliminar peajes huérfanos",
+			"type": "shell",
+			"command": "python manage.py shell -c \"from costos.models import Peaje; Peaje.objects.filter(costos_viaje__isnull=True).delete(); print('Peajes huérfanos eliminados correctamente.')\""
+		}
+	]
+}

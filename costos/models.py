@@ -7,8 +7,11 @@ class CostosViaje(models.Model):
     Modelo para registrar y calcular costos de cada viaje.
     """
     viaje = models.OneToOneField(Viaje, on_delete=models.CASCADE, related_name='costos')
+    km_inicial = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Kilometraje inicial real del viaje')
+    km_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Kilometraje final real del viaje')
     combustible = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    mantenimiento = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    mantenimientos = models.ManyToManyField('flota.Mantenimiento', blank=True, related_name='costos_viaje')
+    mantenimiento = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Costo total de mantenimientos seleccionados')
     peajes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     otros_costos = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     costo_total = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0)
@@ -28,7 +31,16 @@ class CostosViaje(models.Model):
         return total
 
     def save(self, *args, **kwargs):
-        self.costo_total = self.combustible + self.mantenimiento + self.peajes + self.otros_costos
+        from decimal import Decimal
+        # Calcular el costo total de los mantenimientos seleccionados
+        if self.pk:
+            self.mantenimiento = sum(Decimal(m.costo) for m in self.mantenimientos.all())
+        # Convertir todos los valores a Decimal antes de sumar
+        combustible = Decimal(self.combustible)
+        mantenimiento = Decimal(self.mantenimiento)
+        peajes = Decimal(self.peajes)
+        otros_costos = Decimal(self.otros_costos)
+        self.costo_total = combustible + mantenimiento + peajes + otros_costos
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -58,11 +70,11 @@ class PuntoRecarga(models.Model):
     def save(self, *args, **kwargs):
         # Calcular costo total de esta recarga
         self.costo_total = self.litros_cargados * self.precio_combustible
-        
+
         # Calcular kilómetros recorridos desde el punto anterior
         if self.orden == 1:
-            # Primer punto: calcular desde el kilometraje inicial del bus
-            kilometraje_inicial = self.costos_viaje.viaje.bus.kilometraje_inicial
+            # Primer punto: calcular desde el kilometraje inicial REAL del viaje
+            kilometraje_inicial = self.costos_viaje.km_inicial if self.costos_viaje.km_inicial is not None else self.costos_viaje.viaje.bus.kilometraje_inicial
             self.kilometros_recorridos = self.kilometraje - kilometraje_inicial
         else:
             # Puntos posteriores: calcular desde el punto anterior
@@ -70,12 +82,11 @@ class PuntoRecarga(models.Model):
                 costos_viaje=self.costos_viaje,
                 orden__lt=self.orden
             ).order_by('-orden').first()
-            
             if punto_anterior:
                 self.kilometros_recorridos = self.kilometraje - punto_anterior.kilometraje
             else:
                 self.kilometros_recorridos = 0
-        
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -87,6 +98,7 @@ class Peaje(models.Model):
     Modelo para registrar peajes pagados en viajes.
     """
     viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name='peajes')
+    costos_viaje = models.ForeignKey('CostosViaje', on_delete=models.CASCADE, related_name='peajes_costos', null=True, blank=True)
     lugar = models.CharField(max_length=150)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_pago = models.DateTimeField()

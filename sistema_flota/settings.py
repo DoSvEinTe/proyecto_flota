@@ -85,9 +85,9 @@ WSGI_APPLICATION = 'sistema_flota.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'flotav2',
+        'NAME': 'flota_db',
         'USER': 'root',
-        'PASSWORD': 'Contra.12',
+        'PASSWORD': '',
         'HOST': 'localhost',
         'PORT': '3306',
     }

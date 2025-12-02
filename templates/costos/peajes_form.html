@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Peajes - Costos de Viaje{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-road me-2"></i>Registrar Peajes del Viaje</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <table class="table table-bordered" id="tabla-peajes">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Nombre Peaje</th>
+                                    <th>Ubicación</th>
+                                    <th>Monto (CLP)</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if peajes_registrados %}
+                                    {% for peaje in peajes_registrados %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ peaje.lugar }}</td>
+                                        <td>{{ peaje.lugar }}</td>
+                                        <td>{{ peaje.monto|floatformat:0 }}</td>
+                                        <td>
+                                            <a href="{% url 'costos:eliminar_peaje' peaje.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% endif %}
+                                <!-- Peajes agregados dinámicamente -->
+                            </tbody>
+                        </table>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-success btn-md d-flex align-items-center gap-2" style="font-size: 1rem; padding: 0.5rem 1.25rem;" onclick="agregarPeaje()">
+                                <i class="fas fa-plus"></i>
+                                Agregar Peaje
+                            </button>
+                            <button type="submit" name="finalizar" class="btn btn-primary">Finalizar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    let contador = {{ peajes_registrados|length|default:0 }} + 1;
+    function agregarPeaje() {
+        const tbody = document.querySelector('#tabla-peajes tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${contador}</td>
+            <td><input type="text" name="peaje_nombre_${contador}" class="form-control" required></td>
+            <td><input type="text" name="peaje_ubicacion_${contador}" class="form-control" required></td>
+            <td><input type="number" name="peaje_monto_${contador}" class="form-control" step="0.01" min="0" required></td>
+            <td><button type="button" class="btn btn-danger btn-sm" onclick="eliminarPeaje(this)"><i class="fas fa-trash"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        contador++;
+    }
+    function eliminarPeaje(btn) {
+        btn.closest('tr').remove();
+    }
+    // Solo agrega una fila vacía si no hay peajes registrados
+    document.addEventListener('DOMContentLoaded', function() {
+        if (contador === 1) agregarPeaje();
+    });
+</script>
+{% endblock %}

@@ -12,62 +12,71 @@
                     <i class="fas fa-file-invoice-dollar text-success me-2"></i>
                     Detalles de Costos del Viaje
                 </h1>
-                <div>
-                    <a href="{% url 'costos:lista' %}" class="btn btn-outline-secondary">
-                        <i class="fas fa-arrow-left me-2"></i>Volver
-                    </a>
-                </div>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary btn-lg">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
             </div>
         </div>
     </div>
 
     <!-- Información del Viaje -->
+
     <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
+        <div class="col-12">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-gradient-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-bus me-2"></i>Información del Viaje</h5>
+                    <span class="badge bg-success fs-6">{{ costos.viaje.get_estado_display }}</span>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <p class="mb-2"><strong>Bus:</strong> {{ costos.viaje.bus.placa }}</p>
-                            <p class="mb-2"><strong>Modelo:</strong> {{ costos.viaje.bus.modelo }}</p>
-                            <p class="mb-0"><strong>Km Inicial:</strong> {{ costos.viaje.bus.kilometraje_inicial }} km</p>
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="info-card h-100 p-3 rounded shadow-sm bg-white d-flex flex-column justify-content-center align-items-start">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-bus-alt fa-lg text-primary me-2"></i>
+                                    <span class="fw-bold">Bus:</span>
+                                </div>
+                                <div class="fs-5 mb-1">{{ costos.viaje.bus.placa }}</div>
+                                <div class="text-muted">Modelo: {{ costos.viaje.bus.modelo }}</div>
+                                <div class="mt-2">
+                                    <span class="fw-bold">Km Inicial:</span> <span class="text-primary">{{ costos.km_inicial|floatformat:2 }} km</span><br>
+                                    <span class="fw-bold">Km Final:</span> <span class="text-primary">{{ costos.km_final|floatformat:2 }} km</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <p class="mb-2"><strong>Origen:</strong> {{ costos.viaje.lugar_origen.nombre }}</p>
-                            <p class="mb-2"><strong>Destino:</strong> {{ costos.viaje.lugar_destino.nombre }}</p>
-                            <p class="mb-0"><strong>Conductor:</strong> {{ costos.viaje.conductor.nombre }} {{ costos.viaje.conductor.apellido }}</p>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="info-card h-100 p-3 rounded shadow-sm bg-white d-flex flex-column justify-content-center align-items-start">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-map-marker-alt fa-lg text-info me-2"></i>
+                                    <span class="fw-bold">Ruta:</span>
+                                </div>
+                                <div><span class="fw-bold">Origen:</span> {{ costos.viaje.lugar_origen.nombre }}</div>
+                                <div><span class="fw-bold">Destino:</span> {{ costos.viaje.lugar_destino.nombre }}</div>
+                                <div class="mt-2"><span class="fw-bold">Conductor:</span> {{ costos.viaje.conductor.nombre }} {{ costos.viaje.conductor.apellido }}</div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <p class="mb-2"><strong>Salida:</strong> {{ costos.viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
-                            <p class="mb-2"><strong>Llegada Est.:</strong> {{ costos.viaje.fecha_llegada_estimada|date:"d/m/Y H:i" }}</p>
-                            <p class="mb-0"><strong>Estado:</strong> 
-                                <span class="badge bg-{{ costos.viaje.estado }}">
-                                    {{ costos.viaje.get_estado_display }}
-                                </span>
-                            </p>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="info-card h-100 p-3 rounded shadow-sm bg-white d-flex flex-column justify-content-center align-items-start">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-calendar-alt fa-lg text-warning me-2"></i>
+                                    <span class="fw-bold">Fechas:</span>
+                                </div>
+                                <div><span class="fw-bold">Salida:</span> {{ costos.viaje.fecha_salida|date:"d/m/Y H:i" }}</div>
+                                <div><span class="fw-bold">Llegada Est.:</span> {{ costos.viaje.fecha_llegada_estimada|date:"d/m/Y H:i" }}</div>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <p class="mb-2">
-                                <strong>Distancia Estimada:</strong> 
-                                {% if costos.viaje.distancia_km %}
-                                    {{ costos.viaje.distancia_km|floatformat:2 }} km
-                                    <a href="#" id="recalcular-distancia" class="btn btn-sm btn-outline-info ms-2" title="Recalcular">
-                                        <i class="fas fa-sync-alt"></i>
-                                    </a>
-                                {% else %}
-                                    <a href="#" id="calcular-distancia" class="btn btn-sm btn-success">
-                                        <i class="fas fa-calculator me-1"></i>Calcular
-                                    </a>
+                        <div class="col-lg-3 col-md-6 mb-3">
+                            <div class="info-card h-100 p-3 rounded shadow-sm bg-white d-flex flex-column justify-content-center align-items-start">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-tachometer-alt fa-lg text-success me-2"></i>
+                                    <span class="fw-bold">Resumen:</span>
+                                </div>
+                                <div><span class="fw-bold">Km Recorridos:</span> <span class="text-success">{{ total_kilometros|floatformat:2 }} km</span></div>
+                                <div><span class="fw-bold">Total Litros:</span> <span class="text-success">{{ total_litros|floatformat:2 }} L</span></div>
+                                {% if total_litros > 0 %}
+                                <div><span class="fw-bold">Consumo promedio:</span> <span class="text-secondary">{{ total_litros|floatformat:2 }} L / {{ total_kilometros|floatformat:2 }} km</span></div>
                                 {% endif %}
-                            </p>
-                            <p class="mb-2"><strong>Total Km Recorridos:</strong> {{ total_kilometros|floatformat:2 }} km</p>
-                            <p class="mb-2"><strong>Total Litros:</strong> {{ total_litros|floatformat:2 }} L</p>
-                            {% if total_litros > 0 %}
-                            <p class="mb-0"><strong>Consumo promedio:</strong> {{ total_litros|floatformat:2 }} L / {{ total_kilometros|floatformat:2 }} km</p>
-                            {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -81,61 +90,56 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-gas-pump me-2 text-danger"></i>Puntos de Recarga de Combustible</h5>
-                    <a href="{% url 'costos:agregar_punto' costos.pk %}" class="btn btn-sm btn-success">
-                        <i class="fas fa-plus me-2"></i>Agregar Punto de Recarga
-                    </a>
+                        <a href="{% url 'costos:registrar_puntos_recarga' costos.pk %}" class="btn btn-warning">
+                            <i class="fas fa-edit me-2"></i>Editar
+                        </a>
                 </div>
                 <div class="card-body">
                     {% if puntos_recarga %}
                     <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
+                        <table class="table table-bordered align-middle">
+                            <thead class="table-primary">
                                 <tr>
-                                    <th>Orden</th>
+                                    <th class="text-center">#</th>
                                     <th>Ubicación</th>
-                                    <th>Kilometraje</th>
-                                    <th>Km Recorridos</th>
-                                    <th>Litros Cargados</th>
-                                    <th>Precio/Litro</th>
-                                    <th>Costo Total</th>
-                                    <th>Acciones</th>
+                                    <th class="text-center">Kilometraje</th>
+                                    <th class="text-center">Km Recorridos</th>
+                                    <th class="text-center">Litros</th>
+                                    <th class="text-center">Precio/Litro</th>
+                                    <th class="text-center">Costo Total</th>
+                                    <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for punto in puntos_recarga %}
                                 <tr>
-                                    <td><span class="badge bg-primary">{{ punto.orden }}</span></td>
+                                    <td class="text-center"><span class="badge bg-primary fs-6">{{ punto.orden }}</span></td>
                                     <td>
                                         <strong>{{ punto.ubicacion|default:"Sin especificar" }}</strong>
                                         {% if punto.observaciones %}
                                         <br><small class="text-muted">{{ punto.observaciones|truncatewords:10 }}</small>
                                         {% endif %}
                                     </td>
-                                    <td>{{ punto.kilometraje|floatformat:2 }} km</td>
-                                    <td>
-                                        <span class="badge bg-info">{{ punto.kilometros_recorridos|floatformat:2 }} km</span>
+                                    <td class="text-center">{{ punto.kilometraje|floatformat:2 }} km</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-info fs-6">{{ punto.kilometros_recorridos|floatformat:2 }} km</span>
                                     </td>
-                                    <td>{{ punto.litros_cargados|floatformat:2 }} L</td>
-                                    <td>CLP ${{ punto.precio_combustible|floatformat:0 }}</td>
-                                    <td><strong>CLP ${{ punto.costo_total|floatformat:0 }}</strong></td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:editar_punto' punto.pk %}" 
-                                               class="btn btn-outline-primary" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{% url 'costos:eliminar_punto' punto.pk %}" 
-                                               class="btn btn-outline-danger" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
+                                    <td class="text-center">{{ punto.litros_cargados|floatformat:2 }} L</td>
+                                    <td class="text-center">CLP ${{ punto.precio_combustible|floatformat:0 }}</td>
+                                    <td class="text-center"><strong>CLP ${{ punto.costo_total|floatformat:0 }}</strong></td>
+                                        <td class="text-center"></td>
                                 </tr>
                                 {% endfor %}
                                 <tr class="table-success">
                                     <td colspan="3" class="text-end"><strong>TOTALES:</strong></td>
-                                    <td><strong>{{ total_kilometros|floatformat:2 }} km</strong></td>
-                                    <td><strong>{{ total_litros|floatformat:2 }} L</strong></td>
+                                    <td class="text-center"><strong>
+                                        {% if costos.km_final and costos.km_inicial %}
+                                            {{ costos.km_final|floatformat:2 }} km - {{ costos.km_inicial|floatformat:2 }} km = {{ km_recorridos_real|floatformat:2 }} km
+                                        {% else %}
+                                            {{ total_kilometros|floatformat:2 }} km
+                                        {% endif %}
+                                    </strong></td>
+                                    <td class="text-center"><strong>{{ total_litros|floatformat:2 }} L</strong></td>
                                     <td colspan="2" class="text-end"><strong>CLP ${{ costos.combustible|floatformat:0 }}</strong></td>
                                     <td></td>
                                 </tr>
@@ -145,13 +149,145 @@
                     {% else %}
                     <div class="alert alert-info mb-0">
                         <i class="fas fa-info-circle me-2"></i>
-                        No hay puntos de recarga registrados. Haz clic en "Agregar Punto de Recarga" para comenzar.
+                        No hay puntos de recarga registrados. Haz clic en <span class="fw-bold text-primary">"Agregar Punto de Recarga"</span> para comenzar.
                     </div>
                     {% endif %}
                 </div>
             </div>
         </div>
     </div>
+
+                    <!-- Peajes -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-road me-2 text-info"></i>Peajes del Viaje</h5>
+                                    <a href="{% url 'costos:registrar_peajes' costos.pk %}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if costos.viaje.peajes.count > 0 %}
+                                        <div class="table-responsive">
+                                            <table class="table table-bordered align-middle">
+                                                <thead class="table-info">
+                                                    <tr>
+                                                        <th class="text-center">#</th>
+                                                        <th>Nombre</th>
+                                                        <th>Ubicación</th>
+                                                        <th class="text-center">Monto</th>
+                                                        <th class="text-center">Fecha Pago</th>
+                                                        <th class="text-center">Comprobante</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for peaje in costos.viaje.peajes.all %}
+                                                    <tr>
+                                                        <td class="text-center">{{ forloop.counter }}</td>
+                                                        <td>{{ peaje.lugar }}</td>
+                                                        <td>{{ peaje.lugar }}</td>
+                                                        <td class="text-center">CLP ${{ peaje.monto|floatformat:0 }}</td>
+                                                        <td class="text-center">{{ peaje.fecha_pago|date:"d/m/Y H:i" }}</td>
+                                                        <td class="text-center">{{ peaje.comprobante|default:"-" }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            No hay peajes registrados para este viaje. Haz clic en <span class="fw-bold text-info">"Agregar Peaje"</span> para comenzar.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mantenimientos -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-tools me-2 text-warning"></i>Mantenimientos Asociados</h5>
+                                    <a href="{% url 'costos:mantenimiento_costos' costos.pk %}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if costos.mantenimientos.all %}
+                                        {% if costos.mantenimientos.count > 0 %}
+                                        <div class="table-responsive">
+                                            <table class="table table-hover">
+                                                <thead>
+                                                    <tr>
+                                                        <th>#</th>
+                                                        <th>Tipo</th>
+                                                        <th>Descripción</th>
+                                                        <th>Fecha</th>
+                                                        <th>Kilometraje</th>
+                                                        <th>Costo</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for mant in costos.mantenimientos.all %}
+                                                    <tr>
+                                                        <td>{{ forloop.counter }}</td>
+                                                        <td>{{ mant.get_tipo_display }}</td>
+                                                        <td>{{ mant.descripcion|truncatewords:10 }}</td>
+                                                        <td>{{ mant.fecha_mantenimiento|date:"d/m/Y" }}</td>
+                                                        <td>{{ mant.kilometraje }}</td>
+                                                        <td>CLP ${{ mant.costo|floatformat:0 }}</td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            No hay mantenimientos asociados a este viaje.
+                                        </div>
+                                        {% endif %}
+                                    {% else %}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No aplica.
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Otros Costos -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-0 shadow-sm">
+                                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0"><i class="fas fa-ellipsis-h me-2 text-secondary"></i>Otros Costos</h5>
+                                    <a href="{% url 'costos:otros_costos' costos.pk %}" class="btn btn-warning">
+                                        <i class="fas fa-edit me-2"></i>Editar
+                                    </a>
+                                </div>
+                                <div class="card-body">
+                                    {% if costos.otros_costos > 0 %}
+                                        <p class="mb-2"><strong>Monto:</strong> CLP ${{ costos.otros_costos|floatformat:0 }}</p>
+                                        {% if costos.observaciones %}
+                                        <p class="mb-2"><strong>Justificación:</strong> {{ costos.observaciones }}</p>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>
+                                            No aplica.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
     <!-- Resumen de Costos -->
     <div class="row mb-4">
@@ -202,14 +338,11 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'costos:editar' costos.pk %}" class="btn btn-primary">
-                            <i class="fas fa-edit me-2"></i>Editar Costos
-                        </a>
-                        <a href="{% url 'costos:agregar_punto' costos.pk %}" class="btn btn-success">
-                            <i class="fas fa-plus me-2"></i>Agregar Punto de Recarga
-                        </a>
                         <a href="{% url 'costos:eliminar' costos.pk %}" class="btn btn-danger">
                             <i class="fas fa-trash me-2"></i>Eliminar Costos
+                        </a>
+                        <a href="{% url 'costos:informe_costos_pdf' costos.pk %}" class="btn btn-info" target="_blank">
+                            <i class="fas fa-file-pdf me-2"></i>Generar Informe de Costos
                         </a>
                     </div>
                 </div>

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Registrar Otros Costos - Costos de Viaje{% endblock %}
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-ellipsis-h me-2"></i>Registrar Otros Costos</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        {% if otros_costos_registrados or justificacion_otros_costos_registrada %}
+                        <div class="mb-3">
+                            <label class="form-label">Otros Costos Registrados</label>
+                            <div class="alert alert-info">
+                                <strong>Monto:</strong> CLP ${{ otros_costos_registrados|floatformat:0 }}<br>
+                                <strong>Justificación:</strong> {{ justificacion_otros_costos_registrada|default:"-" }}
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="mb-3">
+                            <label for="otros_costos" class="form-label">Monto de Otros Costos (CLP)</label>
+                            <input type="number" name="otros_costos" id="otros_costos" class="form-control" step="0.01" min="0" placeholder="Ej: 20000">
+                        </div>
+                        <div class="mb-3">
+                            <label for="justificacion_otros_costos" class="form-label">Justificación de Otros Costos</label>
+                            <textarea name="justificacion_otros_costos" id="justificacion_otros_costos" class="form-control" rows="2" placeholder="Describe la razón de otros costos..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'costos:registrar_peajes' costos_pk=costos_pk %}" class="btn btn-warning" style="font-weight:bold; color: #fff; border: 2px solid #d97706; box-shadow: 0 2px 8px #fbbf24;">
+                                <i class="fas fa-forward me-1"></i>Omitir
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-check me-1"></i>Continuar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

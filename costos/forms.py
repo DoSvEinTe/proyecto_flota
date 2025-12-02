@@ -7,19 +7,24 @@ class CostosViajeForm(forms.ModelForm):
     """
     Formulario para crear o editar costos de un viaje.
     """
+    mantenimientos = forms.ModelMultipleChoiceField(
+        queryset=None,
+        required=False,
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'}),
+        label='Mantenimientos realizados (seleccione uno o varios)'
+    )
+
     class Meta:
         model = CostosViaje
-        fields = ['viaje', 'mantenimiento', 'peajes', 'otros_costos', 'observaciones']
+        fields = ['viaje', 'mantenimientos', 'peajes', 'otros_costos', 'observaciones']
         widgets = {
             'viaje': forms.Select(attrs={'class': 'form-control'}),
-            'mantenimiento': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'peajes': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'viaje': 'Viaje',
-            'mantenimiento': 'Costo de Mantenimiento (CLP)',
             'peajes': 'Costo de Peajes (CLP)',
             'otros_costos': 'Otros Costos (CLP)',
             'observaciones': 'Observaciones',
@@ -31,6 +36,22 @@ class CostosViajeForm(forms.ModelForm):
         if not self.instance.pk:
             viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
             self.fields['viaje'].queryset = Viaje.objects.exclude(id__in=viajes_con_costos)
+
+        # Filtrar mantenimientos por bus del viaje seleccionado
+        from flota.models import Mantenimiento
+        self.fields['mantenimientos'].queryset = Mantenimiento.objects.none()
+        if 'viaje' in self.data:
+            try:
+                viaje_id = int(self.data.get('viaje'))
+                from flota.models import Mantenimiento, Bus
+                bus = Viaje.objects.get(pk=viaje_id).bus
+                self.fields['mantenimientos'].queryset = Mantenimiento.objects.filter(bus=bus)
+            except Exception:
+                self.fields['mantenimientos'].queryset = Mantenimiento.objects.none()
+        elif self.instance.pk and self.instance.viaje:
+            bus = self.instance.viaje.bus
+            from flota.models import Mantenimiento
+            self.fields['mantenimientos'].queryset = Mantenimiento.objects.filter(bus=bus)
 
 
 class PuntoRecargaForm(forms.ModelForm):
@@ -124,3 +145,38 @@ class PuntoRecargaForm(forms.ModelForm):
                 raise forms.ValidationError(f'Ya existe un punto de recarga con el orden {orden}')
         
         return orden
+
+
+class KmInicialForm(forms.ModelForm):
+    class Meta:
+        model = CostosViaje
+        fields = ['km_inicial']
+        widgets = {
+            'km_inicial': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Ingrese el kilometraje inicial real del viaje'})
+        }
+        labels = {
+            'km_inicial': 'Kilometraje inicial del viaje',
+        }
+        help_texts = {
+            'km_inicial': 'Este valor se usará como referencia para todos los cálculos de este viaje.'
+        }
+
+
+class KmFinalForm(forms.ModelForm):
+    class Meta:
+        model = CostosViaje
+        fields = ['km_final']
+        widgets = {
+            'km_final': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingrese el kilometraje final del viaje',
+                'step': '0.01',
+                'min': '0',
+            })
+        }
+        labels = {
+            'km_final': 'Kilometraje final del viaje'
+        }
+        help_texts = {
+            'km_final': 'Ingrese el kilometraje final real al terminar el viaje.'
+        }

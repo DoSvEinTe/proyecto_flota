@@ -4,6 +4,7 @@ from . import views
 app_name = 'costos'
 
 urlpatterns = [
+        path('peaje/<int:pk>/eliminar/', views.PeajeDeleteView.as_view(), name='eliminar_peaje'),
     # Vista principal de gestión de costos
     path('', views.GestionCostosView.as_view(), name='gestion'),
     
@@ -11,12 +12,14 @@ urlpatterns = [
     path('lista/', views.CostosViajeListView.as_view(), name='lista'),
     path('viajes-sin-costos/', views.ViajesSinCostosListView.as_view(), name='viajes_sin_costos'),
     path('crear/', views.CostosViajeCreateView.as_view(), name='crear'),
+    path('mantenimiento/<int:costos_pk>/', views.mantenimiento_costos, name='mantenimiento_costos'),
+    path('otros-costos/<int:costos_pk>/', views.otros_costos, name='otros_costos'),
     path('<int:pk>/', views.CostosViajeDetailView.as_view(), name='detalle'),
     path('<int:pk>/editar/', views.CostosViajeUpdateView.as_view(), name='editar'),
     path('<int:pk>/eliminar/', views.CostosViajeDeleteView.as_view(), name='eliminar'),
     
     # Gestión de Puntos de Recarga
-    path('<int:costos_pk>/punto-recarga/agregar/', views.PuntoRecargaCreateView.as_view(), name='agregar_punto'),
+    path('<int:costos_pk>/punto-recarga/agregar/', views.agregar_puntos_recarga, name='agregar_punto'),
     path('punto-recarga/<int:pk>/editar/', views.PuntoRecargaUpdateView.as_view(), name='editar_punto'),
     path('punto-recarga/<int:pk>/eliminar/', views.PuntoRecargaDeleteView.as_view(), name='eliminar_punto'),
     
@@ -25,4 +28,15 @@ urlpatterns = [
     
     # Generar PDF
     path('viaje/<int:viaje_id>/formulario-pdf/', views.generar_formulario_costos_pdf, name='formulario_pdf'),
+    path('informe-costos/<int:costos_pk>/', views.informe_costos_pdf, name='informe_costos_pdf'),
+
+    # Registrar peajes y puntos de recarga
+    path('registrar-peajes/<int:costos_pk>/', views.registrar_peajes, name='registrar_peajes'),
+    path('registrar-puntos-recarga/<int:costos_pk>/', views.registrar_puntos_recarga, name='registrar_puntos_recarga'),
+
+    # Registrar km inicial
+    path('<int:costos_pk>/km-inicial/', views.registrar_km_inicial, name='registrar_km_inicial'),
+
+    # Registrar km final
+    path('<int:costos_pk>/km-final/', views.registrar_km_final, name='registrar_km_final'),
 ]

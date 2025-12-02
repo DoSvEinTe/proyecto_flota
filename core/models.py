@@ -15,6 +15,12 @@ class Conductor(models.Model):
     fecha_contratacion = models.DateField()
     licencia_conducir_frontal = models.ImageField(upload_to='licencias/', null=True, blank=True, help_text='Foto frontal de la licencia de conducir')
     licencia_conducir_trasera = models.ImageField(upload_to='licencias/', null=True, blank=True, help_text='Foto trasera de la licencia de conducir')
+    licencias = models.CharField(
+        max_length=50,
+        help_text='Tipos de licencias (A, B, C, etc.)',
+        blank=True,
+        default=''
+    )
     activo = models.BooleanField(default=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)

@@ -52,29 +52,7 @@
         </div>
     </div>
 
-    <!-- Acciones Rápidas -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0"><i class="fas fa-bolt me-2 text-warning"></i>Acciones Rápidas</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex gap-2 flex-wrap">
-                        <a href="{% url 'costos:crear' %}" class="btn btn-primary">
-                            <i class="fas fa-plus me-2"></i>Registrar Costos de Viaje
-                        </a>
-                        <a href="{% url 'costos:lista' %}" class="btn btn-outline-primary">
-                            <i class="fas fa-list me-2"></i>Ver Todos los Costos
-                        </a>
-                        <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-outline-warning">
-                            <i class="fas fa-exclamation-circle me-2"></i>Viajes Pendientes
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+
 
     <!-- Viajes sin Costos -->
     {% if viajes_sin_costos %}
@@ -113,16 +91,83 @@
                                         </span>
                                     </td>
                                     <td>
+                                        <a href="{% url 'costos:crear' %}?viaje={{ viaje.id }}" 
+                                           class="btn btn-primary btn-sm" title="Registrar Costos">
+                                            <i class="fas fa-plus me-1"></i>Registrar
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end mt-2">
+                        <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-action btn-details" style="background-color: #0d47a1; color: #fff;">
+                            <i class="fas fa-list me-1"></i>Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- CRUD Costos Registrados -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-0 py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock me-2 text-info"></i>
+                        Costos Registrados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-bordered align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Placa</th>
+                                    <th>Modelo</th>
+                                    <th>Viaje</th>
+                                    <th>Fecha</th>
+                                    <th>Puntos Recarga</th>
+                                    <th>Peajes</th>
+                                    <th>Combustible</th>
+                                    <th>Otros Costos</th>
+                                    <th>Costo Total</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for costos in costos_list %}
+                                <tr>
+                                    <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
+                                    <td>{{ costos.viaje.bus.modelo }}</td>
+                                    <td>
+                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
+                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
+                                    </td>
+                                    <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-warning">{{ costos.viaje.peajes.count }}</span>
+                                    </td>
+                                    <td>CLP ${{ costos.combustible|floatformat:0 }}</td>
+                                    <td>CLP ${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</td>
+                                    <td><strong>CLP ${{ costos.costo_total|floatformat:0 }}</strong></td>
+                                    <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:crear' %}?viaje={{ viaje.id }}" 
-                                               class="btn btn-primary" title="Registrar Costos">
-                                                <i class="fas fa-plus me-1"></i>Registrar
+                                            <a href="{% url 'costos:detalle' costos.pk %}" class="btn btn-info" title="Ver">
+                                                <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" 
-                                               class="btn btn-outline-danger" 
-                                               title="Descargar formulario PDF"
-                                               target="_blank">
-                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            <a href="{% url 'costos:eliminar' costos.pk %}" class="btn btn-danger" title="Eliminar">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                            <a href="{% url 'costos:informe_costos_pdf' costos.pk %}" class="btn btn-primary" title="Descargar PDF" target="_blank">
+                                                <i class="fas fa-file-pdf"></i>
                                             </a>
                                         </div>
                                     </td>
@@ -131,74 +176,9 @@
                             </tbody>
                         </table>
                     </div>
-                    <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-sm btn-outline-primary">
-                        Ver Todos <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
                 </div>
             </div>
         </div>
     </div>
-    {% endif %}
-
-    <!-- Últimos Costos Registrados -->
-    {% if ultimos_costos %}
-    <div class="row">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="mb-0">
-                        <i class="fas fa-clock me-2 text-info"></i>
-                        Últimos Costos Registrados
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Bus</th>
-                                    <th>Viaje</th>
-                                    <th>Puntos Recarga</th>
-                                    <th>Combustible</th>
-                                    <th>Costo Total</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for costos in ultimos_costos %}
-                                <tr>
-                                    <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
-                                    <td>
-                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
-                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
-                                        <br>
-                                        <small class="text-muted">{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</small>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">
-                                            {{ costos.puntos_recarga.count }} puntos
-                                        </span>
-                                    </td>
-                                    <td>CLP ${{ costos.combustible|floatformat:0 }}</td>
-                                    <td><strong>CLP ${{ costos.costo_total|floatformat:0 }}</strong></td>
-                                    <td>
-                                        <a href="{% url 'costos:detalle' costos.pk %}" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye me-1"></i>Ver
-                                        </a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    <a href="{% url 'costos:lista' %}" class="btn btn-sm btn-outline-primary">
-                        Ver Todos <i class="fas fa-arrow-right ms-1"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}

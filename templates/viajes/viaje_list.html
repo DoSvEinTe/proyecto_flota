@@ -14,7 +14,7 @@
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
-                <tr>
+                <tr style="background-color: #0d47a1; color: #fff;">
                     <th>Bus</th>
                     <th>Conductor</th>
                     <th>Origen</th>
@@ -28,17 +28,21 @@
             <tbody>
                 {% for viaje in viajes %}
                 <tr>
-                    <td>
-                        {{ viaje.bus.placa }}
-                    </td>
+                    <td><strong>{{ viaje.bus.placa }}</strong></td>
                     <td>{{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}</td>
                     <td>{{ viaje.lugar_origen.nombre }}</td>
                     <td>{{ viaje.lugar_destino.nombre }}</td>
                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                     <td>
-                        <span class="badge bg-{% if viaje.estado == 'programado' %}info{% elif viaje.estado == 'en_curso' %}warning{% elif viaje.estado == 'completado' %}success{% else %}danger{% endif %}">
-                            {{ viaje.get_estado_display }}
-                        </span>
+                        {% if viaje.estado == 'completado' %}
+                            <span class="badge bg-success">COMPLETADO</span>
+                        {% elif viaje.estado == 'en_curso' %}
+                            <span class="badge bg-warning text-dark">EN CURSO</span>
+                        {% elif viaje.estado == 'programado' %}
+                            <span class="badge bg-info text-dark">PROGRAMADO</span>
+                        {% else %}
+                            <span class="badge bg-danger">CANCELADO</span>
+                        {% endif %}
                     </td>
                     <td>
                         <span class="badge bg-primary">{{ viaje.get_pasajeros_count }}</span> / {{ viaje.bus.capacidad_pasajeros }}
@@ -47,22 +51,15 @@
                         </a>
                     </td>
                     <td>
-                        <div class="btn-group btn-group-sm" role="group">
-                            {% if user.is_superuser or user.groups.all|length == 0 or user.groups.all.0.name == 'Admin' %}
-                                <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn btn-action btn-edit" title="Editar">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="{% url 'viajes:viaje_delete' viaje.pk %}" class="btn btn-action btn-delete" title="Eliminar">
-                                    <i class="fas fa-trash"></i>
-                                </a>
-                            {% endif %}
-                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" 
-                               class="btn btn-outline-danger" 
-                               title="Descargar Formulario PDF de Costos"
-                               target="_blank">
-                                <i class="fas fa-file-pdf"></i>
-                            </a>
-                        </div>
+                        <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn btn-action btn-edit" title="Editar" style="background-color: #ffc107; color: #fff;">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{% url 'viajes:viaje_delete' viaje.pk %}" class="btn btn-action btn-delete" title="Eliminar" style="background-color: #f44336; color: #fff;">
+                            <i class="fas fa-trash"></i>
+                        </a>
+                        <a href="{% url 'costos:formulario_pdf' viaje.id %}" class="btn btn-action btn-pdf" title="Descargar Formulario PDF de Costos" style="background-color: #2196f3; color: #fff;" target="_blank">
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
                     </td>
                 </tr>
                 {% endfor %}

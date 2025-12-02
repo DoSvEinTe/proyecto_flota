@@ -56,14 +56,10 @@
                                     <td>{{ viaje.bus.kilometraje_inicial }} km</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:crear' %}?viaje={{ viaje.id }}" 
-                                               class="btn btn-primary" title="Registrar Costos">
+                                            <a href="{% url 'costos:crear' %}?viaje={{ viaje.id }}" class="btn btn-action btn-success" style="background-color: #2196f3; color: #fff;" title="Registrar Costos">
                                                 <i class="fas fa-plus me-1"></i>Registrar
                                             </a>
-                                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" 
-                                               class="btn btn-outline-danger" 
-                                               title="Descargar formulario PDF para completar manualmente"
-                                               target="_blank">
+                                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" class="btn btn-action btn-pdf" style="background-color: #f44336; color: #fff;" title="Descargar formulario PDF para completar manualmente" target="_blank">
                                                 <i class="fas fa-file-pdf me-1"></i>PDF
                                             </a>
                                         </div>

@@ -44,7 +44,6 @@
                         <div class="fw-bold">{{ conductor.apellido }}</div>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Cédula</label>
@@ -59,7 +58,6 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Email</label>
@@ -80,7 +78,6 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Fecha de Contratación</label>
@@ -88,17 +85,32 @@
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Tiempo en la empresa</label>
-                        <div class="fw-bold">{{ conductor.tiempo_empresa|default:"Calculando..." }}</div>
+                        <div class="fw-bold">
+                            {% if tiempo_empresa %}
+                                {{ tiempo_empresa }}
+                            {% else %}
+                                Calculando...
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
-                
                 <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted">Licencias</label>
+                        <div>
+                            {% if licencias_list %}
+                                {% for lic in licencias_list %}
+                                    <span class="badge bg-primary me-1">{{ lic.codigo }}</span>
+                                {% endfor %}
+                            {% else %}
+                                <span class="badge bg-secondary">No asignado</span>
+                            {% endif %}
+                        </div>
+                    </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label text-muted">Registrado en</label>
                         <div class="fw-bold">{{ conductor.creado_en|date:"d/m/Y H:i" }}</div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label text-muted">Última actualización</label>
+                        <label class="form-label text-muted mt-2">Última actualización</label>
                         <div class="fw-bold">{{ conductor.actualizado_en|date:"d/m/Y H:i" }}</div>
                     </div>
                 </div>
@@ -247,22 +259,6 @@
             </div>
         </div>
         
-        <!-- Sección de Viajes Recientes -->
-        <div class="card mt-4">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-route me-2"></i>
-                    Viajes Recientes
-                </h5>
-                <button class="btn btn-sm btn-primary">
-                    <i class="fas fa-plus me-2"></i>
-                    Asignar Viaje
-                </button>
-            </div>
-            <div class="card-body">
-                <p class="text-muted mb-0">No hay viajes registrados para este conductor.</p>
-            </div>
-        </div>
     </div>
     
     <div class="col-md-4">
@@ -279,14 +275,6 @@
                         <i class="fas fa-edit me-2"></i>
                         Editar Conductor
                     </a>
-                    <button class="btn btn-info">
-                        <i class="fas fa-id-card me-2"></i>
-                        Gestionar Documentos
-                    </button>
-                    <button class="btn btn-success">
-                        <i class="fas fa-route me-2"></i>
-                        Asignar Viaje
-                    </button>
                     <hr>
                     <a href="{% url 'conductor_delete' conductor.pk %}" class="btn btn-danger">
                         <i class="fas fa-trash me-2"></i>
@@ -297,55 +285,10 @@
         </div>
         
         <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-chart-bar me-2"></i>
-                    Estadísticas
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <small class="text-muted">Total de Viajes</small>
-                    <div class="fw-bold">0</div>
-                </div>
-                <div class="mb-3">
-                    <small class="text-muted">Viajes Este Mes</small>
-                    <div class="fw-bold">0</div>
-                </div>
-                <div class="mb-3">
-                    <small class="text-muted">Calificación Promedio</small>
-                    <div class="fw-bold text-warning">
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        <i class="fas fa-star"></i>
-                        5.0
-                    </div>
-                </div>
-                <div>
-                    <small class="text-muted">Estado General</small>
-                    <div class="fw-bold text-success">Excelente</div>
-                </div>
-            </div>
-        </div>
+            <!-- Sección de estadísticas eliminada -->
         
         <div class="card mt-4">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-bell me-2"></i>
-                    Alertas
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="alert alert-warning alert-sm">
-                    <small><i class="fas fa-exclamation-triangle me-2"></i>Licencia de conducir no registrada</small>
-                </div>
-                <div class="alert alert-info alert-sm">
-                    <small><i class="fas fa-info-circle me-2"></i>Certificado médico pendiente</small>
-                </div>
-            </div>
-        </div>
+            <!-- Sección de alertas eliminada -->
     </div>
 </div>
 {% endblock %}

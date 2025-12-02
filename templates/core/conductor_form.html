@@ -19,217 +19,155 @@
 </div>
 
 <div class="row">
-    <div class="col-md-8">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Información del Conductor
-                </h5>
-            </div>
-            <div class="card-body">
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    
+    <div class="col-md-8 mx-auto">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Información del Conductor
+                    </h5>
+                </div>
+                <div class="card-body">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.nombre.id_for_label }}" class="form-label">
-                                <strong>Nombre *</strong>
-                            </label>
+                            <label for="{{ form.nombre.id_for_label }}" class="form-label"><strong>Nombre
+                                    *</strong></label>
                             {{ form.nombre }}
-                            {% if form.nombre.errors %}
-                                <div class="text-danger small">
-                                    {{ form.nombre.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.nombre.errors %}<div class="text-danger small">{{ form.nombre.errors }}</div>{% endif %}
                         </div>
-                        
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.apellido.id_for_label }}" class="form-label">
-                                <strong>Apellido *</strong>
-                            </label>
+                            <label for="{{ form.apellido.id_for_label }}" class="form-label"><strong>Apellido
+                                    *</strong></label>
                             {{ form.apellido }}
-                            {% if form.apellido.errors %}
-                                <div class="text-danger small">
-                                    {{ form.apellido.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.apellido.errors %}<div class="text-danger small">{{ form.apellido.errors }}</div>{% endif %}
                         </div>
                     </div>
-                    
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.cedula.id_for_label }}" class="form-label">
-                                <strong>Número de Cédula *</strong>
-                            </label>
+                            <label for="{{ form.cedula.id_for_label }}" class="form-label"><strong>Número de
+                                    Cédula *</strong></label>
                             {{ form.cedula }}
-                            {% if form.cedula.errors %}
-                                <div class="text-danger small">
-                                    {{ form.cedula.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.cedula.errors %}<div class="text-danger small">{{ form.cedula.errors }}</div>{% endif %}
                         </div>
-                        
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.email.id_for_label }}" class="form-label">
-                                <strong>Email *</strong>
-                            </label>
+                            <label for="{{ form.email.id_for_label }}" class="form-label"><strong>Email
+                                    *</strong></label>
                             {{ form.email }}
-                            {% if form.email.errors %}
-                                <div class="text-danger small">
-                                    {{ form.email.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
                         </div>
                     </div>
-                    
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.cedula_frontal.id_for_label }}" class="form-label">
-                                <strong><i class="fas fa-id-card me-2"></i>Cédula - Lado Frontal *</strong>
-                            </label>
-                            {{ form.cedula_frontal }}
-                            {% if form.cedula_frontal.errors %}
-                                <div class="text-danger small">
-                                    {{ form.cedula_frontal.errors }}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Foto del lado frontal de la cédula
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.cedula_trasera.id_for_label }}" class="form-label">
-                                <strong><i class="fas fa-id-card me-2"></i>Cédula - Lado Trasero *</strong>
-                            </label>
-                            {{ form.cedula_trasera }}
-                            {% if form.cedula_trasera.errors %}
-                                <div class="text-danger small">
-                                    {{ form.cedula_trasera.errors }}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Foto del lado trasero de la cédula
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.telefono.id_for_label }}" class="form-label">
-                                <strong>Teléfono *</strong>
-                            </label>
+                            <label for="{{ form.telefono.id_for_label }}" class="form-label"><strong>Teléfono
+                                    *</strong></label>
                             {{ form.telefono }}
-                            {% if form.telefono.errors %}
-                                <div class="text-danger small">
-                                    {{ form.telefono.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.telefono.errors %}<div class="text-danger small">{{ form.telefono.errors }}</div>{% endif %}
                         </div>
-                        
                         <div class="col-md-6 mb-3">
-                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label">
-                                <strong>Fecha de Contratación *</strong>
-                            </label>
+                            <label for="{{ form.fecha_contratacion.id_for_label }}" class="form-label"><strong>Fecha
+                                    de Contratación *</strong></label>
                             {{ form.fecha_contratacion }}
-                            {% if form.fecha_contratacion.errors %}
-                                <div class="text-danger small">
-                                    {{ form.fecha_contratacion.errors }}
-                                </div>
-                            {% endif %}
+                            {% if form.fecha_contratacion.errors %}<div class="text-danger small">{{ form.fecha_contratacion.errors }}</div>{% endif %}
                         </div>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                {{ form.activo }}
-                                <label class="form-check-label" for="{{ form.activo.id_for_label }}">
-                                    <strong>Conductor Activo</strong>
-                                </label>
-                            </div>
-                            {% if form.activo.errors %}
-                                <div class="text-danger small">
-                                    {{ form.activo.errors }}
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.licencia_conducir_frontal.id_for_label }}" class="form-label">
-                                <strong><i class="fas fa-id-card me-2"></i>Licencia - Lado Frontal *</strong>
-                            </label>
-                            {{ form.licencia_conducir_frontal }}
-                            {% if form.licencia_conducir_frontal.errors %}
-                                <div class="text-danger small">
-                                    {{ form.licencia_conducir_frontal.errors }}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Foto del lado frontal de la licencia
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6 mb-3">
-                            <label for="{{ form.licencia_conducir_trasera.id_for_label }}" class="form-label">
-                                <strong><i class="fas fa-id-card me-2"></i>Licencia - Lado Trasero *</strong>
-                            </label>
-                            {{ form.licencia_conducir_trasera }}
-                            {% if form.licencia_conducir_trasera.errors %}
-                                <div class="text-danger small">
-                                    {{ form.licencia_conducir_trasera.errors }}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Foto del lado trasero de la licencia
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-end gap-2">
-                        <a href="{% url 'conductor_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-times me-2"></i>
-                            Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>
-                            {% if form.instance.pk %}Actualizar Conductor{% else %}Crear Conductor{% endif %}
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Documentos de Identidad</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cedula_frontal.id_for_label }}" class="form-label"><strong>Cédula
+                                    - Lado Frontal *</strong></label>
+                            {{ form.cedula_frontal }}
+                            {% if form.cedula_frontal.errors %}<div class="text-danger small">{{ form.cedula_frontal.errors }}</div>{% endif %}
+                            <div class="form-text">Foto del lado frontal de la cédula</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.cedula_trasera.id_for_label }}" class="form-label"><strong>Cédula
+                                    - Lado Trasero *</strong></label>
+                            {{ form.cedula_trasera }}
+                            {% if form.cedula_trasera.errors %}<div class="text-danger small">{{ form.cedula_trasera.errors }}</div>{% endif %}
+                            <div class="form-text">Foto del lado trasero de la cédula</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-id-card me-2"></i>Licencias</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label"><strong>Licencias *</strong></label>
+                        <div class="d-flex flex-row flex-wrap gap-4 mb-2">
+                            {% for lic in form.licencias %}
+                            <div class="form-check">{{ lic }} <label class="form-check-label"
+                                    for="{{ lic.id_for_label }}">{{ lic.label }}</label></div>
+                            {% endfor %}
+                        </div>
+                        {% if form.licencias.errors %}<div class="text-danger small mt-2">{{ form.licencias.errors }}</div>{% endif %}
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.licencia_conducir_frontal.id_for_label }}" class="form-label"><strong>Licencia
+                                    - Lado Frontal *</strong></label>
+                            {{ form.licencia_conducir_frontal }}
+                            {% if form.licencia_conducir_frontal.errors %}<div class="text-danger small">{{ form.licencia_conducir_frontal.errors }}</div>{% endif %}
+                            <div class="form-text">Foto del lado frontal de la licencia</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.licencia_conducir_trasera.id_for_label }}" class="form-label"><strong>Licencia
+                                    - Lado Trasero *</strong></label>
+                            {{ form.licencia_conducir_trasera }}
+                            {% if form.licencia_conducir_trasera.errors %}<div class="text-danger small">{{ form.licencia_conducir_trasera.errors }}</div>{% endif %}
+                            <div class="form-text">Foto del lado trasero de la licencia</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-check me-2"></i>Estado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check d-flex align-items-center mb-3">
+                        {{ form.activo }}
+                        <label class="form-check-label ms-2" for="{{ form.activo.id_for_label }}"><strong>Conductor
+                                Activo</strong></label>
+                        <span class="ms-3 text-muted small">Marque como "Activo" si el conductor está disponible para
+                            realizar viajes.</span>
+                    </div>
+                    {% if form.activo.errors %}<div class="text-danger small">{{ form.activo.errors }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'conductor_list' %}" class="btn btn-secondary"><i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-2"></i>{% if form.instance.pk %}Actualizar
+                    Conductor{% else %}Crear Conductor{% endif %}</button>
+            </div>
+        </form>
     </div>
-    
     <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
-                    <i class="fas fa-lightbulb me-2"></i>
-                    Información Importante
-                </h5>
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Información Importante</h5>
             </div>
             <div class="card-body">
-                <div class="alert alert-info">
-                    <h6><i class="fas fa-info-circle me-2"></i>Campos Obligatorios</h6>
+                <div class="alert alert-info"><strong><i class="fas fa-info-circle me-2"></i>Campos Obligatorios</strong>
                     <p class="mb-0 small">Los campos marcados con (*) son obligatorios y deben ser completados.</p>
                 </div>
-                
-                <div class="alert alert-warning">
-                    <h6><i class="fas fa-exclamation-triangle me-2"></i>Datos Únicos</h6>
+                <div class="alert alert-warning"><strong><i class="fas fa-exclamation-triangle me-2"></i>Datos Únicos</strong>
                     <p class="mb-0 small">La cédula y el email deben ser únicos en el sistema.</p>
                 </div>
-                
-                <div class="alert alert-success">
-                    <h6><i class="fas fa-check-circle me-2"></i>Estado del Conductor</h6>
-                    <p class="mb-0 small">Marque como "Activo" si el conductor está disponible para realizar viajes. Los conductores inactivos no aparecerán en las asignaciones de viajes.</p>
+                <div class="alert alert-success"><strong><i class="fas fa-user-check me-2"></i>Estado Disponible</strong>
+                    <p class="mb-0 small"><b>Activo:</b> Conductor disponible para asignaciones.<br><b>Inactivo:</b> No
+                        aparece en asignaciones de viajes.</p>
                 </div>
             </div>
         </div>
