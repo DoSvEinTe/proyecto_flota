@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Conductor, Lugar
+from .models import Conductor
 
 
 @admin.register(Conductor)
@@ -20,24 +20,3 @@ class ConductorAdmin(admin.ModelAdmin):
         }),
     )
     readonly_fields = ('creado_en', 'actualizado_en')
-
-
-@admin.register(Lugar)
-class LugarAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'ciudad', 'provincia', 'pais')
-    list_filter = ('ciudad', 'pais')
-    search_fields = ('nombre', 'ciudad')
-    fieldsets = (
-        ('Información General', {
-            'fields': ('nombre', 'ciudad', 'provincia', 'pais')
-        }),
-        ('Ubicación (Coordenadas)', {
-            'fields': ('latitud', 'longitud'),
-            'classes': ('collapse',)
-        }),
-        ('Metadatos', {
-            'fields': ('creado_en',),
-            'classes': ('collapse',)
-        }),
-    )
-    readonly_fields = ('creado_en',)

@@ -15,6 +15,42 @@ from flota.models import Bus
 from core.permissions import admin_required, usuario_or_admin_required
 
 
+class PasajeroForm(ModelForm):
+    class Meta:
+        model = Pasajero
+        fields = ['nombre_completo', 'rut', 'telefono', 'correo']
+        widgets = {
+            'nombre_completo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del pasajero'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
+            'correo': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
+        }
+    
+    def clean_nombre_completo(self):
+        nombre = self.cleaned_data.get('nombre_completo')
+        if nombre and len(nombre.strip()) < 3:
+            raise forms.ValidationError('El nombre completo debe tener al menos 3 caracteres.')
+        return nombre.strip() if nombre else nombre
+    
+    def clean_rut(self):
+        rut = self.cleaned_data.get('rut')
+        if rut:
+            rut = rut.strip().upper()
+            # Validar formato básico de RUT (permite formato con o sin guion)
+            if not rut.replace('-', '').replace('.', '').isalnum():
+                raise forms.ValidationError('El RUT debe contener solo números y letras.')
+        return rut
+    
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get('telefono')
+        if telefono:
+            telefono = telefono.strip()
+            # Validar que el teléfono contenga solo números y caracteres permitidos
+            if not telefono.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
+                raise forms.ValidationError('El teléfono debe contener solo números y caracteres permitidos (+, -, espacios, paréntesis).')
+        return telefono
+
+
 class ViajeForm(ModelForm):
     class Meta:
         model = Viaje
@@ -315,3 +351,58 @@ def editar_pasajero_viaje(request, pk, pasajero_pk):
         'viaje_pasajero': viaje_pasajero,
     }
     return render(request, 'viajes/editar_pasajero_viaje.html', context)
+
+
+# Vistas para Pasajeros (dentro de viajes)
+@method_decorator(usuario_or_admin_required, name='dispatch')
+class PasajeroListView(ListView):
+    model = Pasajero
+    template_name = 'viajes/pasajero_list.html'
+    context_object_name = 'pasajeros'
+    paginate_by = 20
+
+    def get_queryset(self):
+        return Pasajero.objects.all().order_by('-creado_en')
+
+
+@method_decorator(usuario_or_admin_required, name='dispatch')
+class PasajeroDetailView(DetailView):
+    model = Pasajero
+    template_name = 'viajes/pasajero_detail.html'
+    context_object_name = 'pasajero'
+
+
+@method_decorator(usuario_or_admin_required, name='dispatch')
+class PasajeroCreateView(CreateView):
+    model = Pasajero
+    form_class = PasajeroForm
+    template_name = 'viajes/pasajero_form.html'
+    success_url = reverse_lazy('viajes:pasajero_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Pasajero {form.instance.nombre_completo} creado exitosamente.')
+        return super().form_valid(form)
+
+
+@method_decorator(admin_required, name='dispatch')
+class PasajeroUpdateView(UpdateView):
+    model = Pasajero
+    form_class = PasajeroForm
+    template_name = 'viajes/pasajero_form.html'
+    success_url = reverse_lazy('viajes:pasajero_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, f'Pasajero {form.instance.nombre_completo} actualizado exitosamente.')
+        return super().form_valid(form)
+
+
+@method_decorator(admin_required, name='dispatch')
+class PasajeroDeleteView(DeleteView):
+    model = Pasajero
+    template_name = 'viajes/pasajero_confirm_delete.html'
+    success_url = reverse_lazy('viajes:pasajero_list')
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        messages.success(request, f'Pasajero {self.object.nombre_completo} eliminado exitosamente.')
+        return super().delete(request, *args, **kwargs)

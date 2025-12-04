@@ -22,7 +22,7 @@
             <div class="col-md-6">
                 <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
                 <p><strong>Conductor:</strong> {{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</p>
-                <p><strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</p>
+                <p><strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</p>
             </div>
             <div class="col-md-6">
                 <p><strong>Fecha Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
@@ -109,7 +109,7 @@
                                 <strong>{{ viaje_pasajero.pasajero.nombre_completo }}</strong>
                             </td>
                             <td>{{ viaje_pasajero.pasajero.rut }}</td>
-                            <td>{{ viaje_pasajero.pasajero.numero_telefono|default:"-" }}</td>
+                            <td>{{ viaje_pasajero.pasajero.telefono|default:"-" }}</td>
                             <td>{{ viaje_pasajero.pasajero.correo|default:"-" }}</td>
                             <td>
                                 {% if viaje_pasajero.asiento %}
@@ -173,7 +173,16 @@
                 <h2 class="text-{% if pasajeros_en_viaje|length < viaje.bus.capacidad_pasajeros %}success{% else %}warning{% endif %}">
                     {% widthratio pasajeros_en_viaje|length viaje.bus.capacidad_pasajeros 100 %}%
                 </h2>
-                <small>{{ viaje.bus.capacidad_pasajeros|add:"-"|add:pasajeros_en_viaje|length }} asientos disponibles</small>
+                <small id="asientos-disponibles"></small>
+                <script>
+                    (function() {
+                        const total = {{ pasajeros_en_viaje|length }};
+                        const capacidad = {{ viaje.bus.capacidad_pasajeros }};
+                        const disponibles = capacidad - total;
+                        document.getElementById('asientos-disponibles').textContent = 
+                            disponibles > 0 ? disponibles + ' asientos disponibles' : 'Sin asientos disponibles';
+                    })();
+                </script>
             </div>
         </div>
     </div>

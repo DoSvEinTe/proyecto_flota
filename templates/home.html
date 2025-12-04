@@ -300,25 +300,6 @@
     
     <!-- TODOS - Estadísticas que ambos pueden ver -->
     <div class="col-md-6 col-lg-3 mb-4">
-        <div class="card stat-card card-info">
-            <div class="stat-card-body">
-                <div class="stat-info">
-                    <h5>Total Lugares</h5>
-                    <h2>{{ total_lugares }}</h2>
-                </div>
-                <div class="stat-icon">
-                    <i class="fas fa-map-marker-alt"></i>
-                </div>
-            </div>
-            <div class="stat-card-footer">
-                <a href="{% url 'lugar_list' %}">
-                    Ver todos <i class="fas fa-arrow-right"></i>
-                </a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6 col-lg-3 mb-4">
         <div class="card stat-card card-warning">
             <div class="stat-card-body">
                 <div class="stat-info">
@@ -349,7 +330,7 @@
                 </div>
             </div>
             <div class="stat-card-footer">
-                <a href="{% url 'pasajero_list' %}">
+                <a href="{% url 'viajes:pasajero_list' %}">
                     Ver todos <i class="fas fa-arrow-right"></i>
                 </a>
             </div>
@@ -382,15 +363,11 @@
                     {% endif %}
                     
                     <!-- TODOS - Acciones disponibles para ambos -->
-                    <a href="{% url 'lugar_create' %}" class="btn btn-info">
-                        <i class="fas fa-map-pin"></i>
-                        Agregar Nuevo Lugar
-                    </a>
                     <a href="{% url 'viajes:viaje_create' %}" class="btn btn-warning">
                         <i class="fas fa-plus-circle"></i>
                         Agregar Nuevo Viaje
                     </a>
-                    <a href="{% url 'pasajero_create' %}" class="btn btn-secondary">
+                    <a href="{% url 'viajes:pasajero_create' %}" class="btn btn-secondary">
                         <i class="fas fa-user-plus"></i>
                         Agregar Nuevo Pasajero
                     </a>

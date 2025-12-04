@@ -36,7 +36,7 @@
                 
                 <form method="post" class="d-flex justify-content-between">
                     {% csrf_token %}
-                    <a href="{% url 'pasajero_list' %}" class="btn btn-secondary">
+                    <a href="{% url 'viajes:pasajero_list' %}" class="btn btn-secondary">
                         <i class="fas fa-times me-2"></i>Cancelar
                     </a>
                     <button type="submit" class="btn btn-danger">
@@ -48,3 +48,4 @@
     </div>
 </div>
 {% endblock %}
+

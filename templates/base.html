@@ -531,18 +531,6 @@
                     <span>Viajes</span>
                 </a>
 
-                <a href="{% url 'lugar_list' %}" 
-                   class="{% if 'lugar' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <span>Lugares</span>
-                </a>
-
-                <a href="{% url 'pasajero_list' %}" 
-                   class="{% if 'pasajero' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-users"></i>
-                    <span>Pasajeros</span>
-                </a>
-
                 <a href="{% url 'costos:gestion' %}"
                    class="{% if 'costos' in request.resolver_match.url_name %}active{% endif %}">
                     <i class="fas fa-dollar-sign"></i>
@@ -564,12 +552,8 @@
                         <i class="fas fa-bus"></i>Gestión de Buses
                     {% elif 'conductor' in request.resolver_match.url_name %}
                         <i class="fas fa-user-tie"></i>Gestión de Conductores
-                    {% elif 'viaje' in request.resolver_match.url_name %}
+                    {% elif 'viaje' in request.resolver_match.url_name or 'pasajero' in request.resolver_match.url_name %}
                         <i class="fas fa-route"></i>Gestión de Viajes
-                    {% elif 'lugar' in request.resolver_match.url_name %}
-                        <i class="fas fa-map-marker-alt"></i>Gestión de Lugares
-                    {% elif 'pasajero' in request.resolver_match.url_name %}
-                        <i class="fas fa-users"></i>Gestión de Pasajeros
                     {% elif 'costos' in request.resolver_match.url_name %}
                         <i class="fas fa-dollar-sign"></i>Gestión de Costos
                     {% else %}

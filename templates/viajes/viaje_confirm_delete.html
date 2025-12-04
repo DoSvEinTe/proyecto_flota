@@ -27,7 +27,7 @@
                         <strong>Conductor:</strong> {{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}
                     </p>
                     <p class="mb-2">
-                        <strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}
+                        <strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}
                     </p>
                     <p class="mb-0">
                         <strong>Fecha de Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}
