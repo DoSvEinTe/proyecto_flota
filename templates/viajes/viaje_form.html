@@ -2,163 +2,927 @@
 
 {% block title %}{% if viaje %}Editar Viaje{% else %}Crear Viaje{% endif %} - Sistema de Gestión de Flota{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+<style>
+    #map {
+        height: 500px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: relative;
+        z-index: 1;
+        background: #f0f0f0;
+    }
+    .map-instructions {
+        background-color: #e3f2fd;
+        border: 1px solid #2196F3;
+        border-radius: 6px;
+        padding: 10px;
+        margin-bottom: 15px;
+    }
+    .coordinates-display {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 12px;
+    }
+    .route-info {
+        background-color: #e8f5e9;
+        border: 1px solid #4caf50;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    .calculate-route-btn {
+        margin-top: 10px;
+        background: #4caf50;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        padding: 10px 20px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background 0.3s ease;
+        width: 100%;
+    }
+    .calculate-route-btn:hover {
+        background: #45a049;
+    }
+    .calculate-route-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    .location-type-selector {
+        margin-bottom: 15px;
+    }
+    .location-type-btn {
+        flex: 1;
+        padding: 10px;
+        border: 2px solid #e0e0e0;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+    .location-type-btn:hover {
+        border-color: #2196F3;
+        background-color: #f5f5f5;
+    }
+    .location-type-btn.active {
+        background-color: #2196F3;
+        color: white;
+        border-color: #2196F3;
+    }
+    .location-type-btn i {
+        font-size: 20px;
+        display: block;
+        margin-bottom: 5px;
+    }
+    .search-container {
+        position: relative;
+        margin-bottom: 15px;
+    }
+    .search-input {
+        width: 100%;
+        padding: 12px 50px 12px 40px;
+        border: 2px solid #e0e0e0;
+        border-radius: 25px;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #2196F3;
+        box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+    }
+    .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+    }
+    .search-btn {
+        position: absolute;
+        right: 5px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: #2196F3;
+        border: none;
+        border-radius: 20px;
+        color: white;
+        padding: 8px 16px;
+        cursor: pointer;
+        transition: background 0.3s ease;
+    }
+    .search-btn:hover {
+        background: #1976D2;
+    }
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        max-height: 300px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    .search-results.show {
+        display: block;
+    }
+    .search-result-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s ease;
+    }
+    .search-result-item:hover, .search-result-item.active {
+        background: #e3f2fd;
+        border-left: 3px solid #2196F3;
+    }
+    .search-result-title {
+        font-weight: 500;
+        color: #333;
+    }
+    .search-result-address {
+        font-size: 12px;
+        color: #666;
+    }
+    .marker-origen {
+        background-color: #4CAF50;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .marker-destino {
+        background-color: #F44336;
+        border: 3px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card mb-4">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-{% if viaje %}edit{% else %}plus{% endif %} me-2"></i>
-                {% if viaje %}Editar Viaje{% else %}Crear Nuevo Viaje{% endif %}
-            </div>
-            <div class="card-body">
-                <form method="post" class="needs-validation">
-                    {% csrf_token %}
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger" role="alert">
-                            <strong>Errores en el formulario:</strong>
-                            <ul class="mb-0">
-                                {% for error in form.non_field_errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                    {% endif %}
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-bus me-2"></i>Datos del Viaje
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.bus.id_for_label }}" class="form-label">
-                                        <i class="fas fa-bus me-2"></i>Bus <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.bus }}
-                                    {% if form.bus.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.bus.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.conductor.id_for_label }}" class="form-label">
-                                        <i class="fas fa-user me-2"></i>Conductor <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.conductor }}
-                                    {% if form.conductor.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.conductor.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.lugar_origen.id_for_label }}" class="form-label">
-                                        <i class="fas fa-map-marker-alt me-2"></i>Lugar de Origen <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.lugar_origen }}
-                                    {% if form.lugar_origen.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.lugar_origen.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.lugar_destino.id_for_label }}" class="form-label">
-                                        <i class="fas fa-map-pin me-2"></i>Lugar de Destino <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.lugar_destino }}
-                                    {% if form.lugar_destino.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.lugar_destino.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.fecha_salida.id_for_label }}" class="form-label">
-                                        <i class="fas fa-clock me-2"></i>Fecha y Hora de Salida <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.fecha_salida }}
-                                    {% if form.fecha_salida.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.fecha_salida.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.fecha_llegada_estimada.id_for_label }}" class="form-label">
-                                        <i class="fas fa-hourglass-end me-2"></i>Fecha y Hora Est. de Llegada <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.fecha_llegada_estimada }}
-                                    {% if form.fecha_llegada_estimada.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.fecha_llegada_estimada.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.fecha_llegada_real.id_for_label }}" class="form-label">
-                                        <i class="fas fa-check-circle me-2"></i>Fecha y Hora Real de Llegada (Opcional)
-                                    </label>
-                                    {{ form.fecha_llegada_real }}
-                                    {% if form.fecha_llegada_real.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.fecha_llegada_real.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="{{ form.estado.id_for_label }}" class="form-label">
-                                        <i class="fas fa-tasks me-2"></i>Estado <span class="text-danger">*</span>
-                                    </label>
-                                    {{ form.estado }}
-                                    {% if form.estado.errors %}
-                                        <div class="text-danger small mt-1">
-                                            {{ form.estado.errors|first }}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="card mb-4">
-                        <div class="card-header">
-                            <h5 class="mb-0">
-                                <i class="fas fa-sticky-note me-2"></i>Observaciones
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label for="{{ form.observaciones.id_for_label }}" class="form-label">
-                                    Observaciones (Opcional)
-                                </label>
-                                {{ form.observaciones }}
-                                {% if form.observaciones.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {{ form.observaciones.errors|first }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2 justify-content-between mt-4">
-                        <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left me-2"></i>Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>{% if viaje %}Guardar Cambios{% else %}Crear Viaje{% endif %}
-                        </button>
-                    </div>
-                </form>
-            </div>
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-route me-2"></i>
+                {% if form.instance.pk %}Editar Viaje{% else %}Crear Nuevo Viaje{% endif %}
+            </h1>
+            <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Volver a la lista
+            </a>
         </div>
     </div>
 </div>
+
+<form method="post">
+    {% csrf_token %}
+    
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger" role="alert">
+            <strong>Errores en el formulario:</strong>
+            <ul class="mb-0">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    
+    <!-- Mapa Interactivo -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-map-marked-alt me-2"></i>
+                        Seleccionar Origen y Destino en el Mapa
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="map-instructions">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Instrucciones:</strong> Selecciona si deseas marcar el <strong>origen</strong> o el <strong>destino</strong>, luego busca o haz clic en el mapa para establecer la ubicación.
+                    </div>
+                    
+                    <!-- Selector de tipo de ubicación -->
+                    <div class="location-type-selector d-flex gap-2 mb-3">
+                        <button type="button" class="location-type-btn active" data-type="origen">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <div>Marcar Origen</div>
+                        </button>
+                        <button type="button" class="location-type-btn" data-type="destino">
+                            <i class="fas fa-flag-checkered"></i>
+                            <div>Marcar Destino</div>
+                        </button>
+                    </div>
+                    
+                    <!-- Barra de búsqueda -->
+                    <div class="search-container">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" 
+                               id="search-input" 
+                               class="search-input" 
+                               placeholder="Buscar dirección, ciudad, lugar..."
+                               autocomplete="off">
+                        <button type="button" id="search-btn" class="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <div id="search-results" class="search-results"></div>
+                    </div>
+                    
+                    <div id="map"></div>
+                    
+                    <button type="button" id="calculate-route-btn" class="calculate-route-btn" disabled>
+                        <i class="fas fa-route me-2"></i>Calcular Ruta
+                    </button>
+                    
+                    <div class="coordinates-display mt-3">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-map-marker-alt text-success me-2"></i>Origen:</strong>
+                                <div id="origen-coordinates">No seleccionado</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-flag-checkered text-danger me-2"></i>Destino:</strong>
+                                <div id="destino-coordinates">No seleccionado</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="route-info" class="route-info" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-road me-2"></i>Distancia:</strong>
+                                <div id="route-distance">-</div>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-clock me-2"></i>Tiempo Estimado:</strong>
+                                <div id="route-duration">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Formulario Principal -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bus me-2"></i>Información del Viaje
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.bus.id_for_label }}" class="form-label">
+                                <i class="fas fa-bus me-2"></i>Bus <span class="text-danger">*</span>
+                            </label>
+                            {{ form.bus }}
+                            {% if form.bus.errors %}
+                                <div class="text-danger small mt-1">{{ form.bus.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.conductor.id_for_label }}" class="form-label">
+                                <i class="fas fa-user me-2"></i>Conductor <span class="text-danger">*</span>
+                            </label>
+                            {{ form.conductor }}
+                            {% if form.conductor.errors %}
+                                <div class="text-danger small mt-1">{{ form.conductor.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h6 class="text-primary mb-3"><i class="fas fa-map-marker-alt me-2"></i>Información del Origen</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.origen_nombre.id_for_label }}" class="form-label">
+                                Nombre del Lugar <span class="text-danger">*</span>
+                            </label>
+                            {{ form.origen_nombre }}
+                            {% if form.origen_nombre.errors %}
+                                <div class="text-danger small mt-1">{{ form.origen_nombre.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.origen_ciudad.id_for_label }}" class="form-label">
+                                Ciudad <span class="text-danger">*</span>
+                            </label>
+                            {{ form.origen_ciudad }}
+                            {% if form.origen_ciudad.errors %}
+                                <div class="text-danger small mt-1">{{ form.origen_ciudad.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.origen_provincia.id_for_label }}" class="form-label">
+                                Provincia
+                            </label>
+                            {{ form.origen_provincia }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.origen_pais.id_for_label }}" class="form-label">
+                                País <span class="text-danger">*</span>
+                            </label>
+                            {{ form.origen_pais }}
+                        </div>
+                    </div>
+                    {{ form.latitud_origen }}
+                    {{ form.longitud_origen }}
+                    
+                    <hr>
+                    <h6 class="text-danger mb-3"><i class="fas fa-flag-checkered me-2"></i>Información del Destino</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.destino_nombre.id_for_label }}" class="form-label">
+                                Nombre del Lugar <span class="text-danger">*</span>
+                            </label>
+                            {{ form.destino_nombre }}
+                            {% if form.destino_nombre.errors %}
+                                <div class="text-danger small mt-1">{{ form.destino_nombre.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.destino_ciudad.id_for_label }}" class="form-label">
+                                Ciudad <span class="text-danger">*</span>
+                            </label>
+                            {{ form.destino_ciudad }}
+                            {% if form.destino_ciudad.errors %}
+                                <div class="text-danger small mt-1">{{ form.destino_ciudad.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.destino_provincia.id_for_label }}" class="form-label">
+                                Provincia
+                            </label>
+                            {{ form.destino_provincia }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.destino_pais.id_for_label }}" class="form-label">
+                                País <span class="text-danger">*</span>
+                            </label>
+                            {{ form.destino_pais }}
+                        </div>
+                    </div>
+                    {{ form.latitud_destino }}
+                    {{ form.longitud_destino }}
+                    
+                    <hr>
+                    <h6 class="text-secondary mb-3"><i class="fas fa-clock me-2"></i>Fechas y Horarios</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fecha_salida.id_for_label }}" class="form-label">
+                                Fecha y Hora de Salida <span class="text-danger">*</span>
+                            </label>
+                            {{ form.fecha_salida }}
+                            {% if form.fecha_salida.errors %}
+                                <div class="text-danger small mt-1">{{ form.fecha_salida.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fecha_llegada_estimada.id_for_label }}" class="form-label">
+                                Fecha y Hora Est. de Llegada <span class="text-danger">*</span>
+                            </label>
+                            {{ form.fecha_llegada_estimada }}
+                            {% if form.fecha_llegada_estimada.errors %}
+                                <div class="text-danger small mt-1">{{ form.fecha_llegada_estimada.errors|first }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fecha_llegada_real.id_for_label }}" class="form-label">
+                                Fecha y Hora Real de Llegada
+                            </label>
+                            {{ form.fecha_llegada_real }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                Estado <span class="text-danger">*</span>
+                            </label>
+                            {{ form.estado }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label">
+                            Observaciones
+                        </label>
+                        {{ form.observaciones }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panel de Ayuda -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-lightbulb me-2"></i>
+                        Instrucciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ol class="small mb-0">
+                        <li class="mb-2">Selecciona <strong>"Marcar Origen"</strong> o <strong>"Marcar Destino"</strong></li>
+                        <li class="mb-2">Usa la búsqueda o haz clic en el mapa</li>
+                        <li class="mb-2">Los campos se completarán automáticamente</li>
+                        <li class="mb-2">Completa la información del viaje</li>
+                        <li>Guarda el viaje</li>
+                    </ol>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Importante
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="small mb-0">
+                        <li class="mb-2">Debes marcar tanto el origen como el destino</li>
+                        <li class="mb-2">Las coordenadas se guardan automáticamente</li>
+                        <li>La distancia se calculará al guardar</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex gap-2 justify-content-end">
+                <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>{% if form.instance.pk %}Guardar Cambios{% else %}Crear Viaje{% endif %}
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Iniciando mapa de viajes...');
+    
+    // Verificar que Leaflet está cargado
+    if (typeof L === 'undefined') {
+        console.error('Leaflet no está cargado!');
+        alert('Error: No se pudo cargar el mapa. Por favor, recarga la página.');
+        return;
+    }
+    
+    // Estado actual (origen o destino)
+    var currentType = 'origen';
+    
+    // Coordenadas por defecto (Ecuador - Quito)
+    var defaultLat = -0.2295;
+    var defaultLng = -78.5243;
+    
+    // Referencias a los inputs
+    var origenNombreInput = document.getElementById('id_origen_nombre');
+    var origenCiudadInput = document.getElementById('id_origen_ciudad');
+    var origenProvinciaInput = document.getElementById('id_origen_provincia');
+    var origenPaisInput = document.getElementById('id_origen_pais');
+    var origenLatInput = document.getElementById('id_latitud_origen');
+    var origenLngInput = document.getElementById('id_longitud_origen');
+    
+    var destinoNombreInput = document.getElementById('id_destino_nombre');
+    var destinoCiudadInput = document.getElementById('id_destino_ciudad');
+    var destinoProvinciaInput = document.getElementById('id_destino_provincia');
+    var destinoPaisInput = document.getElementById('id_destino_pais');
+    var destinoLatInput = document.getElementById('id_latitud_destino');
+    var destinoLngInput = document.getElementById('id_longitud_destino');
+    
+    // Inicializar el mapa
+    console.log('Creando mapa con coordenadas:', defaultLat, defaultLng);
+    var map = L.map('map').setView([defaultLat, defaultLng], 7);
+    console.log('Mapa creado exitosamente');
+    
+    // Agregar capa de mapa
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    console.log('Capa de tiles agregada');
+    
+    // Marcadores
+    var markerOrigen = null;
+    var markerDestino = null;
+    var routeLayer = null;
+    
+    // Botón de calcular ruta
+    var calculateRouteBtn = document.getElementById('calculate-route-btn');
+    var routeInfo = document.getElementById('route-info');
+    
+    // Crear iconos personalizados
+    var origenIcon = L.divIcon({
+        className: 'marker-origen',
+        iconSize: [25, 25],
+        html: '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">O</div>'
+    });
+    
+    var destinoIcon = L.divIcon({
+        className: 'marker-destino',
+        iconSize: [25, 25],
+        html: '<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">D</div>'
+    });
+    
+    // Si hay coordenadas existentes, mostrar marcadores
+    if (origenLatInput.value && origenLngInput.value) {
+        var lat = parseFloat(origenLatInput.value);
+        var lng = parseFloat(origenLngInput.value);
+        markerOrigen = L.marker([lat, lng], {icon: origenIcon}).addTo(map);
+        updateCoordinatesDisplay('origen', lat, lng);
+    }
+    
+    if (destinoLatInput.value && destinoLngInput.value) {
+        var lat = parseFloat(destinoLatInput.value);
+        var lng = parseFloat(destinoLngInput.value);
+        markerDestino = L.marker([lat, lng], {icon: destinoIcon}).addTo(map);
+        updateCoordinatesDisplay('destino', lat, lng);
+        
+        // Si hay ambos marcadores, ajustar vista para mostrar ambos
+        if (markerOrigen && markerDestino) {
+            var group = L.featureGroup([markerOrigen, markerDestino]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    }
+    
+    // Verificar si ambos puntos están marcados al cargar
+    checkBothPointsMarked();
+    
+    // Función para actualizar visualización de coordenadas
+    function updateCoordinatesDisplay(type, lat, lng) {
+        var display = document.getElementById(type + '-coordinates');
+        display.innerHTML = 'Lat: ' + lat.toFixed(6) + ', Lng: ' + lng.toFixed(6);
+    }
+    
+    // Función para obtener información del lugar
+    function getLocationInfo(lat, lng, type) {
+        return fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data && data.address) {
+                    var address = data.address;
+                    
+                    // Determinar el nombre del lugar
+                    var nombre = address.amenity || address.shop || address.office || 
+                                 address.building || address.road || address.suburb || 
+                                 address.neighbourhood || 'Ubicación seleccionada';
+                    
+                    // Ciudad
+                    var ciudad = address.city || address.town || address.village || 
+                                 address.municipality || address.county || '';
+                    
+                    // Provincia
+                    var provincia = address.state || address.province || address.region || '';
+                    
+                    // País
+                    var pais = address.country || 'Ecuador';
+                    
+                    // Actualizar los campos correspondientes
+                    if (type === 'origen') {
+                        if (origenNombreInput && nombre) origenNombreInput.value = nombre;
+                        if (origenCiudadInput && ciudad) origenCiudadInput.value = ciudad;
+                        if (origenProvinciaInput && provincia) origenProvinciaInput.value = provincia;
+                        if (origenPaisInput && pais) origenPaisInput.value = pais;
+                    } else {
+                        if (destinoNombreInput && nombre) destinoNombreInput.value = nombre;
+                        if (destinoCiudadInput && ciudad) destinoCiudadInput.value = ciudad;
+                        if (destinoProvinciaInput && provincia) destinoProvinciaInput.value = provincia;
+                        if (destinoPaisInput && pais) destinoPaisInput.value = pais;
+                    }
+                    
+                    showToast('Información de ' + type + ' cargada', 'success');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error al obtener información:', error);
+            });
+    }
+    
+    // Función para mostrar mensajes
+    function showToast(message, type) {
+        if (type === undefined) type = 'info';
+        var toast = document.createElement('div');
+        toast.className = 'alert alert-' + type + ' alert-dismissible fade show position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; max-width: 300px;';
+        toast.innerHTML = message + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        document.body.appendChild(toast);
+        setTimeout(function() {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+    
+    // Función para verificar si ambos puntos están marcados
+    function checkBothPointsMarked() {
+        if (markerOrigen && markerDestino) {
+            calculateRouteBtn.disabled = false;
+        } else {
+            calculateRouteBtn.disabled = true;
+            routeInfo.style.display = 'none';
+        }
+    }
+    
+    // Función para calcular y mostrar la ruta
+    function calculateRoute() {
+        if (!markerOrigen || !markerDestino) {
+            showToast('Debes marcar tanto el origen como el destino', 'warning');
+            return;
+        }
+        
+        var origenLat = parseFloat(origenLatInput.value);
+        var origenLng = parseFloat(origenLngInput.value);
+        var destinoLat = parseFloat(destinoLatInput.value);
+        var destinoLng = parseFloat(destinoLngInput.value);
+        
+        calculateRouteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Calculando ruta...';
+        calculateRouteBtn.disabled = true;
+        
+        // Llamar a la API de OSRM
+        var url = 'https://router.project-osrm.org/route/v1/driving/' + origenLng + ',' + origenLat + ';' + destinoLng + ',' + destinoLat + '?overview=full&geometries=geojson';
+        
+        fetch(url)
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                    var route = data.routes[0];
+                    var distanceKm = (route.distance / 1000).toFixed(2);
+                    var durationMin = Math.round(route.duration / 60);
+                    var durationHours = Math.floor(durationMin / 60);
+                    var durationMinutesRem = durationMin % 60;
+                    
+                    // Mostrar información de la ruta
+                    document.getElementById('route-distance').innerHTML = '<strong>' + distanceKm + ' km</strong>';
+                    document.getElementById('route-duration').innerHTML = '<strong>' + durationHours + 'h ' + durationMinutesRem + 'min</strong>';
+                    routeInfo.style.display = 'block';
+                    
+                    // Dibujar la ruta en el mapa
+                    if (routeLayer) {
+                        map.removeLayer(routeLayer);
+                    }
+                    
+                    var coordinates = [];
+                    for (var i = 0; i < route.geometry.coordinates.length; i++) {
+                        var coord = route.geometry.coordinates[i];
+                        coordinates.push([coord[1], coord[0]]);
+                    }
+                    
+                    routeLayer = L.polyline(coordinates, {
+                        color: '#2196F3',
+                        weight: 4,
+                        opacity: 0.7,
+                        lineJoin: 'round'
+                    }).addTo(map);
+                    
+                    // Ajustar vista para mostrar toda la ruta
+                    var group = L.featureGroup([markerOrigen, markerDestino, routeLayer]);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                    
+                    showToast('Ruta calculada: ' + distanceKm + ' km', 'success');
+                } else {
+                    showToast('No se pudo calcular la ruta', 'danger');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error al calcular ruta:', error);
+                showToast('Error al calcular la ruta', 'danger');
+            })
+            .finally(function() {
+                calculateRouteBtn.innerHTML = '<i class="fas fa-route me-2"></i>Calcular Ruta';
+                calculateRouteBtn.disabled = false;
+            });
+    }
+    
+    // Event listener para el botón de calcular ruta
+    calculateRouteBtn.addEventListener('click', calculateRoute);
+    
+    // Selector de tipo de ubicación
+    document.querySelectorAll('.location-type-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.location-type-btn').forEach(function(b) {
+                b.classList.remove('active');
+            });
+            this.classList.add('active');
+            currentType = this.dataset.type;
+            showToast('Modo: Marcar ' + currentType, 'info');
+        });
+    });
+    
+    // Click en el mapa
+    map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        
+        if (currentType === 'origen') {
+            // Remover marcador anterior si existe
+            if (markerOrigen) map.removeLayer(markerOrigen);
+            
+            // Agregar nuevo marcador
+            markerOrigen = L.marker([lat, lng], {icon: origenIcon}).addTo(map);
+            
+            // Actualizar campos
+            origenLatInput.value = lat.toFixed(6);
+            origenLngInput.value = lng.toFixed(6);
+            updateCoordinatesDisplay('origen', lat, lng);
+            
+            // Obtener información del lugar
+            getLocationInfo(lat, lng, 'origen');
+        } else {
+            // Remover marcador anterior si existe
+            if (markerDestino) map.removeLayer(markerDestino);
+            
+            // Agregar nuevo marcador
+            markerDestino = L.marker([lat, lng], {icon: destinoIcon}).addTo(map);
+            
+            // Actualizar campos
+            destinoLatInput.value = lat.toFixed(6);
+            destinoLngInput.value = lng.toFixed(6);
+            updateCoordinatesDisplay('destino', lat, lng);
+            
+            // Obtener información del lugar
+            getLocationInfo(lat, lng, 'destino');
+        }
+        
+        // Verificar si ambos puntos están marcados
+        checkBothPointsMarked();
+        
+        // Limpiar ruta anterior si existe
+        if (routeLayer) {
+            map.removeLayer(routeLayer);
+            routeInfo.style.display = 'none';
+        }
+        
+        // Si hay ambos marcadores, ajustar vista
+        if (markerOrigen && markerDestino) {
+            var group = L.featureGroup([markerOrigen, markerDestino]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+    });
+    
+    // Búsqueda
+    var searchInput = document.getElementById('search-input');
+    var searchBtn = document.getElementById('search-btn');
+    var searchResults = document.getElementById('search-results');
+    var searchTimeout;
+    
+    function searchPlaces(query) {
+        if (!query || query.length < 3) {
+            searchResults.classList.remove('show');
+            return;
+        }
+        
+        searchResults.innerHTML = '<div class="search-loading" style="padding: 15px; text-align: center;"><i class="fas fa-spinner fa-spin me-2"></i>Buscando...</div>';
+        searchResults.classList.add('show');
+        
+        fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=8&countrycodes=ec&addressdetails=1')
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+                if (data.length === 0) {
+                    return fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query) + '&limit=5&addressdetails=1')
+                        .then(function(response) {
+                            return response.json();
+                        });
+                }
+                return data;
+            })
+            .then(function(data) {
+                displaySearchResults(data);
+            })
+            .catch(function(error) {
+                console.error('Error en búsqueda:', error);
+            });
+    }
+    
+    function displaySearchResults(results) {
+        if (results.length === 0) {
+            searchResults.innerHTML = '<div style="padding: 15px; text-align: center; color: #666;">No se encontraron resultados</div>';
+            return;
+        }
+        
+        var resultsHTML = '';
+        for (var i = 0; i < results.length; i++) {
+            var result = results[i];
+            var title = result.display_name.split(',')[0];
+            resultsHTML += '<div class="search-result-item" data-lat="' + result.lat + '" data-lon="' + result.lon + '">' +
+                '<div class="search-result-title">' + title + '</div>' +
+                '<div class="search-result-address">' + result.display_name + '</div>' +
+                '</div>';
+        }
+        
+        searchResults.innerHTML = resultsHTML;
+        
+        searchResults.querySelectorAll('.search-result-item').forEach(function(item) {
+            item.addEventListener('click', function() {
+                var lat = parseFloat(this.dataset.lat);
+                var lon = parseFloat(this.dataset.lon);
+                
+                map.setView([lat, lon], 16);
+                
+                if (currentType === 'origen') {
+                    if (markerOrigen) map.removeLayer(markerOrigen);
+                    markerOrigen = L.marker([lat, lon], {icon: origenIcon}).addTo(map);
+                    origenLatInput.value = lat.toFixed(6);
+                    origenLngInput.value = lon.toFixed(6);
+                    updateCoordinatesDisplay('origen', lat, lon);
+                    getLocationInfo(lat, lon, 'origen');
+                } else {
+                    if (markerDestino) map.removeLayer(markerDestino);
+                    markerDestino = L.marker([lat, lon], {icon: destinoIcon}).addTo(map);
+                    destinoLatInput.value = lat.toFixed(6);
+                    destinoLngInput.value = lon.toFixed(6);
+                    updateCoordinatesDisplay('destino', lat, lon);
+                    getLocationInfo(lat, lon, 'destino');
+                }
+                
+                // Verificar si ambos puntos están marcados
+                checkBothPointsMarked();
+                
+                // Limpiar ruta anterior si existe
+                if (routeLayer) {
+                    map.removeLayer(routeLayer);
+                    routeInfo.style.display = 'none';
+                }
+                
+                searchResults.classList.remove('show');
+                searchInput.value = '';
+            });
+        });
+    }
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        var query = this.value.trim();
+        if (query.length >= 3) {
+            searchTimeout = setTimeout(function() {
+                searchPlaces(query);
+            }, 300);
+        } else {
+            searchResults.classList.remove('show');
+        }
+    });
+    
+    searchBtn.addEventListener('click', function() {
+        searchPlaces(searchInput.value.trim());
+    });
+    
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchPlaces(this.value.trim());
+        }
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target) && !searchBtn.contains(e.target)) {
+            searchResults.classList.remove('show');
+        }
+    });
+});
+</script>
 {% endblock %}

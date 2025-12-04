@@ -47,16 +47,16 @@
             <div class="card-body">
                 <p>
                     <strong>Origen:</strong><br>
-                    {{ viaje.lugar_origen.nombre }}, {{ viaje.lugar_origen.ciudad }}
-                    {% if viaje.lugar_origen.latitud %}
-                        <br><small class="text-muted">{{ viaje.lugar_origen.latitud }}, {{ viaje.lugar_origen.longitud }}</small>
+                    {{ viaje.get_origen_display }}
+                    {% if viaje.latitud_origen %}
+                        <br><small class="text-muted">Coordenadas: {{ viaje.latitud_origen }}, {{ viaje.longitud_origen }}</small>
                     {% endif %}
                 </p>
                 <p>
                     <strong>Destino:</strong><br>
-                    {{ viaje.lugar_destino.nombre }}, {{ viaje.lugar_destino.ciudad }}
-                    {% if viaje.lugar_destino.latitud %}
-                        <br><small class="text-muted">{{ viaje.lugar_destino.latitud }}, {{ viaje.lugar_destino.longitud }}</small>
+                    {{ viaje.get_destino_display }}
+                    {% if viaje.latitud_destino %}
+                        <br><small class="text-muted">Coordenadas: {{ viaje.latitud_destino }}, {{ viaje.longitud_destino }}</small>
                     {% endif %}
                 </p>
                 {% if viaje.distancia_km %}

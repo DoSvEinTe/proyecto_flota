@@ -19,15 +19,66 @@ class ViajeForm(ModelForm):
     class Meta:
         model = Viaje
         fields = [
-            'bus', 'conductor', 'lugar_origen', 'lugar_destino',
+            'bus', 'conductor',
+            'origen_nombre', 'origen_ciudad', 'origen_provincia', 'origen_pais',
+            'latitud_origen', 'longitud_origen',
+            'destino_nombre', 'destino_ciudad', 'destino_provincia', 'destino_pais',
+            'latitud_destino', 'longitud_destino',
             'fecha_salida', 'fecha_llegada_estimada', 'fecha_llegada_real',
             'estado', 'observaciones'
         ]
         widgets = {
             'bus': forms.Select(attrs={'class': 'form-control'}),
             'conductor': forms.Select(attrs={'class': 'form-control'}),
-            'lugar_origen': forms.Select(attrs={'class': 'form-control'}),
-            'lugar_destino': forms.Select(attrs={'class': 'form-control'}),
+            
+            # Campos de origen
+            'origen_nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del lugar de origen',
+                'id': 'id_origen_nombre'
+            }),
+            'origen_ciudad': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ciudad de origen',
+                'id': 'id_origen_ciudad'
+            }),
+            'origen_provincia': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Provincia (opcional)',
+                'id': 'id_origen_provincia'
+            }),
+            'origen_pais': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'País',
+                'id': 'id_origen_pais'
+            }),
+            'latitud_origen': forms.HiddenInput(attrs={'id': 'id_latitud_origen'}),
+            'longitud_origen': forms.HiddenInput(attrs={'id': 'id_longitud_origen'}),
+            
+            # Campos de destino
+            'destino_nombre': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre del lugar de destino',
+                'id': 'id_destino_nombre'
+            }),
+            'destino_ciudad': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ciudad de destino',
+                'id': 'id_destino_ciudad'
+            }),
+            'destino_provincia': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Provincia (opcional)',
+                'id': 'id_destino_provincia'
+            }),
+            'destino_pais': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'País',
+                'id': 'id_destino_pais'
+            }),
+            'latitud_destino': forms.HiddenInput(attrs={'id': 'id_latitud_destino'}),
+            'longitud_destino': forms.HiddenInput(attrs={'id': 'id_longitud_destino'}),
+            
             'fecha_salida': forms.DateTimeInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local',
@@ -51,18 +102,38 @@ class ViajeForm(ModelForm):
             }),
         }
     
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        # Validar que se hayan proporcionado coordenadas de origen
+        if not cleaned_data.get('latitud_origen') or not cleaned_data.get('longitud_origen'):
+            raise forms.ValidationError('Debe seleccionar un punto de origen en el mapa.')
+        
+        # Validar que se hayan proporcionado coordenadas de destino
+        if not cleaned_data.get('latitud_destino') or not cleaned_data.get('longitud_destino'):
+            raise forms.ValidationError('Debe seleccionar un punto de destino en el mapa.')
+        
+        # Validar campos de origen
+        if not cleaned_data.get('origen_nombre'):
+            raise forms.ValidationError('Debe especificar el nombre del lugar de origen.')
+        if not cleaned_data.get('origen_ciudad'):
+            raise forms.ValidationError('Debe especificar la ciudad de origen.')
+        
+        # Validar campos de destino
+        if not cleaned_data.get('destino_nombre'):
+            raise forms.ValidationError('Debe especificar el nombre del lugar de destino.')
+        if not cleaned_data.get('destino_ciudad'):
+            raise forms.ValidationError('Debe especificar la ciudad de destino.')
+        
+        return cleaned_data
+    
     def save(self, commit=True):
         instance = super().save(commit=False)
-        # Capturar coordenadas del lugar de origen
-        if instance.lugar_origen:
-            instance.latitud_origen = instance.lugar_origen.latitud
-            instance.longitud_origen = instance.lugar_origen.longitud
-        # Capturar coordenadas del lugar de destino
-        if instance.lugar_destino:
-            instance.latitud_destino = instance.lugar_destino.latitud
-            instance.longitud_destino = instance.lugar_destino.longitud
         if commit:
             instance.save()
+            # Calcular distancia después de guardar
+            if instance.latitud_origen and instance.longitud_origen and instance.latitud_destino and instance.longitud_destino:
+                instance.calcular_distancia_real()
         return instance
 
 

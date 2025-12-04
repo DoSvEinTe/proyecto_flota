@@ -30,8 +30,8 @@
                 <tr>
                     <td><strong>{{ viaje.bus.placa }}</strong></td>
                     <td>{{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}</td>
-                    <td>{{ viaje.lugar_origen.nombre }}</td>
-                    <td>{{ viaje.lugar_destino.nombre }}</td>
+                    <td>{{ viaje.get_origen_display }}</td>
+                    <td>{{ viaje.get_destino_display }}</td>
                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                     <td>
                         {% if viaje.estado == 'completado' %}
