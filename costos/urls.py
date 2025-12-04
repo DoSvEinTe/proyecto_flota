@@ -4,7 +4,6 @@ from . import views
 app_name = 'costos'
 
 urlpatterns = [
-        path('peaje/<int:pk>/eliminar/', views.PeajeDeleteView.as_view(), name='eliminar_peaje'),
     # Vista principal de gestión de costos
     path('', views.GestionCostosView.as_view(), name='gestion'),
     
@@ -12,8 +11,21 @@ urlpatterns = [
     path('lista/', views.CostosViajeListView.as_view(), name='lista'),
     path('viajes-sin-costos/', views.ViajesSinCostosListView.as_view(), name='viajes_sin_costos'),
     path('crear/', views.CostosViajeCreateView.as_view(), name='crear'),
+    
+    # Redirección para compatibilidad
+    path('registrar-completo/', views.RedirectToViajesSinCostos.as_view(), name='registrar_completo_redirect'),
+    
+    # Registrar costos completo (debe estar antes de <int:pk>)
+    path('viaje/<int:viaje_id>/registrar-completo/', views.registrar_costos_completo, name='registrar_completo'),
+    
+    # Mantenimientos y otros costos
     path('mantenimiento/<int:costos_pk>/', views.mantenimiento_costos, name='mantenimiento_costos'),
     path('otros-costos/<int:costos_pk>/', views.otros_costos, name='otros_costos'),
+    
+    # Peajes
+    path('peaje/<int:pk>/eliminar/', views.PeajeDeleteView.as_view(), name='eliminar_peaje'),
+    
+    # CRUD de CostosViaje (deben estar después de las rutas específicas)
     path('<int:pk>/', views.CostosViajeDetailView.as_view(), name='detalle'),
     path('<int:pk>/editar/', views.CostosViajeUpdateView.as_view(), name='editar'),
     path('<int:pk>/eliminar/', views.CostosViajeDeleteView.as_view(), name='eliminar'),

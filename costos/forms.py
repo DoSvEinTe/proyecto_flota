@@ -1,6 +1,7 @@
 from django import forms
 from .models import CostosViaje, PuntoRecarga
 from viajes.models import Viaje
+from django.forms import formset_factory
 
 
 class CostosViajeForm(forms.ModelForm):
@@ -180,3 +181,53 @@ class KmFinalForm(forms.ModelForm):
         help_texts = {
             'km_final': 'Ingrese el kilometraje final real al terminar el viaje.'
         }
+
+
+class PeajeFormularioForm(forms.Form):
+    """Formulario simple para agregar peajes dinámicamente."""
+    nombre = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del peaje'}))
+    ubicacion = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}))
+    monto = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Monto'}))
+
+
+class PuntoRecargaFormularioForm(forms.Form):
+    """Formulario simple para agregar puntos de recarga dinámicamente."""
+    orden = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}))
+    ubicacion = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}))
+    kilometraje = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje'}))
+    litros = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Litros'}))
+    precio = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Precio/litro'}))
+
+
+class CostosViajeFormCompleto(forms.ModelForm):
+    """Formulario completo para registrar todos los costos de un viaje en una sola vista."""
+
+    class Meta:
+        model = CostosViaje
+        fields = ['km_inicial', 'km_final', 'otros_costos', 'observaciones']
+        widgets = {
+            'km_inicial': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje inicial del viaje'}),
+            'km_final': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje final del viaje'}),
+            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones adicionales...'}),
+        }
+        labels = {
+            'km_inicial': 'Kilometraje Inicial',
+            'km_final': 'Kilometraje Final',
+            'otros_costos': 'Otros Costos (CLP)',
+            'observaciones': 'Observaciones',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        km_inicial = cleaned_data.get('km_inicial')
+        km_final = cleaned_data.get('km_final')
+        
+        if km_inicial and km_final:
+            if km_final <= km_inicial:
+                raise forms.ValidationError('El kilometraje final debe ser mayor al kilometraje inicial.')
+        
+        return cleaned_data

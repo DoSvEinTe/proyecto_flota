@@ -1,0 +1,864 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registrar Costos de Viaje - Sistema de Gestión de Flota{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1"><i class="fas fa-dollar-sign me-2"></i>Registrar Costos de Viaje</h2>
+                    <p class="text-muted">Complete toda la información del viaje en un solo formulario</p>
+                </div>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            {{ form.non_field_errors }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Instrucciones:</strong> Complete los campos requeridos (marcados con <span class="text-danger">*</span>). 
+        Los peajes y puntos de recarga son opcionales. Al seleccionar un viaje, se cargarán automáticamente los mantenimientos disponibles del bus.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Información General del Viaje -->
+    {% if viaje %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información del Viaje</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="fas fa-bus fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Bus</small>
+                            <strong class="h5 mb-0">{{ viaje.bus.placa }}</strong>
+                            <small class="text-muted d-block">{{ viaje.bus.modelo }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="fas fa-user fa-2x text-success"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Conductor</small>
+                            <strong>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="fas fa-route fa-2x text-warning"></i>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Ruta</small>
+                            <strong>{{ viaje.lugar_origen.nombre }}</strong>
+                            <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                            <strong>{{ viaje.lugar_destino.nombre }}</strong>
+                            <small class="text-muted d-block">Fecha: {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <form method="post" id="costosForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="viaje" value="{{ viaje.id }}">
+        
+        <!-- Sección 1: Kilometrajes del Viaje -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>1. Kilometrajes del Viaje</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.km_inicial.id_for_label }}" class="form-label fw-bold">
+                            {{ form.km_inicial.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.km_inicial }}
+                        {% if form.km_inicial.errors %}
+                            <div class="text-danger small mt-1">{{ form.km_inicial.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Kilometraje al inicio del viaje</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.km_final.id_for_label }}" class="form-label fw-bold">
+                            {{ form.km_final.label }} <span class="text-danger">*</span>
+                        </label>
+                        {{ form.km_final }}
+                        {% if form.km_final.errors %}
+                            <div class="text-danger small mt-1">{{ form.km_final.errors }}</div>
+                        {% endif %}
+                        <small class="text-muted">Kilometraje al finalizar el viaje</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 2: Mantenimientos -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-wrench me-2"></i>2. Mantenimientos (Opcional)</h5>
+                <button type="button" class="btn btn-light btn-sm" id="agregar-mantenimiento">
+                    <i class="fas fa-plus me-1"></i>Agregar Mantenimiento
+                </button>
+            </div>
+            <div class="card-body">
+                <!-- Formularios de mantenimientos -->
+                <div id="mantenimientos-container">
+                    <p class="text-muted text-center py-3" id="no-mantenimientos-msg">
+                        <i class="fas fa-tools fa-2x mb-2 d-block"></i>
+                        No hay mantenimientos agregados. Haz clic en "Agregar Mantenimiento" para crear uno nuevo.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 3: Peajes -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-road me-2"></i>3. Peajes (Opcional)</h5>
+                <button type="button" class="btn btn-dark btn-sm" id="agregar-peaje">
+                    <i class="fas fa-plus me-1"></i>Agregar
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="peajes-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 10%;">Orden</th>
+                                <th style="width: 25%;">Lugar</th>
+                                <th style="width: 15%;">Monto</th>
+                                <th style="width: 20%;">Fecha Pago</th>
+                                <th style="width: 20%;">Voucher</th>
+                                <th style="width: 10%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="peajes-container">
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4" id="no-peajes-msg">
+                                    <i class="fas fa-road fa-2x mb-2 d-block"></i>
+                                    No hay peajes agregados. Haz clic en "Agregar" para crear uno nuevo.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 4: Puntos de Recarga -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-gas-pump me-2"></i>4. Puntos de Recarga de Combustible (Opcional)</h5>
+                <button type="button" class="btn btn-light btn-sm" id="agregar-recarga">
+                    <i class="fas fa-plus me-1"></i>AGREGAR
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-bordered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">ORDEN</th>
+                                <th style="width: 150px;">LUGAR</th>
+                                <th style="width: 120px;">SUCURSAL</th>
+                                <th style="width: 120px;">KM CAMIÓN</th>
+                                <th style="width: 100px;">MONTO</th>
+                                <th style="width: 120px;">FECHA PAGO</th>
+                                <th style="width: 100px;">LITROS</th>
+                                <th style="width: 120px;">PRECIO COMB</th>
+                                <th style="width: 100px;">VOUCHER</th>
+                                <th style="width: 100px;">ACCIONES</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recargas-container">
+                            <tr class="text-center text-muted" id="no-recargas-msg">
+                                <td colspan="10" class="py-4">
+                                    <i class="fas fa-gas-pump fa-2x mb-2 d-block"></i>
+                                    No hay puntos de recarga agregados
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sección 5: Otros Costos y Observaciones -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-clipboard me-2"></i>5. Otros Costos y Observaciones</h5>
+            </div>
+            <div class="card-body">
+                <!-- Formulario para agregar otros costos -->
+                <div class="row mb-4 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Tipo de Costo</label>
+                        <select id="tipo-otro-costo" class="form-select">
+                            <option value="">Seleccionar...</option>
+                            <option value="comida">Comida</option>
+                            <option value="hospedaje">Hospedaje</option>
+                            <option value="estacionamiento">Estacionamiento</option>
+                            <option value="otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Monto (CLP)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="monto-otro-costo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">Comprobante</label>
+                        <input type="file" id="voucher-otro-costo" class="form-control" accept="image/*,.pdf">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-bold">&nbsp;</label>
+                        <button type="button" class="btn btn-success w-100" id="agregar-otro-costo">
+                            <i class="fas fa-plus me-1"></i>Agregar
+                        </button>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Descripción</label>
+                        <textarea id="descripcion-otro-costo" class="form-control" rows="2" placeholder="Descripción del gasto..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Lista de otros costos agregados -->
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Costos Agregados</h6>
+                    <div id="otros-costos-container">
+                        <p class="text-muted text-center py-3" id="no-otros-costos-msg">
+                            <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                            No hay otros costos agregados
+                        </p>
+                    </div>
+                    <div class="mt-3">
+                        <strong>Total Otros Costos: $<span id="total-otros-costos">0.00</span></strong>
+                    </div>
+                </div>
+
+                <!-- Campo oculto para enviar el total -->
+                <input type="hidden" name="otros_costos" id="otros_costos_total" value="0">
+
+                <!-- Observaciones generales -->
+                <hr>
+                <div class="row">
+                    <div class="col-md-12 mb-3">
+                        <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-bold">
+                            {{ form.observaciones.label }}
+                        </label>
+                        {{ form.observaciones }}
+                        {% if form.observaciones.errors %}
+                            <div class="text-danger small mt-1">{{ form.observaciones.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <i class="fas fa-save me-2"></i>Guardar Costos del Viaje
+                </button>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary btn-lg px-5 ms-3">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let peajeIndex = 1;
+    let recargaIndex = 1;
+    let mantenimientoIndex = 0;
+    let otroCostoIndex = 0;
+    let otrosCostosData = [];
+
+    // Agregar mantenimiento
+    document.getElementById('agregar-mantenimiento').addEventListener('click', function() {
+        mantenimientoIndex++;
+        const container = document.getElementById('mantenimientos-container');
+        const noMsg = document.getElementById('no-mantenimientos-msg');
+        if (noMsg) noMsg.style.display = 'none';
+        
+        const newMantenimiento = document.createElement('div');
+        newMantenimiento.className = 'mantenimiento-item mb-4 p-4';
+        newMantenimiento.setAttribute('data-index', mantenimientoIndex);
+        newMantenimiento.style.backgroundColor = '#f8f9fa';
+        newMantenimiento.style.borderRadius = '8px';
+        newMantenimiento.style.border = '1px solid #dee2e6';
+        newMantenimiento.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="mb-0"><i class="fas fa-wrench me-2 text-info"></i>Mantenimiento</h6>
+                <button type="button" class="btn btn-danger btn-sm remove-mantenimiento">
+                    <i class="fas fa-times me-1"></i>Eliminar
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de Mantenimiento</label>
+                    <input type="date" name="nuevo_mant_fecha_${mantenimientoIndex}" class="form-control" placeholder="dd - mm - aaaa">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="nuevo_mant_tipo_${mantenimientoIndex}" class="form-select">
+                        <option value="">---------</option>
+                        <option value="preventivo">Preventivo</option>
+                        <option value="correctivo">Correctivo</option>
+                        <option value="predictivo">Predictivo</option>
+                        <option value="mecanico">Mecánico</option>
+                        <option value="electrico">Eléctrico</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="nuevo_mant_descripcion_${mantenimientoIndex}" class="form-control" rows="3" placeholder="Descripción del trabajo realizado..."></textarea>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea name="nuevo_mant_observaciones_${mantenimientoIndex}" class="form-control" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Costo</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" name="nuevo_mant_costo_${mantenimientoIndex}" class="form-control" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Proveedor</label>
+                    <input type="text" name="nuevo_mant_proveedor_${mantenimientoIndex}" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Kilometraje</label>
+                    <input type="number" name="nuevo_mant_kilometraje_${mantenimientoIndex}" class="form-control" min="0">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Taller</label>
+                    <input type="text" name="nuevo_mant_taller_${mantenimientoIndex}" class="form-control">
+                </div>
+                <div class="col-md-12 text-end">
+                    <button type="button" class="btn btn-secondary me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success save-mantenimiento" data-index="${mantenimientoIndex}">
+                        <i class="fas fa-wrench me-1"></i>Registrar Mantenimiento
+                    </button>
+                </div>
+            </div>
+        `;
+        container.appendChild(newMantenimiento);
+    });
+
+    // Eliminar mantenimiento
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-mantenimiento')) {
+            if (confirm('¿Está seguro de eliminar este mantenimiento?')) {
+                const item = e.target.closest('.mantenimiento-item');
+                item.remove();
+                
+                // Mostrar mensaje si no hay mantenimientos
+                const container = document.getElementById('mantenimientos-container');
+                const noMsg = document.getElementById('no-mantenimientos-msg');
+                if (container.children.length === 0 && noMsg) {
+                    noMsg.style.display = 'block';
+                }
+            }
+        }
+        
+        // Guardar mantenimiento (validar campos)
+        if (e.target.closest('.save-mantenimiento')) {
+            const btn = e.target.closest('.save-mantenimiento');
+            const index = btn.getAttribute('data-index');
+            const item = document.querySelector(`.mantenimiento-item[data-index="${index}"]`);
+            
+            // Validar campos requeridos
+            const fecha = item.querySelector(`input[name="nuevo_mant_fecha_${index}"]`).value;
+            const tipo = item.querySelector(`select[name="nuevo_mant_tipo_${index}"]`).value;
+            const descripcion = item.querySelector(`textarea[name="nuevo_mant_descripcion_${index}"]`).value;
+            
+            if (!fecha || !tipo || !descripcion) {
+                alert('Por favor complete los campos: Fecha, Tipo y Descripción');
+                return;
+            }
+            
+            // Cambiar apariencia para indicar que está guardado
+            item.style.backgroundColor = '#d1f2eb';
+            item.style.border = '2px solid #0f5132';
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Guardado';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+            btn.disabled = true;
+            
+            // Ocultar botón cancelar
+            const cancelBtn = item.querySelector('.btn-secondary');
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+    });
+
+    // Agregar peaje
+    document.getElementById('agregar-peaje').addEventListener('click', function() {
+        peajeIndex++;
+        const container = document.getElementById('peajes-container');
+        const noMsg = document.querySelector('#no-peajes-msg');
+        if (noMsg && noMsg.parentElement) {
+            noMsg.parentElement.remove();
+        }
+        
+        const newRow = document.createElement('tr');
+        newRow.className = 'peaje-item';
+        newRow.setAttribute('data-index', peajeIndex);
+        newRow.innerHTML = `
+            <td>
+                <input type="number" name="peaje_orden_${peajeIndex}" class="form-control form-control-sm" value="${peajeIndex}" min="1" readonly>
+            </td>
+            <td>
+                <input type="text" name="peaje_lugar_${peajeIndex}" class="form-control form-control-sm" placeholder="Nombre del peaje">
+            </td>
+            <td>
+                <input type="number" name="peaje_monto_${peajeIndex}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="date" name="peaje_fecha_${peajeIndex}" class="form-control form-control-sm">
+            </td>
+            <td>
+                <input type="file" name="peaje_voucher_${peajeIndex}" class="form-control form-control-sm" accept="image/*,.pdf">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-peaje">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        container.appendChild(newRow);
+    });
+
+    // Agregar punto de recarga
+    document.getElementById('agregar-recarga').addEventListener('click', function() {
+        recargaIndex++;
+        const container = document.getElementById('recargas-container');
+        const noMsg = document.getElementById('no-recargas-msg');
+        if (noMsg) noMsg.style.display = 'none';
+        
+        const newRecarga = document.createElement('tr');
+        newRecarga.className = 'recarga-item';
+        newRecarga.setAttribute('data-index', recargaIndex);
+        newRecarga.innerHTML = `
+            <td>
+                <input type="number" name="recarga_orden_${recargaIndex}" class="form-control form-control-sm text-center" value="${recargaIndex}" min="1" readonly>
+            </td>
+            <td>
+                <input type="text" name="recarga_lugar_${recargaIndex}" class="form-control form-control-sm" placeholder="Lugar">
+            </td>
+            <td>
+                <input type="text" name="recarga_sucursal_${recargaIndex}" class="form-control form-control-sm" placeholder="Sucursal">
+            </td>
+            <td>
+                <input type="number" name="recarga_kilometraje_${recargaIndex}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" name="recarga_monto_${recargaIndex}" class="form-control form-control-sm monto-recarga" step="0.01" min="0" placeholder="0.00" readonly>
+            </td>
+            <td>
+                <input type="date" name="recarga_fecha_${recargaIndex}" class="form-control form-control-sm">
+            </td>
+            <td>
+                <input type="number" name="recarga_litros_${recargaIndex}" class="form-control form-control-sm litros-recarga" step="0.01" min="0" placeholder="0.00" data-index="${recargaIndex}">
+            </td>
+            <td>
+                <input type="number" name="recarga_precio_${recargaIndex}" class="form-control form-control-sm precio-recarga" step="0.01" min="0" placeholder="0.00" data-index="${recargaIndex}">
+            </td>
+                            <td>
+                <input type="file" name="recarga_voucher_${recargaIndex}" class="form-control form-control-sm" accept="image/*,.pdf">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-recarga-btn">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        container.appendChild(newRecarga);
+    });    // Eliminar peaje
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-peaje')) {
+            if (confirm('¿Está seguro de eliminar este peaje?')) {
+                const row = e.target.closest('.peaje-item');
+                row.remove();
+                
+                // Reordenar los peajes
+                const peajes = document.querySelectorAll('.peaje-item');
+                peajes.forEach((peaje, index) => {
+                    const ordenInput = peaje.querySelector('input[name^="peaje_orden_"]');
+                    if (ordenInput) {
+                        ordenInput.value = index + 1;
+                    }
+                });
+                
+                // Mostrar mensaje si no hay peajes
+                const container = document.getElementById('peajes-container');
+                if (container.children.length === 0) {
+                    const noMsgRow = document.createElement('tr');
+                    noMsgRow.innerHTML = `
+                        <td colspan="6" class="text-center text-muted py-4" id="no-peajes-msg">
+                            <i class="fas fa-road fa-2x mb-2 d-block"></i>
+                            No hay peajes agregados. Haz clic en "Agregar" para crear uno nuevo.
+                        </td>
+                    `;
+                    container.appendChild(noMsgRow);
+                }
+            }
+        }
+    });
+
+    // Eliminar punto de recarga individual
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-recarga-btn')) {
+            if (confirm('¿Está seguro de eliminar este punto de recarga?')) {
+                const row = e.target.closest('.recarga-item');
+                row.remove();
+                
+                // Reordenar los puntos de recarga
+                const recargas = document.querySelectorAll('.recarga-item');
+                recargas.forEach((recarga, index) => {
+                    const ordenInput = recarga.querySelector('input[name^="recarga_orden_"]');
+                    if (ordenInput) {
+                        ordenInput.value = index + 1;
+                    }
+                });
+                
+                // Mostrar mensaje si no hay recargas
+                const container = document.getElementById('recargas-container');
+                const noMsg = document.getElementById('no-recargas-msg');
+                if (container.children.length === 0 && noMsg) {
+                    noMsg.style.display = 'table-row';
+                } else if (container.querySelectorAll('.recarga-item').length === 0 && noMsg) {
+                    const noMsgRow = document.createElement('tr');
+                    noMsgRow.id = 'no-recargas-msg';
+                    noMsgRow.className = 'text-center text-muted';
+                    noMsgRow.innerHTML = `
+                        <td colspan="10" class="py-4">
+                            <i class="fas fa-gas-pump fa-2x mb-2 d-block"></i>
+                            No hay puntos de recarga agregados
+                        </td>
+                    `;
+                    container.appendChild(noMsgRow);
+                }
+            }
+        }
+    });
+
+    // Calcular monto automáticamente (litros * precio combustible)
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('litros-recarga') || e.target.classList.contains('precio-recarga')) {
+            const index = e.target.getAttribute('data-index');
+            const litros = parseFloat(document.querySelector(`input[name="recarga_litros_${index}"]`).value) || 0;
+            const precio = parseFloat(document.querySelector(`input[name="recarga_precio_${index}"]`).value) || 0;
+            const monto = litros * precio;
+            const montoInput = document.querySelector(`input[name="recarga_monto_${index}"]`);
+            if (montoInput) {
+                montoInput.value = monto.toFixed(2);
+            }
+        }
+    });
+
+    // Agregar otro costo
+    document.getElementById('agregar-otro-costo').addEventListener('click', function() {
+        const tipo = document.getElementById('tipo-otro-costo').value;
+        const monto = parseFloat(document.getElementById('monto-otro-costo').value) || 0;
+        const descripcion = document.getElementById('descripcion-otro-costo').value.trim();
+        const voucherInput = document.getElementById('voucher-otro-costo');
+        const voucher = voucherInput.files[0];
+
+        if (!tipo) {
+            alert('Por favor seleccione un tipo de costo');
+            return;
+        }
+        if (monto <= 0) {
+            alert('Por favor ingrese un monto válido');
+            return;
+        }
+        if (!descripcion) {
+            alert('Por favor ingrese una descripción');
+            return;
+        }
+
+        otroCostoIndex++;
+        
+        // Guardar datos
+        const costoData = {
+            index: otroCostoIndex,
+            tipo: tipo,
+            monto: monto,
+            descripcion: descripcion,
+            voucher: voucher ? voucher.name : 'Sin comprobante'
+        };
+        otrosCostosData.push(costoData);
+
+        // Agregar a la lista visual
+        const container = document.getElementById('otros-costos-container');
+        const noMsg = document.getElementById('no-otros-costos-msg');
+        if (noMsg) noMsg.style.display = 'none';
+
+        const newItem = document.createElement('div');
+        newItem.className = 'otro-costo-item card mb-2';
+        newItem.setAttribute('data-index', otroCostoIndex);
+        newItem.innerHTML = `
+            <div class="card-body py-2 px-3">
+                <div class="row align-items-center">
+                    <div class="col-md-2">
+                        <strong>${tipo.charAt(0).toUpperCase() + tipo.slice(1)}</strong>
+                    </div>
+                    <div class="col-md-2">
+                        <span class="text-success fw-bold">$${monto.toFixed(2)}</span>
+                    </div>
+                    <div class="col-md-5">
+                        <small class="text-muted">${descripcion}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <small class="text-info"><i class="fas fa-paperclip me-1"></i>${voucher ? voucher.name : 'Sin comprobante'}</small>
+                    </div>
+                    <div class="col-md-1 text-end">
+                        <button type="button" class="btn btn-danger btn-sm remove-otro-costo" data-index="${otroCostoIndex}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(newItem);
+
+        // Crear campos ocultos para enviar al servidor
+        const form = document.getElementById('costosForm');
+        
+        // Tipo
+        const inputTipo = document.createElement('input');
+        inputTipo.type = 'hidden';
+        inputTipo.name = `otro_costo_tipo_${otroCostoIndex}`;
+        inputTipo.value = tipo;
+        inputTipo.setAttribute('data-otro-costo', otroCostoIndex);
+        form.appendChild(inputTipo);
+
+        // Monto
+        const inputMonto = document.createElement('input');
+        inputMonto.type = 'hidden';
+        inputMonto.name = `otro_costo_monto_${otroCostoIndex}`;
+        inputMonto.value = monto;
+        inputMonto.setAttribute('data-otro-costo', otroCostoIndex);
+        form.appendChild(inputMonto);
+
+        // Descripción
+        const inputDesc = document.createElement('input');
+        inputDesc.type = 'hidden';
+        inputDesc.name = `otro_costo_descripcion_${otroCostoIndex}`;
+        inputDesc.value = descripcion;
+        inputDesc.setAttribute('data-otro-costo', otroCostoIndex);
+        form.appendChild(inputDesc);
+
+        // Voucher (si existe)
+        if (voucher) {
+            const inputVoucher = document.createElement('input');
+            inputVoucher.type = 'file';
+            inputVoucher.name = `otro_costo_voucher_${otroCostoIndex}`;
+            inputVoucher.style.display = 'none';
+            inputVoucher.setAttribute('data-otro-costo', otroCostoIndex);
+            
+            // Transferir el archivo
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(voucher);
+            inputVoucher.files = dataTransfer.files;
+            
+            form.appendChild(inputVoucher);
+        }
+
+        // Actualizar total
+        actualizarTotalOtrosCostos();
+
+        // Limpiar campos
+        document.getElementById('tipo-otro-costo').value = '';
+        document.getElementById('monto-otro-costo').value = '';
+        document.getElementById('descripcion-otro-costo').value = '';
+        document.getElementById('voucher-otro-costo').value = '';
+    });
+
+    // Eliminar otro costo
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-otro-costo')) {
+            const btn = e.target.closest('.remove-otro-costo');
+            const index = btn.getAttribute('data-index');
+            
+            if (confirm('¿Está seguro de eliminar este costo?')) {
+                // Eliminar del array
+                otrosCostosData = otrosCostosData.filter(item => item.index != index);
+                
+                // Eliminar elementos visuales
+                const item = document.querySelector(`.otro-costo-item[data-index="${index}"]`);
+                if (item) item.remove();
+
+                // Eliminar campos ocultos
+                const form = document.getElementById('costosForm');
+                const hiddenInputs = form.querySelectorAll(`[data-otro-costo="${index}"]`);
+                hiddenInputs.forEach(input => input.remove());
+
+                // Actualizar total
+                actualizarTotalOtrosCostos();
+
+                // Mostrar mensaje si no hay costos
+                const container = document.getElementById('otros-costos-container');
+                const noMsg = document.getElementById('no-otros-costos-msg');
+                if (container.querySelectorAll('.otro-costo-item').length === 0 && noMsg) {
+                    noMsg.style.display = 'block';
+                }
+            }
+        }
+    });
+
+    // Función para actualizar el total de otros costos
+    function actualizarTotalOtrosCostos() {
+        let total = 0;
+        otrosCostosData.forEach(item => {
+            total += item.monto;
+        });
+        document.getElementById('total-otros-costos').textContent = total.toFixed(2);
+        document.getElementById('otros_costos_total').value = total.toFixed(2);
+    }
+});
+</script>
+
+<style>
+.card-header h5 {
+    font-weight: 600;
+}
+
+.peaje-item, .recarga-item {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.peaje-item:hover, .recarga-item:hover {
+    background-color: #e9ecef;
+}
+
+.mantenimiento-item {
+    transition: all 0.3s ease;
+}
+
+.mantenimiento-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.mantenimiento-item label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.mantenimiento-item .form-control,
+.mantenimiento-item .form-select {
+    border: 1px solid #ced4da;
+}
+
+.mantenimiento-item .form-control:focus,
+.mantenimiento-item .form-select:focus {
+    border-color: #17a2b8;
+    box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+}
+
+/* Estilos para tablas de peajes y recargas */
+.table thead th {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.table tbody td {
+    vertical-align: middle;
+    padding: 0.5rem;
+}
+
+.table tbody td input[type="text"],
+.table tbody td input[type="number"],
+.table tbody td input[type="date"],
+.table tbody td input[type="file"] {
+    border: 1px solid #ced4da;
+    font-size: 0.9rem;
+}
+
+.table tbody td input[type="text"]:focus,
+.table tbody td input[type="number"]:focus,
+.table tbody td input[type="date"]:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+}
+
+/* Estilos para otros costos */
+.otro-costo-item {
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.otro-costo-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: #adb5bd;
+}
+
+.otro-costo-item .card-body {
+    background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+}
+
+.form-control:focus {
+    border-color: #1e40af;
+    box-shadow: 0 0 0 0.2rem rgba(30, 64, 175, 0.25);
+}
+</style>
+{% endblock %}

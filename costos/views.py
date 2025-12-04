@@ -23,14 +23,14 @@ class PeajeDeleteView(LoginRequiredMixin, DeleteView):
         return reverse_lazy('costos:gestion')
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
-from django.views.generic import ListView, UpdateView, DeleteView, DetailView
+from django.views.generic import ListView, UpdateView, DeleteView, DetailView, RedirectView
 from django.urls import reverse_lazy
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum, Count
 from django.http import JsonResponse, HttpResponse
 from .models import CostosViaje, Peaje, PuntoRecarga
-from .forms import CostosViajeForm, PuntoRecargaForm, KmInicialForm, KmFinalForm
+from .forms import CostosViajeForm, PuntoRecargaForm, KmInicialForm, KmFinalForm, CostosViajeFormCompleto
 from flota.models import Mantenimiento
 from flota.forms import MantenimientoForm
 from viajes.models import Viaje
@@ -44,6 +44,12 @@ from datetime import datetime
 import io
 from flota.models import Mantenimiento
 from .informe_costos import informe_costos_pdf
+
+
+class RedirectToViajesSinCostos(LoginRequiredMixin, RedirectView):
+    """Redirección de la URL antigua a la lista de viajes sin costos."""
+    pattern_name = 'costos:viajes_sin_costos'
+    permanent = False
 
 
 class CostosViajeListView(LoginRequiredMixin, ListView):
@@ -581,3 +587,184 @@ def registrar_km_final(request, costos_pk):
     else:
         form = KmFinalForm(instance=costos_viaje)
     return render(request, 'costos/km_final_form.html', {'form': form, 'costos_pk': costos_pk})
+
+
+def registrar_costos_completo(request, viaje_id):
+    """Vista unificada para registrar todos los costos de un viaje en un solo formulario."""
+    from decimal import Decimal
+    
+    viaje = get_object_or_404(Viaje, pk=viaje_id)
+    
+    # Verificar si ya tiene costos registrados
+    if CostosViaje.objects.filter(viaje=viaje).exists():
+        messages.warning(request, 'Este viaje ya tiene costos registrados.')
+        return redirect('costos:gestion')
+    
+    if request.method == 'POST':
+        form = CostosViajeFormCompleto(request.POST)
+        
+        if form.is_valid():
+            # Crear el registro de costos
+            costos_viaje = form.save(commit=False)
+            costos_viaje.viaje = viaje
+            costos_viaje.save()
+            
+            # Procesar mantenimientos
+            mantenimientos_list = []
+            bus = costos_viaje.viaje.bus
+            for key in request.POST:
+                if key.startswith('nuevo_mant_fecha_'):
+                    idx = key.split('_')[-1]
+                    fecha = request.POST.get(f'nuevo_mant_fecha_{idx}', '').strip()
+                    tipo = request.POST.get(f'nuevo_mant_tipo_{idx}', '').strip()
+                    costo = request.POST.get(f'nuevo_mant_costo_{idx}', '').strip()
+                    kilometraje = request.POST.get(f'nuevo_mant_kilometraje_{idx}', '').strip()
+                    proveedor = request.POST.get(f'nuevo_mant_proveedor_{idx}', '').strip()
+                    taller = request.POST.get(f'nuevo_mant_taller_{idx}', '').strip()
+                    descripcion = request.POST.get(f'nuevo_mant_descripcion_{idx}', '').strip()
+                    observaciones = request.POST.get(f'nuevo_mant_observaciones_{idx}', '').strip()
+                    
+                    if fecha and tipo and descripcion:
+                        try:
+                            costo_mant = Decimal(costo) if costo else Decimal('0')
+                            km_mant = int(kilometraje) if kilometraje else 0
+                            
+                            nuevo_mantenimiento = Mantenimiento.objects.create(
+                                bus=bus,
+                                fecha_mantenimiento=fecha,
+                                tipo=tipo,
+                                costo=costo_mant,
+                                kilometraje=km_mant,
+                                proveedor=proveedor if proveedor else None,
+                                taller=taller,
+                                descripcion=descripcion,
+                                observaciones=observaciones
+                            )
+                            mantenimientos_list.append(nuevo_mantenimiento)
+                        except Exception as e:
+                            messages.warning(request, f'No se pudo crear el mantenimiento: {str(e)}')
+            
+            # Asociar todos los mantenimientos al registro de costos
+            if mantenimientos_list:
+                costos_viaje.mantenimientos.set(mantenimientos_list)
+                costos_viaje.mantenimiento = sum(Decimal(str(m.costo)) for m in mantenimientos_list)
+            
+            # Procesar peajes dinámicos
+            total_peajes = Decimal('0')
+            for key in request.POST:
+                if key.startswith('peaje_lugar_'):
+                    idx = key.split('_')[-1]
+                    lugar = request.POST.get(f'peaje_lugar_{idx}', '').strip()
+                    monto = request.POST.get(f'peaje_monto_{idx}', '').strip()
+                    fecha_pago = request.POST.get(f'peaje_fecha_{idx}', '').strip()
+                    voucher = request.FILES.get(f'peaje_voucher_{idx}')
+                    
+                    if lugar and monto:
+                        try:
+                            monto_decimal = Decimal(monto)
+                            
+                            # Usar la fecha proporcionada o la actual
+                            if fecha_pago:
+                                from datetime import datetime as dt
+                                fecha = dt.strptime(fecha_pago, '%Y-%m-%d').date()
+                            else:
+                                fecha = datetime.now().date()
+                            
+                            peaje = Peaje.objects.create(
+                                viaje=costos_viaje.viaje,
+                                costos_viaje=costos_viaje,
+                                lugar=lugar,
+                                monto=monto_decimal,
+                                fecha_pago=fecha,
+                                comprobante=voucher if voucher else ""
+                            )
+                            total_peajes += monto_decimal
+                        except Exception as e:
+                            messages.warning(request, f'No se pudo crear el peaje: {str(e)}')
+            
+            costos_viaje.peajes = total_peajes
+            
+            # Procesar puntos de recarga dinámicos
+            for key in request.POST:
+                if key.startswith('recarga_lugar_'):
+                    idx = key.split('_')[-1]
+                    orden = request.POST.get(f'recarga_orden_{idx}', '').strip()
+                    lugar = request.POST.get(f'recarga_lugar_{idx}', '').strip()
+                    sucursal = request.POST.get(f'recarga_sucursal_{idx}', '').strip()
+                    kilometraje = request.POST.get(f'recarga_kilometraje_{idx}', '').strip()
+                    litros = request.POST.get(f'recarga_litros_{idx}', '').strip()
+                    precio = request.POST.get(f'recarga_precio_{idx}', '').strip()
+                    fecha_pago = request.POST.get(f'recarga_fecha_{idx}', '').strip()
+                    voucher = request.FILES.get(f'recarga_voucher_{idx}')
+                    
+                    if lugar and kilometraje and litros and precio:
+                        try:
+                            # Crear ubicación completa
+                            ubicacion_completa = lugar
+                            if sucursal:
+                                ubicacion_completa += f" - {sucursal}"
+                            
+                            # Crear observaciones con la fecha si existe
+                            observaciones = ""
+                            if fecha_pago:
+                                observaciones = f"Fecha de pago: {fecha_pago}"
+                            
+                            PuntoRecarga.objects.create(
+                                costos_viaje=costos_viaje,
+                                orden=int(orden) if orden else int(idx),
+                                kilometraje=Decimal(kilometraje),
+                                precio_combustible=Decimal(precio),
+                                litros_cargados=Decimal(litros),
+                                ubicacion=ubicacion_completa,
+                                observaciones=observaciones
+                            )
+                        except Exception as e:
+                            messages.warning(request, f'No se pudo crear el punto de recarga: {str(e)}')
+            
+            # Recalcular el costo total de combustible
+            costos_viaje.calcular_costo_combustible()
+            
+            # Procesar otros costos
+            total_otros_costos = Decimal('0')
+            observaciones_otros_costos = []
+            
+            for key in request.POST:
+                if key.startswith('otro_costo_tipo_'):
+                    idx = key.split('_')[-1]
+                    tipo = request.POST.get(f'otro_costo_tipo_{idx}', '').strip()
+                    monto = request.POST.get(f'otro_costo_monto_{idx}', '').strip()
+                    descripcion = request.POST.get(f'otro_costo_descripcion_{idx}', '').strip()
+                    voucher = request.FILES.get(f'otro_costo_voucher_{idx}')
+                    
+                    if tipo and monto and descripcion:
+                        try:
+                            monto_decimal = Decimal(monto)
+                            total_otros_costos += monto_decimal
+                            
+                            # Agregar a observaciones
+                            obs = f"{tipo.upper()}: {descripcion} - ${monto}"
+                            if voucher:
+                                obs += f" (Comprobante: {voucher.name})"
+                            observaciones_otros_costos.append(obs)
+                        except Exception as e:
+                            messages.warning(request, f'No se pudo procesar el costo {tipo}: {str(e)}')
+            
+            # Actualizar otros_costos y observaciones
+            costos_viaje.otros_costos = total_otros_costos
+            if observaciones_otros_costos:
+                obs_actuales = costos_viaje.observaciones or ''
+                if obs_actuales:
+                    obs_actuales += '\n\n'
+                obs_actuales += 'OTROS COSTOS:\n' + '\n'.join(observaciones_otros_costos)
+                costos_viaje.observaciones = obs_actuales
+            
+            costos_viaje.save()
+            
+            messages.success(request, 'Costos del viaje registrados exitosamente.')
+            return redirect('costos:detalle', pk=costos_viaje.pk)
+        else:
+            messages.error(request, 'Por favor corrija los errores en el formulario.')
+    else:
+        form = CostosViajeFormCompleto()
+    
+    return render(request, 'costos/costos_completo_form.html', {'form': form, 'viaje': viaje})

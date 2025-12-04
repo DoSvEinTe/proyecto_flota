@@ -102,7 +102,7 @@ class Peaje(models.Model):
     lugar = models.CharField(max_length=150)
     monto = models.DecimalField(max_digits=10, decimal_places=2)
     fecha_pago = models.DateTimeField()
-    comprobante = models.CharField(max_length=50, blank=True)
+    comprobante = models.FileField(upload_to='peajes/vouchers/', blank=True, null=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
