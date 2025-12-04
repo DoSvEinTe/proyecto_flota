@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.db import transaction
 from .models import Viaje, ViajePasajero
 from core.models import Conductor, Lugar, Pasajero
+from core.views import PasajeroForm
 from flota.models import Bus
 from core.permissions import admin_required, usuario_or_admin_required
 
@@ -211,10 +212,14 @@ def viaje_pasajeros_view(request, pk):
     pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero')
     pasajeros_disponibles = Pasajero.objects.exclude(id__in=viaje.pasajeros.values_list('id', flat=True))
     
+    # Formulario para crear nuevo pasajero
+    pasajero_form = PasajeroForm()
+    
     context = {
         'viaje': viaje,
         'pasajeros_en_viaje': pasajeros_en_viaje,
         'pasajeros_disponibles': pasajeros_disponibles,
+        'pasajero_form': pasajero_form,
     }
     return render(request, 'viajes/viaje_pasajeros.html', context)
 
@@ -317,69 +322,34 @@ def editar_pasajero_viaje(request, pk, pasajero_pk):
     return render(request, 'viajes/editar_pasajero_viaje.html', context)
 
 
-# Formulario para Pasajeros
-class PasajeroForm(ModelForm):
-    class Meta:
-        model = Pasajero
-        fields = ['nombre_completo', 'rut', 'telefono', 'correo']
-        widgets = {
-            'nombre_completo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del pasajero'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
-            'correo': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
-        }
-
-
-# Vistas para gestión completa de Pasajeros dentro de Viajes
-@method_decorator(usuario_or_admin_required, name='dispatch')
-class PasajeroListView(ListView):
-    model = Pasajero
-    template_name = 'viajes/pasajero_list.html'
-    context_object_name = 'pasajeros'
-    paginate_by = 20
-
-    def get_queryset(self):
-        return Pasajero.objects.all().order_by('-creado_en')
-
-
-@method_decorator(usuario_or_admin_required, name='dispatch')
-class PasajeroDetailView(DetailView):
-    model = Pasajero
-    template_name = 'viajes/pasajero_detail.html'
-    context_object_name = 'pasajero'
-
-
-@method_decorator(usuario_or_admin_required, name='dispatch')
-class PasajeroCreateView(CreateView):
-    model = Pasajero
-    form_class = PasajeroForm
-    template_name = 'viajes/pasajero_form.html'
-    success_url = reverse_lazy('viajes:pasajero_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f'Pasajero {form.instance.nombre_completo} creado exitosamente.')
-        return super().form_valid(form)
-
-
-@method_decorator(admin_required, name='dispatch')
-class PasajeroUpdateView(UpdateView):
-    model = Pasajero
-    form_class = PasajeroForm
-    template_name = 'viajes/pasajero_form.html'
-    success_url = reverse_lazy('viajes:pasajero_list')
-
-    def form_valid(self, form):
-        messages.success(self.request, f'Pasajero {form.instance.nombre_completo} actualizado exitosamente.')
-        return super().form_valid(form)
-
-
-@method_decorator(admin_required, name='dispatch')
-class PasajeroDeleteView(DeleteView):
-    model = Pasajero
-    template_name = 'viajes/pasajero_confirm_delete.html'
-    success_url = reverse_lazy('viajes:pasajero_list')
-
-    def delete(self, request, *args, **kwargs):
-        self.object = self.get_object()
-        messages.success(request, f'Pasajero {self.object.nombre_completo} eliminado exitosamente.')
-        return super().delete(request, *args, **kwargs)
+@login_required(login_url='login')
+@usuario_or_admin_required
+def crear_pasajero_desde_viaje(request, pk):
+    """
+    Vista para crear un nuevo pasajero desde el contexto de un viaje.
+    Después de crear el pasajero, redirige de vuelta a la vista de pasajeros del viaje.
+    """
+    viaje = get_object_or_404(Viaje, pk=pk)
+    
+    if request.method == 'POST':
+        form = PasajeroForm(request.POST)
+        if form.is_valid():
+            pasajero = form.save()
+            messages.success(request, f'Pasajero {pasajero.nombre_completo} creado exitosamente.')
+            return redirect('viajes:viaje_pasajeros', pk=pk)
+        else:
+            # Si hay errores, volver a la vista de pasajeros con el formulario con errores
+            pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero')
+            pasajeros_disponibles = Pasajero.objects.exclude(id__in=viaje.pasajeros.values_list('id', flat=True))
+            
+            context = {
+                'viaje': viaje,
+                'pasajeros_en_viaje': pasajeros_en_viaje,
+                'pasajeros_disponibles': pasajeros_disponibles,
+                'pasajero_form': form,  # Formulario con errores
+            }
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            return render(request, 'viajes/viaje_pasajeros.html', context)
+    
+    # Si es GET, redirigir a la vista de pasajeros
+    return redirect('viajes:viaje_pasajeros', pk=pk)

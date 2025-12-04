@@ -14,13 +14,7 @@ urlpatterns = [
     # Gestión de pasajeros en viajes
     path('<int:pk>/pasajeros/', views.viaje_pasajeros_view, name='viaje_pasajeros'),
     path('<int:pk>/pasajeros/agregar/', views.agregar_pasajero_viaje, name='agregar_pasajero_viaje'),
+    path('<int:pk>/pasajeros/crear/', views.crear_pasajero_desde_viaje, name='crear_pasajero_desde_viaje'),
     path('<int:pk>/pasajeros/<int:pasajero_pk>/quitar/', views.quitar_pasajero_viaje, name='quitar_pasajero_viaje'),
     path('<int:pk>/pasajeros/<int:pasajero_pk>/editar/', views.editar_pasajero_viaje, name='editar_pasajero_viaje'),
-    
-    # Gestión completa de pasajeros (dentro de viajes)
-    path('pasajeros/', views.PasajeroListView.as_view(), name='pasajero_list'),
-    path('pasajeros/nuevo/', views.PasajeroCreateView.as_view(), name='pasajero_create'),
-    path('pasajeros/<int:pk>/', views.PasajeroDetailView.as_view(), name='pasajero_detail'),
-    path('pasajeros/<int:pk>/editar/', views.PasajeroUpdateView.as_view(), name='pasajero_update'),
-    path('pasajeros/<int:pk>/eliminar/', views.PasajeroDeleteView.as_view(), name='pasajero_delete'),
 ]
