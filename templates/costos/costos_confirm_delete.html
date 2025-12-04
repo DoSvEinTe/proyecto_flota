@@ -19,7 +19,7 @@
                     
                     <div class="alert alert-info">
                         <p class="mb-2"><strong>Bus:</strong> {{ object.viaje.bus.placa }}</p>
-                        <p class="mb-2"><strong>Viaje:</strong> {{ object.viaje.lugar_origen.nombre }} → {{ object.viaje.lugar_destino.nombre }}</p>
+                        <p class="mb-2"><strong>Viaje:</strong> {{ object.viaje.get_origen_display }} → {{ object.viaje.get_destino_display }}</p>
                         <p class="mb-2"><strong>Fecha:</strong> {{ object.viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
                         <p class="mb-2"><strong>Costo Total:</strong> CLP ${{ object.costo_total|floatformat:0 }}</p>
                         <p class="mb-0"><strong>Puntos de Recarga:</strong> {{ object.puntos_recarga.count }}</p>

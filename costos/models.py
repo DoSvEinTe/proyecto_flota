@@ -74,8 +74,11 @@ class PuntoRecarga(models.Model):
         # Calcular kilómetros recorridos desde el punto anterior
         if self.orden == 1:
             # Primer punto: calcular desde el kilometraje inicial REAL del viaje
-            kilometraje_inicial = self.costos_viaje.km_inicial if self.costos_viaje.km_inicial is not None else self.costos_viaje.viaje.bus.kilometraje_inicial
-            self.kilometros_recorridos = self.kilometraje - kilometraje_inicial
+            if self.costos_viaje.km_inicial is not None:
+                self.kilometros_recorridos = self.kilometraje - self.costos_viaje.km_inicial
+            else:
+                # Si no hay km_inicial registrado, no podemos calcular kilómetros recorridos
+                self.kilometros_recorridos = 0
         else:
             # Puntos posteriores: calcular desde el punto anterior
             punto_anterior = PuntoRecarga.objects.filter(

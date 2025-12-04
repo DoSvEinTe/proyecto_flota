@@ -80,9 +80,9 @@
                         </div>
                         <div>
                             <small class="text-muted d-block">Ruta</small>
-                            <strong>{{ viaje.lugar_origen.nombre }}</strong>
+                            <strong>{{ viaje.get_origen_display }}</strong>
                             <i class="fas fa-arrow-right mx-2 text-muted"></i>
-                            <strong>{{ viaje.lugar_destino.nombre }}</strong>
+                            <strong>{{ viaje.get_destino_display }}</strong>
                             <small class="text-muted d-block">Fecha: {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</small>
                         </div>
                     </div>

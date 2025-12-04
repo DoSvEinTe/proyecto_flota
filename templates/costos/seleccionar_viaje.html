@@ -15,7 +15,7 @@
                             <label for="viaje" class="form-label">Viaje</label>
                             <select name="viaje" id="viaje" class="form-control">
                                 {% for viaje in viajes %}
-                                <option value="{{ viaje.id }}">{{ viaje.bus.placa }} - {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }} ({{ viaje.fecha_salida|date:'d/m/Y' }})</option>
+                                <option value="{{ viaje.id }}">{{ viaje.bus.placa }} - {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }} ({{ viaje.fecha_salida|date:'d/m/Y' }})</option>
                                 {% endfor %}
                             </select>
                         </div>

@@ -99,22 +99,15 @@ class PuntoRecargaForm(forms.ModelForm):
             if ultimo_punto:
                 self.fields['kilometraje'].initial = ultimo_punto.kilometraje
                 self.fields['kilometraje'].widget.attrs['min'] = str(ultimo_punto.kilometraje)
-            else:
-                # Si no hay puntos anteriores, usar el kilometraje inicial del bus
-                self.fields['kilometraje'].initial = costos_viaje.viaje.bus.kilometraje_inicial
-                self.fields['kilometraje'].widget.attrs['min'] = str(costos_viaje.viaje.bus.kilometraje_inicial)
+            elif costos_viaje.km_inicial:
+                # Si no hay puntos anteriores, usar el km_inicial del registro de costos
+                self.fields['kilometraje'].initial = costos_viaje.km_inicial
+                self.fields['kilometraje'].widget.attrs['min'] = str(costos_viaje.km_inicial)
 
     def clean_kilometraje(self):
         kilometraje = self.cleaned_data['kilometraje']
         
         if self.costos_viaje:
-            # Validar que el kilometraje sea mayor al inicial del bus
-            kilometraje_inicial = self.costos_viaje.viaje.bus.kilometraje_inicial
-            if kilometraje < kilometraje_inicial:
-                raise forms.ValidationError(
-                    f'El kilometraje debe ser mayor o igual al kilometraje inicial del bus ({kilometraje_inicial} km)'
-                )
-            
             # Validar que el kilometraje sea mayor al punto anterior
             orden = self.cleaned_data.get('orden', 1)
             if orden > 1:
@@ -126,6 +119,12 @@ class PuntoRecargaForm(forms.ModelForm):
                 if punto_anterior and kilometraje <= punto_anterior.kilometraje:
                     raise forms.ValidationError(
                         f'El kilometraje debe ser mayor al punto anterior ({punto_anterior.kilometraje} km)'
+                    )
+            elif orden == 1 and self.costos_viaje.km_inicial:
+                # Si es el primer punto, validar contra el km_inicial del viaje
+                if kilometraje < self.costos_viaje.km_inicial:
+                    raise forms.ValidationError(
+                        f'El kilometraje debe ser mayor o igual al kilometraje inicial del viaje ({self.costos_viaje.km_inicial} km)'
                     )
         
         return kilometraje

@@ -13,5 +13,4 @@ urlpatterns = [
     path('conductores/<int:pk>/', views.ConductorDetailView.as_view(), name='conductor_detail'),
     path('conductores/<int:pk>/editar/', views.ConductorUpdateView.as_view(), name='conductor_update'),
     path('conductores/<int:pk>/eliminar/', views.ConductorDeleteView.as_view(), name='conductor_delete'),
-    
 ]

@@ -17,7 +17,7 @@ urlpatterns = [
     path('<int:pk>/pasajeros/<int:pasajero_pk>/quitar/', views.quitar_pasajero_viaje, name='quitar_pasajero_viaje'),
     path('<int:pk>/pasajeros/<int:pasajero_pk>/editar/', views.editar_pasajero_viaje, name='editar_pasajero_viaje'),
     
-    # Gestión de pasajeros (CRUD)
+    # Gestión completa de pasajeros (dentro de viajes)
     path('pasajeros/', views.PasajeroListView.as_view(), name='pasajero_list'),
     path('pasajeros/nuevo/', views.PasajeroCreateView.as_view(), name='pasajero_create'),
     path('pasajeros/<int:pk>/', views.PasajeroDetailView.as_view(), name='pasajero_detail'),

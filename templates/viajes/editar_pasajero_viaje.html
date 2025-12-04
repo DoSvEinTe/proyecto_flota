@@ -21,7 +21,7 @@
             </div>
             <div class="card-body">
                 <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
-                <p><strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</p>
+                <p><strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</p>
                 <p><strong>Fecha:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
             </div>
         </div>

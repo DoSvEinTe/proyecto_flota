@@ -15,42 +15,6 @@ from flota.models import Bus
 from core.permissions import admin_required, usuario_or_admin_required
 
 
-class PasajeroForm(ModelForm):
-    class Meta:
-        model = Pasajero
-        fields = ['nombre_completo', 'rut', 'telefono', 'correo']
-        widgets = {
-            'nombre_completo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del pasajero'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)'}),
-            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
-            'correo': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
-        }
-    
-    def clean_nombre_completo(self):
-        nombre = self.cleaned_data.get('nombre_completo')
-        if nombre and len(nombre.strip()) < 3:
-            raise forms.ValidationError('El nombre completo debe tener al menos 3 caracteres.')
-        return nombre.strip() if nombre else nombre
-    
-    def clean_rut(self):
-        rut = self.cleaned_data.get('rut')
-        if rut:
-            rut = rut.strip().upper()
-            # Validar formato básico de RUT (permite formato con o sin guion)
-            if not rut.replace('-', '').replace('.', '').isalnum():
-                raise forms.ValidationError('El RUT debe contener solo números y letras.')
-        return rut
-    
-    def clean_telefono(self):
-        telefono = self.cleaned_data.get('telefono')
-        if telefono:
-            telefono = telefono.strip()
-            # Validar que el teléfono contenga solo números y caracteres permitidos
-            if not telefono.replace('+', '').replace('-', '').replace(' ', '').replace('(', '').replace(')', '').isdigit():
-                raise forms.ValidationError('El teléfono debe contener solo números y caracteres permitidos (+, -, espacios, paréntesis).')
-        return telefono
-
-
 class ViajeForm(ModelForm):
     class Meta:
         model = Viaje
@@ -353,7 +317,20 @@ def editar_pasajero_viaje(request, pk, pasajero_pk):
     return render(request, 'viajes/editar_pasajero_viaje.html', context)
 
 
-# Vistas para Pasajeros (dentro de viajes)
+# Formulario para Pasajeros
+class PasajeroForm(ModelForm):
+    class Meta:
+        model = Pasajero
+        fields = ['nombre_completo', 'rut', 'telefono', 'correo']
+        widgets = {
+            'nombre_completo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del pasajero'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
+            'correo': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
+        }
+
+
+# Vistas para gestión completa de Pasajeros dentro de Viajes
 @method_decorator(usuario_or_admin_required, name='dispatch')
 class PasajeroListView(ListView):
     model = Pasajero

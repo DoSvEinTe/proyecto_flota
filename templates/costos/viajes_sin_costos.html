@@ -34,7 +34,6 @@
                                     <th>Conductor</th>
                                     <th>Fecha Salida</th>
                                     <th>Estado</th>
-                                    <th>Km Inicial</th>
                                     <th>Acciones</th>
                                 </tr>
                             </thead>
@@ -44,22 +43,29 @@
                                     <td><strong>{{ viaje.bus.placa }}</strong></td>
                                     <td>{{ viaje.bus.modelo }}</td>
                                     <td>
-                                        {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}
+                                        {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}
                                     </td>
                                     <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        <span class="badge bg-{{ viaje.estado }}">
-                                            {{ viaje.get_estado_display }}
-                                        </span>
+                                        {% if viaje.estado == 'completado' %}
+                                            <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
+                                        {% elif viaje.estado == 'en_curso' %}
+                                            <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
+                                        {% elif viaje.estado == 'programado' %}
+                                            <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                        {% endif %}
                                     </td>
-                                    <td>{{ viaje.bus.kilometraje_inicial }} km</td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" class="btn btn-action btn-success" style="background-color: #2196f3; color: #fff;" title="Registrar Costos">
+                                            <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
+                                               class="btn btn-primary" title="Registrar Costos">
                                                 <i class="fas fa-plus me-1"></i>Registrar
                                             </a>
-                                            <a href="{% url 'costos:formulario_pdf' viaje.id %}" class="btn btn-action btn-pdf" style="background-color: #f44336; color: #fff;" title="Descargar formulario PDF para completar manualmente" target="_blank">
+                                            <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
+                                               class="btn btn-danger" title="Descargar formulario PDF para completar manualmente" target="_blank">
                                                 <i class="fas fa-file-pdf me-1"></i>PDF
                                             </a>
                                         </div>

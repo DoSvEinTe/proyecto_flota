@@ -66,7 +66,7 @@ class CostosViajeListView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         # Obtener viajes sin costos asignados
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        context['viajes_sin_costos'] = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor', 'lugar_origen', 'lugar_destino')
+        context['viajes_sin_costos'] = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')
         return context
 
 
@@ -79,7 +79,7 @@ class ViajesSinCostosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        return Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor', 'lugar_origen', 'lugar_destino')
+        return Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')
 
 
 class CostosViajeCreateView(LoginRequiredMixin, View):
@@ -158,6 +158,13 @@ class CostosViajeDetailView(LoginRequiredMixin, DetailView):
             context['km_recorridos_real'] = self.object.km_final - self.object.km_inicial
         else:
             context['km_recorridos_real'] = context['total_kilometros']
+        
+        # Calcular consumo
+        if context['total_litros'] > 0 and context['km_recorridos_real'] > 0:
+            context['consumo_promedio'] = context['km_recorridos_real'] / context['total_litros']
+        else:
+            context['consumo_promedio'] = 0
+            
         return context
 
 
@@ -219,9 +226,9 @@ def agregar_puntos_recarga(request, costos_pk):
                     recargas.append(punto)
         costos_viaje.calcular_costo_combustible()
         costos_viaje.save()
-        # Si ya tiene km_final, ir al detalle, si no, pedir km_final
+        # Si ya tiene km_final, ir a gestión, si no, pedir km_final
         if costos_viaje.km_final is not None:
-            return redirect('costos:detalle', pk=costos_pk)
+            return redirect('costos:gestion')
         return redirect('costos:registrar_km_final', costos_pk=costos_pk)
     return render(request, 'costos/punto_recarga_form.html', {'costos_viaje': costos_viaje})
 
@@ -316,12 +323,12 @@ def calcular_distancia_viaje(request, viaje_id):
         
         viaje = get_object_or_404(Viaje, pk=viaje_id)
         
-        # Obtener coordenadas de los lugares relacionados o del viaje
+        # Obtener coordenadas directamente del viaje
         try:
-            lat_origen = viaje.latitud_origen if viaje.latitud_origen else viaje.lugar_origen.latitud
-            lon_origen = viaje.longitud_origen if viaje.longitud_origen else viaje.lugar_origen.longitud
-            lat_destino = viaje.latitud_destino if viaje.latitud_destino else viaje.lugar_destino.latitud
-            lon_destino = viaje.longitud_destino if viaje.longitud_destino else viaje.lugar_destino.longitud
+            lat_origen = viaje.latitud_origen
+            lon_origen = viaje.longitud_origen
+            lat_destino = viaje.latitud_destino
+            lon_destino = viaje.longitud_destino
         except Exception as e:
             return JsonResponse({
                 'error': f'Error al obtener coordenadas: {str(e)}'
@@ -330,7 +337,7 @@ def calcular_distancia_viaje(request, viaje_id):
         # Verificar que el viaje tenga coordenadas
         if not all([lat_origen, lon_origen, lat_destino, lon_destino]):
             return JsonResponse({
-                'error': f'Faltan coordenadas. Origen: {viaje.lugar_origen.nombre} (lat: {lat_origen}, lon: {lon_origen}), Destino: {viaje.lugar_destino.nombre} (lat: {lat_destino}, lon: {lon_destino})'
+                'error': f'Faltan coordenadas. Origen: {viaje.get_origen_display()} (lat: {lat_origen}, lon: {lon_origen}), Destino: {viaje.get_destino_display()} (lat: {lat_destino}, lon: {lon_destino})'
             }, status=400)
         
         # Calcular la distancia
@@ -410,10 +417,10 @@ def generar_formulario_costos_pdf(request, viaje_id):
     elements.append(Spacer(1, 0.2 * inch))
     elements.append(Paragraph("INFORMACIÓN DEL VIAJE", subtitle_style))
     costos_viaje = CostosViaje.objects.filter(viaje=viaje).first()
-    km_inicial = costos_viaje.km_inicial if costos_viaje and costos_viaje.km_inicial is not None else viaje.bus.kilometraje_inicial
+    km_inicial = costos_viaje.km_inicial if costos_viaje and costos_viaje.km_inicial is not None else None
     info_viaje = [
         f"<b>Bus:</b> {viaje.bus.placa} &nbsp;&nbsp;&nbsp; <b>Modelo:</b> {viaje.bus.modelo}",
-        f"<b>Origen:</b> {viaje.lugar_origen.nombre} &nbsp;&nbsp;&nbsp; <b>Destino:</b> {viaje.lugar_destino.nombre}",
+        f"<b>Origen:</b> {viaje.get_origen_display()} &nbsp;&nbsp;&nbsp; <b>Destino:</b> {viaje.get_destino_display()}",
         f"<b>Conductor:</b> {viaje.conductor.nombre} {viaje.conductor.apellido} &nbsp;&nbsp;&nbsp; ",
         f"<b>Fecha:</b> {viaje.fecha_salida.strftime('%d/%m/%Y')}",
         f"<b>Kilometraje Inicial (real):</b> {km_inicial if km_inicial is not None else '_______________________________'}",
@@ -583,7 +590,7 @@ def registrar_km_final(request, costos_pk):
         if form.is_valid():
             form.save()
             messages.success(request, 'Kilometraje final registrado correctamente.')
-            return redirect('costos:detalle', pk=costos_pk)
+            return redirect('costos:gestion')
     else:
         form = KmFinalForm(instance=costos_viaje)
     return render(request, 'costos/km_final_form.html', {'form': form, 'costos_pk': costos_pk})
@@ -761,7 +768,7 @@ def registrar_costos_completo(request, viaje_id):
             costos_viaje.save()
             
             messages.success(request, 'Costos del viaje registrados exitosamente.')
-            return redirect('costos:detalle', pk=costos_viaje.pk)
+            return redirect('costos:gestion')
         else:
             messages.error(request, 'Por favor corrija los errores en el formulario.')
     else:

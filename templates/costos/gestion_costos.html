@@ -87,19 +87,31 @@
                                 {% for viaje in viajes_sin_costos %}
                                 <tr>
                                     <td><strong>{{ viaje.bus.placa }}</strong></td>
-                                    <td>{{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</td>
+                                    <td>{{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</td>
                                     <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        <span class="badge bg-{{ viaje.estado }}">
-                                            {{ viaje.get_estado_display }}
-                                        </span>
+                                        {% if viaje.estado == 'completado' %}
+                                            <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
+                                        {% elif viaje.estado == 'en_curso' %}
+                                            <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
+                                        {% elif viaje.estado == 'programado' %}
+                                            <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                        {% endif %}
                                     </td>
                                     <td>
-                                        <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
-                                           class="btn btn-primary btn-sm" title="Registrar Costos">
-                                            <i class="fas fa-plus me-1"></i>Registrar
-                                        </a>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
+                                               class="btn btn-primary" title="Registrar Costos">
+                                                <i class="fas fa-plus me-1"></i>Registrar
+                                            </a>
+                                            <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
+                                               class="btn btn-danger" title="Generar Formulario PDF" target="_blank">
+                                                <i class="fas fa-file-pdf me-1"></i>PDF
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -150,8 +162,8 @@
                                     <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
                                     <td>{{ costos.viaje.bus.modelo }}</td>
                                     <td>
-                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
-                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
+                                        {{ costos.viaje.get_origen_display|truncatewords:2 }} → 
+                                        {{ costos.viaje.get_destino_display|truncatewords:2 }}
                                     </td>
                                     <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
                                     <td>

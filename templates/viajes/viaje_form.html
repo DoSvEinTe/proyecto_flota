@@ -39,25 +39,6 @@
         padding: 10px;
         margin-top: 10px;
     }
-    .calculate-route-btn {
-        margin-top: 10px;
-        background: #4caf50;
-        border: none;
-        border-radius: 6px;
-        color: white;
-        padding: 10px 20px;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background 0.3s ease;
-        width: 100%;
-    }
-    .calculate-route-btn:hover {
-        background: #45a049;
-    }
-    .calculate-route-btn:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-    }
     .location-type-selector {
         margin-bottom: 15px;
     }
@@ -218,7 +199,7 @@
                 <div class="card-body">
                     <div class="map-instructions">
                         <i class="fas fa-info-circle me-2"></i>
-                        <strong>Instrucciones:</strong> Selecciona si deseas marcar el <strong>origen</strong> o el <strong>destino</strong>, luego busca o haz clic en el mapa para establecer la ubicación.
+                        <strong>Instrucciones:</strong> Selecciona si deseas marcar el <strong>origen</strong> o el <strong>destino</strong>, luego busca o haz clic en el mapa. La ruta se calculará automáticamente.
                     </div>
                     
                     <!-- Selector de tipo de ubicación -->
@@ -248,10 +229,6 @@
                     </div>
                     
                     <div id="map"></div>
-                    
-                    <button type="button" id="calculate-route-btn" class="calculate-route-btn" disabled>
-                        <i class="fas fa-route me-2"></i>Calcular Ruta
-                    </button>
                     
                     <div class="coordinates-display mt-3">
                         <div class="row">
@@ -546,9 +523,6 @@ document.addEventListener('DOMContentLoaded', function() {
     var markerOrigen = null;
     var markerDestino = null;
     var routeLayer = null;
-    
-    // Botón de calcular ruta
-    var calculateRouteBtn = document.getElementById('calculate-route-btn');
     var routeInfo = document.getElementById('route-info');
     
     // Crear iconos personalizados
@@ -655,24 +629,26 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 3000);
     }
     
-    // Función para verificar si ambos puntos están marcados
+    // Función para verificar si ambos puntos están marcados y calcular ruta automáticamente
     function checkBothPointsMarked() {
         if (markerOrigen && markerDestino) {
-            calculateRouteBtn.disabled = false;
+            calculateRoute();
         } else {
-            calculateRouteBtn.disabled = true;
             routeInfo.style.display = 'none';
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+                routeLayer = null;
+            }
         }
     }
     
     // Función para calcular y mostrar la ruta
     function calculateRoute() {
         if (!markerOrigen || !markerDestino) {
-            showToast('Debes marcar tanto el origen como el destino', 'warning');
             return;
         }
         
-        var origenLat = parseFloat(origenLatInput.value);
+        var origenLat = markerOrigen.getLatLng().lat;
         var origenLng = parseFloat(origenLngInput.value);
         var destinoLat = parseFloat(destinoLatInput.value);
         var destinoLng = parseFloat(destinoLngInput.value);
@@ -730,15 +706,8 @@ document.addEventListener('DOMContentLoaded', function() {
             .catch(function(error) {
                 console.error('Error al calcular ruta:', error);
                 showToast('Error al calcular la ruta', 'danger');
-            })
-            .finally(function() {
-                calculateRouteBtn.innerHTML = '<i class="fas fa-route me-2"></i>Calcular Ruta';
-                calculateRouteBtn.disabled = false;
             });
     }
-    
-    // Event listener para el botón de calcular ruta
-    calculateRouteBtn.addEventListener('click', calculateRoute);
     
     // Selector de tipo de ubicación
     document.querySelectorAll('.location-type-btn').forEach(function(btn) {

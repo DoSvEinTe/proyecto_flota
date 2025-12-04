@@ -7,7 +7,7 @@ from django.utils.decorators import method_decorator
 from django.forms import ModelForm
 from django import forms
 from django.utils import timezone
-from .models import Conductor, Pasajero
+from .models import Conductor, Lugar, Pasajero
 from .permissions import admin_required, usuario_or_admin_required
 import math
 
@@ -66,6 +66,8 @@ class ConductorForm(ModelForm):
         if commit:
             instance.save()
         return instance
+
+
 
 
 # Vistas para Conductores
@@ -216,6 +218,7 @@ def home_view(request):
         'total_buses': buses.count(),
         'buses': buses,
         'total_conductores': Conductor.objects.count(),
+        'total_lugares': Lugar.objects.count(),
         'total_pasajeros': Pasajero.objects.count(),
         'total_viajes': Viaje.objects.count(),
         'documentos_proximos_vencer': documentos_proximos_vencer,

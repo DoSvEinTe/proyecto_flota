@@ -11,10 +11,10 @@
                     <i class="fas fa-user me-2"></i>Detalle del Pasajero
                 </h5>
                 <div>
-                    <a href="{% url 'viajes:pasajero_update' pasajero.pk %}" class="btn btn-sm btn-edit">
+                    <a href="{% url 'pasajero_update' pasajero.pk %}" class="btn btn-sm btn-edit">
                         <i class="fas fa-edit me-1"></i>Editar
                     </a>
-                    <a href="{% url 'viajes:pasajero_delete' pasajero.pk %}" class="btn btn-sm btn-delete">
+                    <a href="{% url 'pasajero_delete' pasajero.pk %}" class="btn btn-sm btn-delete">
                         <i class="fas fa-trash me-1"></i>Eliminar
                     </a>
                 </div>
@@ -54,15 +54,11 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{% url 'viajes:pasajero_list' %}" class="btn btn-secondary">
+                <a href="{% url 'pasajero_list' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
-                </a>
-                <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
-                    <i class="fas fa-route me-2"></i>Volver a Viajes
                 </a>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
-

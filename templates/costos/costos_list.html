@@ -33,7 +33,7 @@
                                 {% for viaje in viajes_sin_costos %}
                                 <tr>
                                     <td><strong>{{ viaje.bus.placa }}</strong></td>
-                                    <td>{{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</td>
+                                    <td>{{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</td>
                                     <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                                     <td>
@@ -85,8 +85,8 @@
                                     <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
                                     <td>{{ costos.viaje.bus.modelo }}</td>
                                     <td>
-                                        {{ costos.viaje.lugar_origen.nombre|truncatewords:2 }} → 
-                                        {{ costos.viaje.lugar_destino.nombre|truncatewords:2 }}
+                                        {{ costos.viaje.get_origen_display|truncatewords:2 }} → 
+                                        {{ costos.viaje.get_destino_display|truncatewords:2 }}
                                     </td>
                                     <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
                                     <td>

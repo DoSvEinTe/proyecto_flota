@@ -6,6 +6,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Pasajeros del Viaje</h2>
     <div>
+        <a href="{% url 'viajes:pasajero_list' %}" class="btn btn-info me-2">
+            <i class="fas fa-users me-2"></i>Gestionar Todos los Pasajeros
+        </a>
         <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
             <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
         </a>
@@ -22,7 +25,7 @@
             <div class="col-md-6">
                 <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
                 <p><strong>Conductor:</strong> {{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</p>
-                <p><strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</p>
+                <p><strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</p>
             </div>
             <div class="col-md-6">
                 <p><strong>Fecha Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
@@ -40,8 +43,13 @@
 <!-- Agregar Pasajero -->
 {% if pasajeros_disponibles %}
 <div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="fas fa-user-plus me-2"></i>Agregar Pasajero
+    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-user-plus me-2"></i>Agregar Pasajero
+        </div>
+        <a href="{% url 'viajes:pasajero_create' %}" class="btn btn-sm btn-light">
+            <i class="fas fa-plus me-1"></i>Crear Nuevo Pasajero
+        </a>
     </div>
     <div class="card-body">
         <form method="post" action="{% url 'viajes:agregar_pasajero_viaje' viaje.pk %}">
@@ -78,6 +86,9 @@
 <div class="alert alert-warning">
     <i class="fas fa-exclamation-triangle me-2"></i>
     No hay más pasajeros disponibles para agregar a este viaje.
+    <a href="{% url 'viajes:pasajero_create' %}" class="btn btn-sm btn-success ms-2">
+        <i class="fas fa-plus me-1"></i>Crear Nuevo Pasajero
+    </a>
 </div>
 {% endif %}
 
@@ -173,16 +184,7 @@
                 <h2 class="text-{% if pasajeros_en_viaje|length < viaje.bus.capacidad_pasajeros %}success{% else %}warning{% endif %}">
                     {% widthratio pasajeros_en_viaje|length viaje.bus.capacidad_pasajeros 100 %}%
                 </h2>
-                <small id="asientos-disponibles"></small>
-                <script>
-                    (function() {
-                        const total = {{ pasajeros_en_viaje|length }};
-                        const capacidad = {{ viaje.bus.capacidad_pasajeros }};
-                        const disponibles = capacidad - total;
-                        document.getElementById('asientos-disponibles').textContent = 
-                            disponibles > 0 ? disponibles + ' asientos disponibles' : 'Sin asientos disponibles';
-                    })();
-                </script>
+                <small>{{ viaje.bus.capacidad_pasajeros|add:"-"|add:pasajeros_en_viaje|length }} asientos disponibles</small>
             </div>
         </div>
     </div>
