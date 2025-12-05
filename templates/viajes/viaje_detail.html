@@ -1,105 +1,591 @@
 {% extends 'base.html' %}
+{% load l10n %}
 
 {% block title %}Detalle de Viaje - Sistema de Gestión de Flota{% endblock %}
 
+{% block extra_css %}
+<style>
+    .detail-header {
+        background: linear-gradient(135deg, #1e40af 0%, #0d47a1 100%);
+        border-radius: 16px;
+        padding: 2rem;
+        color: white !important;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 24px rgba(30, 64, 175, 0.3);
+    }
+
+    .detail-header h1 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: white !important;
+    }
+
+    .detail-header p {
+        color: white !important;
+        opacity: 0.95;
+    }
+
+    .detail-header * {
+        color: white !important;
+    }
+    }
+
+    .detail-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        margin-bottom: 1.5rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .detail-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+    }
+
+    .detail-card .card-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .detail-card .card-body {
+        padding: 1.5rem;
+    }
+
+    .info-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-item strong {
+        color: #374151;
+        font-weight: 600;
+        display: inline-block;
+        min-width: 160px;
+    }
+
+    .info-item .value {
+        color: #6b7280;
+    }
+
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-badge i {
+        font-size: 1rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-gestionar {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-editar {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .btn-eliminar {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .btn-volver {
+        background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+        color: white;
+    }
+
+    .progress-container {
+        background: #f3f4f6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .progress {
+        height: 28px;
+        border-radius: 14px;
+        background: #e5e7eb;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: width 0.6s ease;
+    }
+
+    .route-display {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #f9fafb;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+
+    .route-point {
+        flex: 1;
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    .route-point .location-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .route-point .location-name {
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 0.25rem;
+    }
+
+    .route-arrow {
+        font-size: 2rem;
+        color: #3b82f6;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-left: 4px solid #3b82f6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .stat-box .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #1e40af;
+    }
+
+    .stat-box .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .timeline-item {
+        padding-left: 2rem;
+        position: relative;
+        padding-bottom: 1.5rem;
+    }
+
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #3b82f6;
+        border: 3px solid #e0f2fe;
+    }
+
+    .timeline-item::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 12px;
+        width: 2px;
+        height: calc(100% - 12px);
+        background: #e5e7eb;
+    }
+
+    .timeline-item:last-child::after {
+        display: none;
+    }
+
+    /* Estilos del Mapa */
+    #map {
+        height: 400px;
+        width: 100%;
+        border-radius: 8px;
+        margin-top: 1rem;
+        border: 2px solid #e5e7eb;
+    }
+
+    .route-indicator {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .route-indicator .route-point {
+        display: flex;
+        align-items: center;
+        flex: 1;
+    }
+
+    .route-indicator .route-arrow {
+        padding: 0 1rem;
+        color: #3b82f6;
+    }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% if viaje.latitud_origen and viaje.longitud_origen and viaje.latitud_destino and viaje.longitud_destino %}
+    var latOrigen = {{ viaje.latitud_origen|unlocalize }};
+    var lngOrigen = {{ viaje.longitud_origen|unlocalize }};
+    var latDestino = {{ viaje.latitud_destino|unlocalize }};
+    var lngDestino = {{ viaje.longitud_destino|unlocalize }};
+    
+    // Inicializar mapa
+    var map = L.map('map', {
+        center: [latOrigen, lngOrigen],
+        zoom: 8
+    });
+    
+    // Agregar capa de tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Asegurar renderizado
+    setTimeout(function() {
+        map.invalidateSize();
+    }, 100);
+    
+    // Crear iconos
+    var origenIcon = L.divIcon({
+        className: 'marker-origen',
+        html: '<div style="background-color: #10b981; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">O</div>',
+        iconSize: [30, 30]
+    });
+    
+    var destinoIcon = L.divIcon({
+        className: 'marker-destino',
+        html: '<div style="background-color: #ef4444; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">D</div>',
+        iconSize: [30, 30]
+    });
+    
+    // Agregar marcadores
+    var markerOrigen = L.marker([latOrigen, lngOrigen], {icon: origenIcon}).addTo(map);
+    markerOrigen.bindPopup('<strong>Origen:</strong><br>{{ viaje.get_origen_display }}');
+    
+    var markerDestino = L.marker([latDestino, lngDestino], {icon: destinoIcon}).addTo(map);
+    markerDestino.bindPopup('<strong>Destino:</strong><br>{{ viaje.get_destino_display }}');
+    
+    // Calcular ruta
+    var url = 'https://router.project-osrm.org/route/v1/driving/' + lngOrigen + ',' + latOrigen + ';' + lngDestino + ',' + latDestino + '?overview=full&geometries=geojson';
+    
+    fetch(url)
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+                var route = data.routes[0];
+                var distanceKm = (route.distance / 1000).toFixed(2);
+                var durationMin = Math.round(route.duration / 60);
+                var durationHours = Math.floor(durationMin / 60);
+                var durationMinutesRem = durationMin % 60;
+                
+                // Mostrar información
+                document.getElementById('route-distance').textContent = distanceKm + ' km';
+                document.getElementById('route-duration').textContent = durationHours + 'h ' + durationMinutesRem + 'min';
+                document.getElementById('route-info').style.display = 'block';
+                
+                // Dibujar ruta
+                var coordinates = [];
+                for (var i = 0; i < route.geometry.coordinates.length; i++) {
+                    var coord = route.geometry.coordinates[i];
+                    coordinates.push([coord[1], coord[0]]);
+                }
+                
+                var routeLayer = L.polyline(coordinates, {
+                    color: '#3b82f6',
+                    weight: 5,
+                    opacity: 0.7,
+                    lineJoin: 'round'
+                }).addTo(map);
+                
+                // Ajustar vista
+                var group = L.featureGroup([markerOrigen, markerDestino, routeLayer]);
+                map.fitBounds(group.getBounds().pad(0.1));
+            } else {
+                var group = L.featureGroup([markerOrigen, markerDestino]);
+                map.fitBounds(group.getBounds().pad(0.2));
+            }
+        })
+        .catch(function(error) {
+            console.error('Error al calcular ruta:', error);
+            var group = L.featureGroup([markerOrigen, markerDestino]);
+            map.fitBounds(group.getBounds().pad(0.2));
+        });
+    {% else %}
+    document.getElementById('map').innerHTML = '<div class="alert alert-warning m-3">No hay coordenadas disponibles para mostrar el mapa de ruta.</div>';
+    {% endif %}
+});
+</script>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Detalle del Viaje</h2>
-    <div>
-        <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-success me-2">
-            <i class="fas fa-users me-2"></i>Gestionar Pasajeros
-        </a>
-        <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn btn-warning me-2">
-            <i class="fas fa-edit me-2"></i>Editar
-        </a>
-        <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver
-        </a>
+<!-- Header -->
+<div class="detail-header">
+    <div class="d-flex justify-content-between align-items-start">
+        <div>
+            <h1><i class="fas fa-route me-2"></i>Detalle del Viaje</h1>
+            <p class="mb-0 opacity-90">Información completa del viaje</p>
+        </div>
+        <div>
+            <span class="status-badge bg-{% if viaje.estado == 'programado' %}info{% elif viaje.estado == 'en_curso' %}warning{% elif viaje.estado == 'completado' %}success{% else %}danger{% endif %}">
+                <i class="fas fa-circle"></i>
+                {{ viaje.get_estado_display|upper }}
+            </span>
+        </div>
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-info-circle me-2"></i>Información del Viaje
-            </div>
-            <div class="card-body">
-                <p>
-                    <strong>Estado:</strong>
-                    <span class="badge bg-{% if viaje.estado == 'programado' %}info{% elif viaje.estado == 'en_curso' %}warning{% elif viaje.estado == 'completado' %}success{% else %}danger{% endif %}">
-                        {{ viaje.get_estado_display }}
-                    </span>
-                </p>
-                <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
-                <p><strong>Conductor:</strong> {{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}</p>
-                <p><strong>Teléfono Conductor:</strong> {{ viaje.conductor.telefono }}</p>
-                <p><strong>Email Conductor:</strong> {{ viaje.conductor.email }}</p>
-            </div>
-        </div>
-    </div>
+<!-- Botones de Acción Superiores -->
+<!-- Botones de Acción Superiores -->
+<div class="action-buttons mb-4">
+    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn action-btn btn-gestionar">
+        <i class="fas fa-users"></i>Gestionar Pasajeros
+    </a>
+    <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn action-btn btn-editar">
+        <i class="fas fa-edit"></i>Editar
+    </a>
+    <a href="{% url 'viajes:viaje_list' %}" class="btn action-btn btn-volver">
+        <i class="fas fa-arrow-left"></i>Volver
+    </a>
+</div>
 
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-map-marker-alt me-2"></i>Ruta
-            </div>
-            <div class="card-body">
-                <p>
-                    <strong>Origen:</strong><br>
-                    {{ viaje.get_origen_display }}
+<!-- Ruta Visual -->
+<div class="detail-card">
+    <div class="card-header">
+        <i class="fas fa-map-marked-alt me-2"></i>Mapa de Ruta del Viaje
+    </div>
+    <div class="card-body">
+        <div class="route-indicator">
+            <div class="route-point">
+                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                    <i class="fas fa-map-marker-alt text-white"></i>
+                </div>
+                <div>
+                    <small class="text-muted d-block mb-1">Origen</small>
+                    <strong class="d-block">{{ viaje.get_origen_display }}</strong>
                     {% if viaje.latitud_origen %}
-                        <br><small class="text-muted">Coordenadas: {{ viaje.latitud_origen }}, {{ viaje.longitud_origen }}</small>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-crosshairs me-1"></i>
+                            {{ viaje.latitud_origen }}, {{ viaje.longitud_origen }}
+                        </small>
                     {% endif %}
-                </p>
-                <p>
-                    <strong>Destino:</strong><br>
-                    {{ viaje.get_destino_display }}
+                </div>
+            </div>
+            
+            <div class="route-arrow">
+                <i class="fas fa-arrow-right fa-2x"></i>
+            </div>
+            
+            <div class="route-point justify-content-end">
+                <div class="text-end me-3">
+                    <small class="text-muted d-block mb-1">Destino</small>
+                    <strong class="d-block">{{ viaje.get_destino_display }}</strong>
                     {% if viaje.latitud_destino %}
-                        <br><small class="text-muted">Coordenadas: {{ viaje.latitud_destino }}, {{ viaje.longitud_destino }}</small>
+                        <small class="text-muted d-block mt-1">
+                            <i class="fas fa-crosshairs me-1"></i>
+                            {{ viaje.latitud_destino }}, {{ viaje.longitud_destino }}
+                        </small>
                     {% endif %}
-                </p>
-                {% if viaje.distancia_km %}
-                    <p><strong>Distancia:</strong> {{ viaje.distancia_km }} km</p>
-                {% endif %}
+                </div>
+                <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; min-width: 40px;">
+                    <i class="fas fa-map-marker-alt text-white"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+        
+        <div class="mt-3" id="route-info" style="display: none;">
+            <div class="alert alert-info mb-0">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-route me-2"></i>Distancia Ideal de Ruta:</strong>
+                        <span id="route-distance">-</span>
+                    </div>
+                    <div class="col-md-6">
+                        <strong><i class="fas fa-clock me-2"></i>Tiempo Estimado:</strong>
+                        <span id="route-duration">-</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Información Principal -->
 <div class="row">
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
+    <div class="col-lg-6">
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-bus me-2"></i>Información del Vehículo
+            </div>
+            <div class="card-body">
+                <div class="info-item">
+                    <strong><i class="fas fa-id-card me-2 text-primary"></i>Placa:</strong>
+                    <span class="value">{{ viaje.bus.placa }}</span>
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-car me-2 text-primary"></i>Modelo:</strong>
+                    <span class="value">{{ viaje.bus.modelo }}</span>
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-users me-2 text-primary"></i>Capacidad:</strong>
+                    <span class="value">{{ viaje.bus.capacidad_pasajeros }} pasajeros</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <div class="card-header">
                 <i class="fas fa-clock me-2"></i>Horarios
             </div>
             <div class="card-body">
-                <p><strong>Fecha de Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
-                <p><strong>Llegada Estimada:</strong> {{ viaje.fecha_llegada_estimada|date:"d/m/Y H:i" }}</p>
+                <div class="timeline-item">
+                    <div>
+                        <strong class="text-success">Fecha de Salida</strong>
+                        <div class="text-muted">
+                            <i class="far fa-calendar me-2"></i>{{ viaje.fecha_salida|date:"d/m/Y" }}
+                            <i class="far fa-clock ms-3 me-2"></i>{{ viaje.fecha_salida|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div>
+                        <strong class="text-info">Llegada Estimada</strong>
+                        <div class="text-muted">
+                            <i class="far fa-calendar me-2"></i>{{ viaje.fecha_llegada_estimada|date:"d/m/Y" }}
+                            <i class="far fa-clock ms-3 me-2"></i>{{ viaje.fecha_llegada_estimada|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
                 {% if viaje.fecha_llegada_real %}
-                    <p><strong>Llegada Real:</strong> {{ viaje.fecha_llegada_real|date:"d/m/Y H:i" }}</p>
+                <div class="timeline-item">
+                    <div>
+                        <strong class="text-success">Llegada Real</strong>
+                        <div class="text-muted">
+                            <i class="far fa-calendar me-2"></i>{{ viaje.fecha_llegada_real|date:"d/m/Y" }}
+                            <i class="far fa-clock ms-3 me-2"></i>{{ viaje.fecha_llegada_real|date:"H:i" }}
+                        </div>
+                    </div>
+                </div>
                 {% else %}
-                    <p class="text-muted"><em>Llegada real: Pendiente</em></p>
+                <div class="timeline-item">
+                    <div>
+                        <strong class="text-warning">Llegada Real</strong>
+                        <div class="text-muted">
+                            <i class="fas fa-hourglass-half me-2"></i>Pendiente
+                        </div>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card mb-3">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-users me-2"></i>Información Adicional
+    <div class="col-lg-6">
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-user-tie me-2"></i>Conductor Asignado
             </div>
             <div class="card-body">
-                <p><strong>Pasajeros Registrados:</strong> 
-                    <span class="badge bg-primary">{{ viaje.get_pasajeros_count }}</span> / {{ viaje.bus.capacidad_pasajeros }}
-                    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-sm btn-outline-primary ms-2">
-                        <i class="fas fa-users me-1"></i>Ver Pasajeros
+                <div class="info-item">
+                    <strong><i class="fas fa-user me-2 text-primary"></i>Nombre:</strong>
+                    <span class="value">{{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}</span>
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-phone me-2 text-primary"></i>Teléfono:</strong>
+                    <span class="value">{{ viaje.conductor.telefono }}</span>
+                </div>
+                <div class="info-item">
+                    <strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong>
+                    <span class="value">{{ viaje.conductor.email }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-users me-2"></i>Ocupación del Bus
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h3 class="mb-0">
+                            <span class="text-primary">{{ viaje.get_pasajeros_count }}</span>
+                            <span class="text-muted"> / {{ viaje.bus.capacidad_pasajeros }}</span>
+                        </h3>
+                        <small class="text-muted">Pasajeros Registrados</small>
+                    </div>
+                    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-users me-1"></i>Ver Lista
                     </a>
-                </p>
-                <p><strong>Ocupación:</strong> 
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar bg-{% if viaje.get_pasajeros_count >= viaje.bus.capacidad_pasajeros %}danger{% else %}success{% endif %}" 
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress">
+                        {% widthratio viaje.bus.capacidad_pasajeros 10 8 as capacidad_80 %}
+                        <div class="progress-bar bg-{% if viaje.get_pasajeros_count >= viaje.bus.capacidad_pasajeros %}danger{% elif viaje.get_pasajeros_count >= capacidad_80 %}warning{% else %}success{% endif %}" 
                              role="progressbar" 
                              style="width: {% widthratio viaje.get_pasajeros_count viaje.bus.capacidad_pasajeros 100 %}%"
                              aria-valuenow="{{ viaje.get_pasajeros_count }}" 
@@ -108,41 +594,59 @@
                             {% widthratio viaje.get_pasajeros_count viaje.bus.capacidad_pasajeros 100 %}%
                         </div>
                     </div>
-                </p>
-                <p><strong>Capacidad del Bus:</strong> {{ viaje.bus.capacidad_pasajeros }} pasajeros</p>
-                {% if viaje.observaciones %}
-                    <p>
-                        <strong>Observaciones:</strong><br>
-                        <span class="text-muted">{{ viaje.observaciones }}</span>
-                    </p>
-                {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% if viaje.observaciones %}
+        <div class="detail-card">
+            <div class="card-header">
+                <i class="fas fa-sticky-note me-2"></i>Observaciones
+            </div>
+            <div class="card-body">
+                <p class="mb-0 text-muted">{{ viaje.observaciones }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Historial -->
+<div class="detail-card">
+    <div class="card-header">
+        <i class="fas fa-history me-2"></i>Historial
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-item">
+                    <strong><i class="fas fa-plus-circle me-2 text-success"></i>Creado:</strong>
+                    <span class="value">{{ viaje.creado_en|date:"d/m/Y H:i" }}</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <strong><i class="fas fa-sync-alt me-2 text-info"></i>Última Actualización:</strong>
+                    <span class="value">{{ viaje.actualizado_en|date:"d/m/Y H:i" }}</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header bg-secondary text-white">
-        <i class="fas fa-clock me-2"></i>Historial
-    </div>
-    <div class="card-body">
-        <p><small class="text-muted">Creado: {{ viaje.creado_en|date:"d/m/Y H:i" }}</small></p>
-        <p><small class="text-muted">Última actualización: {{ viaje.actualizado_en|date:"d/m/Y H:i" }}</small></p>
-    </div>
-</div>
-
-<div class="mt-4 d-flex gap-2">
-    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-success">
-        <i class="fas fa-users me-2"></i>Gestionar Pasajeros
+<!-- Botones de Acción Inferiores -->
+<div class="action-buttons mb-4">
+    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn action-btn btn-gestionar">
+        <i class="fas fa-users"></i>Gestionar Pasajeros
     </a>
-    <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn btn-warning">
-        <i class="fas fa-edit me-2"></i>Editar
+    <a href="{% url 'viajes:viaje_update' viaje.pk %}" class="btn action-btn btn-editar">
+        <i class="fas fa-edit"></i>Editar
     </a>
-    <a href="{% url 'viajes:viaje_delete' viaje.pk %}" class="btn btn-danger">
-        <i class="fas fa-trash me-2"></i>Eliminar
+    <a href="{% url 'viajes:viaje_delete' viaje.pk %}" class="btn action-btn btn-eliminar">
+        <i class="fas fa-trash"></i>Eliminar
     </a>
-    <a href="{% url 'viajes:viaje_list' %}" class="btn btn-secondary">
-        <i class="fas fa-arrow-left me-2"></i>Volver
+    <a href="{% url 'viajes:viaje_list' %}" class="btn action-btn btn-volver">
+        <i class="fas fa-arrow-left"></i>Volver
     </a>
 </div>
 {% endblock %}

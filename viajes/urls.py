@@ -17,4 +17,5 @@ urlpatterns = [
     path('<int:pk>/pasajeros/crear/', views.crear_pasajero_desde_viaje, name='crear_pasajero_desde_viaje'),
     path('<int:pk>/pasajeros/<int:pasajero_pk>/quitar/', views.quitar_pasajero_viaje, name='quitar_pasajero_viaje'),
     path('<int:pk>/pasajeros/<int:pasajero_pk>/editar/', views.editar_pasajero_viaje, name='editar_pasajero_viaje'),
+    path('<int:pk>/pasajeros/pdf/', views.generar_pdf_pasajeros, name='generar_pdf_pasajeros'),
 ]

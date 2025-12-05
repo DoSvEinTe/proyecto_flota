@@ -119,8 +119,15 @@
 
 <!-- Lista de Pasajeros -->
 <div class="card">
-    <div class="card-header bg-info text-white">
-        <i class="fas fa-users me-2"></i>Pasajeros Registrados ({{ pasajeros_en_viaje|length }})
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+        <span>
+            <i class="fas fa-users me-2"></i>Pasajeros Registrados ({{ pasajeros_en_viaje|length }})
+        </span>
+        {% if pasajeros_en_viaje %}
+        <a href="{% url 'viajes:generar_pdf_pasajeros' viaje.pk %}" class="btn btn-sm" target="_blank" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px; transition: all 0.3s ease;">
+            <i class="fas fa-file-pdf me-2"></i>Generar PDF
+        </a>
+        {% endif %}
     </div>
     <div class="card-body">
         {% if pasajeros_en_viaje %}

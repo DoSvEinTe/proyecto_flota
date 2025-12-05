@@ -7,8 +7,16 @@ from django.utils.decorators import method_decorator
 from django.forms import ModelForm
 from django import forms
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db import transaction
+from django.template.loader import get_template
+from io import BytesIO
+from reportlab.lib.pagesizes import letter, A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+from reportlab.pdfgen import canvas
 from .models import Viaje, ViajePasajero
 from core.models import Conductor, Lugar, Pasajero
 from core.views import PasajeroForm
@@ -377,3 +385,127 @@ def crear_pasajero_desde_viaje(request, pk):
     
     # Si es GET, redirigir a la vista de pasajeros
     return redirect('viajes:viaje_pasajeros', pk=pk)
+
+
+@login_required(login_url='login')
+def generar_pdf_pasajeros(request, pk):
+    """
+    Vista para generar un PDF con la lista de pasajeros del viaje.
+    """
+    viaje = get_object_or_404(Viaje, pk=pk)
+    pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
+    
+    # Crear el objeto HttpResponse con el tipo de contenido PDF
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="pasajeros_viaje_{viaje.id}.pdf"'
+    
+    # Crear el PDF
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=18)
+    
+    # Contenedor para los elementos del PDF
+    elements = []
+    
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        textColor=colors.HexColor('#1e40af'),
+        spaceAfter=30,
+        alignment=1  # Centrado
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Normal'],
+        fontSize=12,
+        textColor=colors.HexColor('#6b7280'),
+        spaceAfter=20,
+        alignment=1
+    )
+    
+    # Título
+    title = Paragraph(f"Lista de Pasajeros - Viaje {viaje.id}", title_style)
+    elements.append(title)
+    
+    # Información del viaje
+    viaje_info = f"""
+    <b>Bus:</b> {viaje.bus.placa} - {viaje.bus.modelo}<br/>
+    <b>Conductor:</b> {viaje.conductor.nombre} {viaje.conductor.apellido}<br/>
+    <b>Origen:</b> {viaje.get_origen_display()}<br/>
+    <b>Destino:</b> {viaje.get_destino_display()}<br/>
+    <b>Fecha de Salida:</b> {viaje.fecha_salida.strftime('%d/%m/%Y %H:%M')}<br/>
+    <b>Estado:</b> {viaje.get_estado_display()}
+    """
+    viaje_paragraph = Paragraph(viaje_info, styles['Normal'])
+    elements.append(viaje_paragraph)
+    elements.append(Spacer(1, 20))
+    
+    # Tabla de pasajeros
+    data = [['#', 'Nombre Completo', 'RUT', 'Teléfono', 'Asiento', 'Observaciones']]
+    
+    for idx, vp in enumerate(pasajeros_en_viaje, 1):
+        pasajero = vp.pasajero
+        data.append([
+            str(idx),
+            pasajero.nombre_completo,
+            pasajero.rut or 'N/A',
+            pasajero.telefono or 'N/A',
+            vp.asiento or 'Sin asignar',
+            vp.observaciones or '-'
+        ])
+    
+    # Crear la tabla
+    table = Table(data, colWidths=[0.5*inch, 2*inch, 1.2*inch, 1.2*inch, 0.8*inch, 1.8*inch])
+    
+    # Estilo de la tabla
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.lightgrey]),
+    ]))
+    
+    elements.append(table)
+    elements.append(Spacer(1, 20))
+    
+    # Resumen
+    total_pasajeros = pasajeros_en_viaje.count()
+    capacidad = viaje.bus.capacidad_pasajeros
+    disponibles = capacidad - total_pasajeros
+    
+    resumen = f"""
+    <b>Total de Pasajeros:</b> {total_pasajeros}<br/>
+    <b>Capacidad del Bus:</b> {capacidad}<br/>
+    <b>Asientos Disponibles:</b> {disponibles}<br/>
+    <b>Ocupación:</b> {int((total_pasajeros / capacidad) * 100) if capacidad > 0 else 0}%
+    """
+    resumen_paragraph = Paragraph(resumen, styles['Normal'])
+    elements.append(resumen_paragraph)
+    
+    # Pie de página
+    elements.append(Spacer(1, 30))
+    footer = Paragraph(
+        f"Generado el {timezone.now().strftime('%d/%m/%Y %H:%M')} - FlotaGest - Hotel El Greco",
+        ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=1)
+    )
+    elements.append(footer)
+    
+    # Construir el PDF
+    doc.build(elements)
+    
+    # Obtener el valor del buffer y escribirlo en la respuesta
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    
+    return response
