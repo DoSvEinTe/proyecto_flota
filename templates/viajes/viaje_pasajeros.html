@@ -22,7 +22,7 @@
             <div class="col-md-6">
                 <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
                 <p><strong>Conductor:</strong> {{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</p>
-                <p><strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</p>
+                <p><strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</p>
             </div>
             <div class="col-md-6">
                 <p><strong>Fecha Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
@@ -41,11 +41,11 @@
 <div class="card mb-4">
     <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
         <span><i class="fas fa-user-plus me-2"></i>Crear Nuevo Pasajero</span>
-        <button type="button" class="btn btn-sm btn-light" data-bs-toggle="collapse" data-bs-target="#crearPasajeroForm" aria-expanded="false" aria-controls="crearPasajeroForm">
-            <i class="fas fa-chevron-down"></i>
+        <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="collapse" data-bs-target="#crearPasajeroForm" aria-expanded="true" aria-controls="crearPasajeroForm" style="border: 2px solid white;">
+            <i class="fas fa-chevron-up" id="toggleIcon"></i>
         </button>
     </div>
-    <div class="collapse" id="crearPasajeroForm">
+    <div class="collapse show" id="crearPasajeroForm">
         <div class="card-body">
             <form method="post" action="{% url 'viajes:crear_pasajero_desde_viaje' viaje.pk %}">
                 {% csrf_token %}
@@ -97,6 +97,16 @@
                         {% endif %}
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="asiento" class="form-label">Asiento (Opcional)</label>
+                        <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Ej: 12A">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="observaciones" class="form-label">Observaciones (Opcional)</label>
+                        <input type="text" name="observaciones" id="observaciones" class="form-control" placeholder="Observaciones adicionales">
+                    </div>
+                </div>
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save me-2"></i>Crear Pasajero
@@ -106,50 +116,6 @@
         </div>
     </div>
 </div>
-
-<!-- Agregar Pasajero Existente -->
-{% if pasajeros_disponibles %}
-<div class="card mb-4">
-    <div class="card-header bg-success text-white">
-        <i class="fas fa-user-check me-2"></i>Agregar Pasajero Existente
-    </div>
-    <div class="card-body">
-        <form method="post" action="{% url 'viajes:agregar_pasajero_viaje' viaje.pk %}">
-            {% csrf_token %}
-            <div class="row">
-                <div class="col-md-4">
-                    <label for="pasajero_id" class="form-label">Seleccionar Pasajero</label>
-                    <select name="pasajero_id" id="pasajero_id" class="form-control" required>
-                        <option value="">-- Seleccionar Pasajero --</option>
-                        {% for pasajero in pasajeros_disponibles %}
-                            <option value="{{ pasajero.id }}">{{ pasajero.nombre_completo }} ({{ pasajero.rut }})</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="asiento" class="form-label">Asiento (Opcional)</label>
-                    <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Ej: 12A">
-                </div>
-                <div class="col-md-3">
-                    <label for="observaciones" class="form-label">Observaciones (Opcional)</label>
-                    <input type="text" name="observaciones" id="observaciones" class="form-control" placeholder="Observaciones">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-success form-control">
-                        <i class="fas fa-plus me-2"></i>Agregar
-                    </button>
-                </div>
-            </div>
-        </form>
-    </div>
-</div>
-{% else %}
-<div class="alert alert-info">
-    <i class="fas fa-info-circle me-2"></i>
-    Todos los pasajeros registrados ya están en este viaje. Puedes crear un nuevo pasajero usando el formulario de arriba.
-</div>
-{% endif %}
 
 <!-- Lista de Pasajeros -->
 <div class="card">
@@ -264,6 +230,22 @@
 document.addEventListener('DOMContentLoaded', function() {
     const totalPasajeros = {{ pasajeros_en_viaje|length }};
     const capacidadBus = {{ viaje.bus.capacidad_pasajeros }};
+    
+    // Cambiar icono del botón de colapso
+    const collapseElement = document.getElementById('crearPasajeroForm');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (collapseElement && toggleIcon) {
+        collapseElement.addEventListener('show.bs.collapse', function() {
+            toggleIcon.classList.remove('fa-chevron-down');
+            toggleIcon.classList.add('fa-chevron-up');
+        });
+        
+        collapseElement.addEventListener('hide.bs.collapse', function() {
+            toggleIcon.classList.remove('fa-chevron-up');
+            toggleIcon.classList.add('fa-chevron-down');
+        });
+    }
     
     if (totalPasajeros >= capacidadBus) {
         const formAgregar = document.querySelector('form[action*="agregar"]');

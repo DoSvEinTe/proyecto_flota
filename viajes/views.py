@@ -209,8 +209,7 @@ def viaje_pasajeros_view(request, pk):
     Vista para mostrar y manejar pasajeros de un viaje específico.
     """
     viaje = get_object_or_404(Viaje, pk=pk)
-    pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero')
-    pasajeros_disponibles = Pasajero.objects.exclude(id__in=viaje.pasajeros.values_list('id', flat=True))
+    pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
     
     # Formulario para crear nuevo pasajero
     pasajero_form = PasajeroForm()
@@ -218,7 +217,6 @@ def viaje_pasajeros_view(request, pk):
     context = {
         'viaje': viaje,
         'pasajeros_en_viaje': pasajeros_en_viaje,
-        'pasajeros_disponibles': pasajeros_disponibles,
         'pasajero_form': pasajero_form,
     }
     return render(request, 'viajes/viaje_pasajeros.html', context)
@@ -327,25 +325,51 @@ def editar_pasajero_viaje(request, pk, pasajero_pk):
 def crear_pasajero_desde_viaje(request, pk):
     """
     Vista para crear un nuevo pasajero desde el contexto de un viaje.
-    Después de crear el pasajero, redirige de vuelta a la vista de pasajeros del viaje.
+    Después de crear el pasajero, lo agrega automáticamente al viaje y redirige de vuelta a la vista de pasajeros del viaje.
     """
     viaje = get_object_or_404(Viaje, pk=pk)
     
     if request.method == 'POST':
         form = PasajeroForm(request.POST)
         if form.is_valid():
-            pasajero = form.save()
-            messages.success(request, f'Pasajero {pasajero.nombre_completo} creado exitosamente.')
-            return redirect('viajes:viaje_pasajeros', pk=pk)
+            try:
+                with transaction.atomic():
+                    # Crear el pasajero
+                    pasajero = form.save()
+                    
+                    # Obtener datos adicionales del formulario
+                    asiento = request.POST.get('asiento', '').strip()
+                    observaciones = request.POST.get('observaciones', '').strip()
+                    
+                    # Verificar capacidad del bus
+                    if viaje.get_pasajeros_count() >= viaje.bus.capacidad_pasajeros:
+                        messages.warning(request, f'Pasajero {pasajero.nombre_completo} creado, pero el bus ha alcanzado su capacidad máxima. No se agregó al viaje automáticamente.')
+                    else:
+                        # Agregar automáticamente el pasajero al viaje
+                        ViajePasajero.objects.create(
+                            viaje=viaje,
+                            pasajero=pasajero,
+                            asiento=asiento if asiento else None,
+                            observaciones=observaciones if observaciones else 'Creado desde gestión de viaje'
+                        )
+                        
+                        # Actualizar el contador de pasajeros confirmados
+                        viaje.pasajeros_confirmados = viaje.get_pasajeros_count()
+                        viaje.save()
+                        
+                        messages.success(request, f'Pasajero {pasajero.nombre_completo} creado y agregado al viaje exitosamente.')
+                    
+                    return redirect('viajes:viaje_pasajeros', pk=pk)
+                    
+            except Exception as e:
+                messages.error(request, f'Error al crear el pasajero: {str(e)}')
         else:
             # Si hay errores, volver a la vista de pasajeros con el formulario con errores
-            pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero')
-            pasajeros_disponibles = Pasajero.objects.exclude(id__in=viaje.pasajeros.values_list('id', flat=True))
+            pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
             
             context = {
                 'viaje': viaje,
                 'pasajeros_en_viaje': pasajeros_en_viaje,
-                'pasajeros_disponibles': pasajeros_disponibles,
                 'pasajero_form': form,  # Formulario con errores
             }
             messages.error(request, 'Por favor, corrige los errores en el formulario.')

@@ -351,10 +351,47 @@ class PasajeroDeleteView(DeleteView):
 def home_view(request):
     from flota.models import Bus, DocumentoVehiculo
     from viajes.models import Viaje
+    from costos.models import CostosViaje
     from datetime import date, timedelta
+    from django.db.models import Sum, Avg, Count, Q
+    from decimal import Decimal
     
     # Obtener buses con sus placas
     buses = Bus.objects.all()
+    
+    # Obtener viajes
+    viajes = Viaje.objects.all()
+    viajes_activos = viajes.filter(estado__in=['programado', 'en_curso']).count()
+    viajes_completados = viajes.filter(estado='completado').count()
+    ultimos_viajes = viajes.select_related('bus', 'conductor').order_by('-creado_en')[:5]
+    
+    # Estadísticas de costos
+    costos = CostosViaje.objects.all()
+    
+    # Costos totales
+    total_costos = costos.aggregate(
+        total_combustible=Sum('combustible'),
+        total_mantenimiento=Sum('mantenimiento'),
+        total_peajes=Sum('peajes'),
+        total_otros=Sum('otros_costos'),
+        total_general=Sum('costo_total')
+    )
+    
+    # Viajes con mayor costo
+    viajes_mayor_costo = costos.select_related('viaje__bus', 'viaje__conductor').order_by('-costo_total')[:5]
+    
+    # Promedio de costos
+    promedio_costos = costos.aggregate(
+        promedio_combustible=Avg('combustible'),
+        promedio_total=Avg('costo_total')
+    )
+    
+    # Costos del último mes
+    fecha_mes_atras = date.today() - timedelta(days=30)
+    costos_mes = costos.filter(creado_en__gte=fecha_mes_atras).aggregate(
+        total_mes=Sum('costo_total'),
+        viajes_mes=Count('id')
+    )
     
     # Obtener documentos próximos a vencer (en los próximos 30 días)
     hoy = date.today()
@@ -378,10 +415,19 @@ def home_view(request):
         'total_conductores': Conductor.objects.count(),
         'total_lugares': Lugar.objects.count(),
         'total_pasajeros': Pasajero.objects.count(),
-        'total_viajes': Viaje.objects.count(),
+        'total_viajes': viajes.count(),
+        'viajes_activos': viajes_activos,
+        'viajes_completados': viajes_completados,
+        'ultimos_viajes': ultimos_viajes,
         'documentos_proximos_vencer': documentos_proximos_vencer,
         'documentos_vencidos': documentos_vencidos,
+        # Estadísticas de costos
+        'total_costos': total_costos,
+        'viajes_mayor_costo': viajes_mayor_costo,
+        'promedio_costos': promedio_costos,
+        'costos_mes': costos_mes,
+        'total_costos_registrados': costos.count(),
     }
-    return render(request, 'home.html', context)
+    return render(request, 'home_new.html', context)
 
 

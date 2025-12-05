@@ -29,7 +29,6 @@
             --light-bg: #f8fafc;
             --card-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            --sidebar-width: 280px;
         }
 
         html, body {
@@ -41,183 +40,180 @@
             font-family: 'Poppins', sans-serif;
             color: #1f2937;
             display: flex;
-            overflow: hidden;
+            flex-direction: column;
+            overflow-x: hidden;
         }
 
-        /* Sidebar Navigation */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
+        /* Top Navigation Bar */
+        .top-navbar {
+            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             padding: 0;
-            height: 100vh;
-            overflow-y: auto;
-            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
-            position: fixed;
-            left: 0;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            position: sticky;
             top: 0;
             z-index: 1000;
         }
 
-        .sidebar-brand {
-            padding: 2rem 1.5rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        .sidebar-brand i {
-            font-size: 2rem;
-            color: var(--accent-color);
-        }
-
-        .sidebar-menu {
-            padding: 2rem 0;
-        }
-
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem 1.5rem;
-            color: rgba(255, 255, 255, 0.8);
-            text-decoration: none;
-            transition: var(--transition);
-            border-left: 4px solid transparent;
-            position: relative;
-        }
-
-        .sidebar-menu a:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-            color: white;
-            border-left-color: var(--accent-color);
-        }
-
-        .sidebar-menu a.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white;
-            border-left-color: var(--accent-color);
-            font-weight: 600;
-        }
-
-        .sidebar-menu i {
-            font-size: 1.25rem;
-            width: 1.5rem;
-            text-align: center;
-        }
-
-        .sidebar-menu .menu-label {
-            padding: 1rem 1.5rem 0.5rem;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: rgba(255, 255, 255, 0.5);
-            font-weight: 600;
-        }
-
-        /* Main Content Area */
-        .main-wrapper {
-            margin-left: var(--sidebar-width);
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .top-navbar {
-            background: white;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .top-navbar h1 {
-            margin: 0;
-            color: var(--primary-color);
-            font-size: 1.75rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .content-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 2rem;
-        }
-
-        /* Navbar Personalizada */
-        .navbar-custom {
-            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            padding: 1rem 0;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-            display: none; /* Oculto en la nueva estructura */
+            justify-content: space-between;
         }
 
         .navbar-brand {
+            color: white;
+            font-size: 1.75rem;
             font-weight: 700;
-            font-size: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            padding: 1rem 0;
+            text-decoration: none;
+            transition: var(--transition);
         }
 
-        .navbar-brand i {
-            font-size: 2rem;
+        .navbar-brand:hover {
             color: var(--accent-color);
         }
 
-        .main-tabs {
-            background-color: white;
-            border-radius: 12px;
-            box-shadow: var(--card-shadow);
-            margin-bottom: 2rem;
-            overflow: hidden;
-            display: none; /* Oculto en la nueva estructura */
+        .navbar-brand i {
+            font-size: 2.25rem;
+            color: var(--accent-color);
         }
 
-        .nav-tabs {
-            border-bottom: 2px solid #e5e7eb;
-            padding: 0;
-            background-color: #f9fafb;
+        .navbar-menu {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            justify-content: center;
         }
 
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6b7280;
+        .navbar-menu a {
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            padding: 1.25rem 1.5rem;
             font-weight: 500;
-            padding: 1rem 1.5rem;
-            margin: 0;
-            border-radius: 0;
-            background-color: transparent;
-            position: relative;
+            font-size: 1rem;
             transition: var(--transition);
+            border-bottom: 3px solid transparent;
             display: flex;
             align-items: center;
             gap: 0.5rem;
         }
 
-        .nav-tabs .nav-link:hover {
+        .navbar-menu a:hover {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-bottom-color: var(--accent-color);
+        }
+
+        .navbar-menu a.active {
+            color: white;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-bottom-color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .navbar-menu a i {
+            font-size: 1.125rem;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .user-info {
+            text-align: right;
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .user-info .user-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.125rem;
+        }
+
+        .user-info .user-role {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            display: inline-block;
+            font-weight: 600;
+        }
+
+        .user-info .role-admin {
+            background: #dc2626;
+            color: white;
+        }
+
+        .user-info .role-user {
+            background: #0ea5e9;
+            color: white;
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: var(--transition);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: white;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        /* Main Content Area */
+        .main-wrapper {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2.5rem 2rem;
+            flex: 1;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .page-header h1 {
             color: var(--primary-color);
-            background-color: #eff6ff;
+            font-size: 2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
         }
 
-        .nav-tabs .nav-link.active {
-            background-color: white;
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
+        .page-header h1 i {
+            color: var(--accent-color);
         }
 
-        .tab-content {
-            padding: 2rem;
-            background-color: white;
-        }
-
+        /* Botones y elementos UI */
         .btn-create {
             background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             border: none;
@@ -239,6 +235,7 @@
             transform: translateY(0);
         }
 
+        /* Tablas */
         .table {
             margin-top: 1.5rem;
             border-collapse: collapse;
@@ -320,36 +317,7 @@
             color: white;
         }
 
-        .container-main {
-            max-width: 1300px;
-            margin: 0 auto;
-            padding: 0 1.5rem;
-            flex: 1;
-        }
-
-        /* Top Navbar */
-        .top-navbar {
-            background-color: white;
-            border-bottom: 2px solid var(--border-color);
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-
-        .top-navbar h1 {
-            margin: 0;
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--text-dark);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .top-navbar i {
-            color: var(--primary-color);
-            font-size: 1.5rem;
-        }
-
+        /* Alertas */
         .alert {
             border-radius: 8px;
             margin-bottom: 1.5rem;
@@ -384,64 +352,63 @@
             }
         }
 
-        /* Footer */
-        .footer-custom {
-            background: linear-gradient(90deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-            margin-top: auto;
-        }
-
-        .footer-custom p {
-            margin: 0.5rem 0;
-            font-size: 0.95rem;
-        }
-
-        .footer-custom small {
-            opacity: 0.9;
-        }
-
         /* Scrollbar personalizada */
-        .sidebar::-webkit-scrollbar,
         .content-area::-webkit-scrollbar {
             width: 8px;
         }
 
-        .sidebar::-webkit-scrollbar-track,
         .content-area::-webkit-scrollbar-track {
             background: transparent;
         }
 
-        .sidebar::-webkit-scrollbar-thumb,
         .content-area::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(30, 64, 175, 0.2);
             border-radius: 4px;
         }
 
-        .sidebar::-webkit-scrollbar-thumb:hover,
         .content-area::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(30, 64, 175, 0.3);
         }
 
         /* Responsive */
+        @media (max-width: 1024px) {
+            .navbar-menu a span {
+                display: none;
+            }
+
+            .navbar-menu {
+                gap: 0;
+            }
+
+            .content-area {
+                padding: 1.5rem 1rem;
+            }
+        }
+
         @media (max-width: 768px) {
-            :root {
-                --sidebar-width: 0px;
+            .navbar-container {
+                flex-wrap: wrap;
+                padding: 0 1rem;
             }
 
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-                z-index: 1001;
+            .navbar-menu {
+                order: 3;
+                width: 100%;
+                justify-content: space-around;
+                border-top: 1px solid rgba(255, 255, 255, 0.2);
+                padding-top: 0.5rem;
             }
 
-            .sidebar.active {
-                transform: translateX(0);
+            .navbar-menu a {
+                padding: 0.75rem 1rem;
             }
 
-            .main-wrapper {
-                margin-left: 0;
+            .user-info .user-name {
+                display: none;
+            }
+
+            .content-area {
+                padding: 1rem;
             }
         }
 
@@ -490,101 +457,74 @@
     </style>
 </head>
 <body>
-    <!-- Sidebar Navigation -->
-    <aside class="sidebar">
-        <div class="sidebar-brand">
-            <i class="fas fa-bus"></i>
-            <span>FlotaGest</span>
-        </div>
-
-        <nav class="sidebar-menu">
-            <div class="menu-label">Principal</div>
-            
-            <a href="{% url 'home' %}" 
-               class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-                <i class="fas fa-chart-line"></i>
-                <span>Inicio</span>
+    <!-- Top Navigation Bar -->
+    <nav class="top-navbar">
+        <div class="navbar-container">
+            <a href="{% url 'home' %}" class="navbar-brand">
+                <i class="fas fa-bus"></i>
+                <span>FlotaGest</span>
             </a>
 
             {% if user.is_authenticated %}
-                {% if user.is_superuser or user.groups.all|length == 0 or user.groups.all.0.name == 'Admin' %}
-                    <div class="menu-label" style="margin-top: 2rem;">Operaciones</div>
-
-                    <a href="{% url 'flota:bus_list' %}" 
-                       class="{% if 'bus' in request.resolver_match.url_name %}active{% endif %}">
-                        <i class="fas fa-bus"></i>
-                        <span>Buses</span>
+                <div class="navbar-menu">
+                    <a href="{% url 'home' %}" 
+                       class="{% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Inicio</span>
                     </a>
 
-                    <a href="{% url 'conductor_list' %}" 
-                       class="{% if 'conductor' in request.resolver_match.url_name %}active{% endif %}">
-                        <i class="fas fa-user-tie"></i>
-                        <span>Conductores</span>
+                    {% if user.is_superuser or user.groups.all|length == 0 or user.groups.all.0.name == 'Admin' %}
+                        <a href="{% url 'flota:bus_list' %}" 
+                           class="{% if 'bus' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-bus"></i>
+                            <span>Buses</span>
+                        </a>
+
+                        <a href="{% url 'conductor_list' %}" 
+                           class="{% if 'conductor' in request.resolver_match.url_name %}active{% endif %}">
+                            <i class="fas fa-user-tie"></i>
+                            <span>Conductores</span>
+                        </a>
+                    {% endif %}
+
+                    <a href="{% url 'viajes:viaje_list' %}" 
+                       class="{% if 'viaje' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="fas fa-route"></i>
+                        <span>Viajes</span>
                     </a>
-                {% endif %}
 
-                <div class="menu-label" style="margin-top: 2rem;">Gestión</div>
+                    <a href="{% url 'costos:gestion' %}"
+                       class="{% if 'costos' in request.resolver_match.url_name %}active{% endif %}">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Costos</span>
+                    </a>
+                </div>
 
-                <a href="{% url 'viajes:viaje_list' %}" 
-                   class="{% if 'viaje' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-route"></i>
-                    <span>Viajes</span>
-                </a>
-
-                <a href="{% url 'costos:gestion' %}"
-                   class="{% if 'costos' in request.resolver_match.url_name %}active{% endif %}">
-                    <i class="fas fa-dollar-sign"></i>
-                    <span>Costos</span>
-                </a>
+                <div class="navbar-user">
+                    <div class="user-info">
+                        <div class="user-name">{{ user.get_full_name|default:user.username }}</div>
+                        <div>
+                            {% if user.is_superuser %}
+                                <span class="user-role role-admin">ADMIN</span>
+                            {% elif user.groups.all.0.name == 'Usuario' %}
+                                <span class="user-role role-user">USUARIO</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-logout" title="Cerrar sesión">
+                            <i class="fas fa-sign-out-alt"></i>
+                            <span>Salir</span>
+                        </button>
+                    </form>
+                </div>
             {% endif %}
-        </nav>
-    </aside>
+        </div>
+    </nav>
 
     <!-- Main Content -->
     <div class="main-wrapper">
-        <!-- Top Navbar -->
-        <div class="top-navbar">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <h1>
-                    {% if request.resolver_match.url_name == 'home' %}
-                        <i class="fas fa-chart-line"></i>Panel de Control
-                    {% elif 'bus' in request.resolver_match.url_name %}
-                        <i class="fas fa-bus"></i>Gestión de Buses
-                    {% elif 'conductor' in request.resolver_match.url_name %}
-                        <i class="fas fa-user-tie"></i>Gestión de Conductores
-                    {% elif 'viaje' in request.resolver_match.url_name %}
-                        <i class="fas fa-route"></i>Gestión de Viajes
-                    {% elif 'costos' in request.resolver_match.url_name %}
-                        <i class="fas fa-dollar-sign"></i>Gestión de Costos
-                    {% else %}
-                        <i class="fas fa-cogs"></i>Sistema de Flota
-                    {% endif %}
-                </h1>
-                
-                {% if user.is_authenticated %}
-                    <div style="display: flex; align-items: center; gap: 20px;">
-                        <div style="text-align: right; color: #6b7280; font-size: 14px;">
-                            <div style="font-weight: 600; color: #1f2937;">{{ user.get_full_name|default:user.username }}</div>
-                            <div style="font-size: 12px;">
-                                {% if user.is_superuser %}
-                                    <span style="background: #dc2626; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 500;">ADMIN</span>
-                                {% elif user.groups.all.0.name == 'Usuario' %}
-                                    <span style="background: #0ea5e9; color: white; padding: 2px 8px; border-radius: 4px; font-weight: 500;">USUARIO</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <form method="post" action="{% url 'logout' %}" style="margin: 0;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Cerrar sesión">
-                                <i class="fas fa-sign-out-alt"></i> Salir
-                            </button>
-                        </form>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-
-        <!-- Content Area -->
         <div class="content-area">
             {% if messages %}
                 {% for message in messages %}
@@ -603,28 +543,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}
     {% endblock %}
-    <script>
-        // Mantener el título superior y ocultar encabezados locales duplicados
-        document.addEventListener('DOMContentLoaded', function(){
-            var topH = document.querySelector('.top-navbar h1');
-            if(topH){
-                // Oculta el bloque .page-header si existe
-                var pageHeader = document.querySelector('.page-header');
-                if(pageHeader){
-                    pageHeader.style.display = 'none';
-                }
-
-                // Oculta títulos H1 dentro del área de contenido para evitar duplicados
-                var contentH1 = document.querySelectorAll('.content-area h1');
-                contentH1.forEach(function(h){
-                    h.style.display = 'none';
-                });
-
-                // Oculta elementos con clase .page-title
-                var pageTitles = document.querySelectorAll('.page-title');
-                pageTitles.forEach(function(pt){ pt.style.display = 'none'; });
-            }
-        });
-    </script>
 </body>
 </html>

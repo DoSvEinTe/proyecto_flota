@@ -1,0 +1,668 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Sistema de Gestión de Flota{% endblock %}
+
+{% block extra_css %}
+<style>
+    .welcome-section {
+        background: linear-gradient(135deg, #1e40af 0%, #0d47a1 100%);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        color: white;
+        margin-bottom: 2.5rem;
+        box-shadow: 0 10px 30px rgba(30, 64, 175, 0.3);
+    }
+
+    .welcome-section h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .welcome-section p {
+        font-size: 1.125rem;
+        opacity: 0.95;
+        margin: 0;
+    }
+
+    .stat-card {
+        border: none;
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        height: 100%;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .stat-card.card-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    }
+
+    .stat-card.card-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .stat-card.card-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    }
+
+    .stat-card.card-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .stat-card.card-danger {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .stat-card-body {
+        padding: 2rem;
+        color: white;
+    }
+
+    .stat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.9;
+    }
+
+    .stat-info h5 {
+        font-size: 0.875rem;
+        font-weight: 600;
+        opacity: 0.95;
+        margin-bottom: 0.5rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .stat-info h2 {
+        font-size: 2.75rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .stat-footer {
+        padding: 1rem 2rem;
+        background: rgba(255, 255, 255, 0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .stat-footer a {
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.3s ease;
+    }
+
+    .stat-footer a:hover {
+        opacity: 0.9;
+        padding-left: 0.5rem;
+    }
+
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-title i {
+        color: #1e40af;
+    }
+
+    .quick-action-card {
+        border: none;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+
+    .quick-action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    .quick-action-card .card-body {
+        padding: 2rem;
+        text-align: center;
+    }
+
+    .quick-action-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: white;
+    }
+
+    .quick-action-icon.bg-primary {
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+    }
+
+    .quick-action-icon.bg-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .quick-action-icon.bg-info {
+        background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+    }
+
+    .quick-action-icon.bg-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+
+    .quick-action-card h5 {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.75rem;
+    }
+
+    .quick-action-card p {
+        color: #6b7280;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .quick-action-card .btn {
+        border-radius: 8px;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        width: 100%;
+    }
+
+    .recent-activity {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .activity-item {
+        padding: 1.25rem;
+        border-left: 3px solid #e5e7eb;
+        margin-bottom: 1rem;
+        background: #f9fafb;
+        border-radius: 0 8px 8px 0;
+        transition: all 0.3s ease;
+    }
+
+    .activity-item:hover {
+        border-left-color: #1e40af;
+        background: #eff6ff;
+    }
+
+    .activity-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .activity-item.viaje {
+        border-left-color: #06b6d4;
+    }
+
+    .activity-item.bus {
+        border-left-color: #3b82f6;
+    }
+
+    .activity-item.conductor {
+        border-left-color: #10b981;
+    }
+
+    .activity-item.costo {
+        border-left-color: #f59e0b;
+    }
+
+    .activity-item h6 {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .activity-item p {
+        color: #6b7280;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .activity-item small {
+        color: #9ca3af;
+        font-size: 0.8rem;
+    }
+
+    .info-card {
+        background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border-left: 4px solid #1e40af;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card h6 {
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .info-card p {
+        color: #6b7280;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+
+    .chart-container {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Welcome Section -->
+<div class="welcome-section">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1><i class="fas fa-home me-2"></i>Bienvenido, {{ user.get_full_name|default:user.username }}</h1>
+            <p>Sistema de Gestión de Flota - Panel de Control</p>
+        </div>
+        <div class="text-end">
+            <div style="font-size: 2rem; opacity: 0.9;">
+                <i class="fas fa-bus"></i>
+            </div>
+            <small style="opacity: 0.8;">FlotaGest</small>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas Principales -->
+<div class="row mb-4">
+    {% if user.is_superuser or user.groups.all|length == 0 or user.groups.all.0.name == 'Admin' %}
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card stat-card card-primary">
+                <div class="stat-card-body">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h5>Total Buses</h5>
+                            <h2>{{ total_buses }}</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-bus"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <a href="{% url 'flota:bus_list' %}">
+                        Ver flota completa
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-xl-3 mb-4">
+            <div class="card stat-card card-success">
+                <div class="stat-card-body">
+                    <div class="stat-header">
+                        <div class="stat-info">
+                            <h5>Conductores</h5>
+                            <h2>{{ total_conductores }}</h2>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-user-tie"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="stat-footer">
+                    <a href="{% url 'conductor_list' %}">
+                        Ver conductores
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card stat-card card-info">
+            <div class="stat-card-body">
+                <div class="stat-header">
+                    <div class="stat-info">
+                        <h5>Viajes Totales</h5>
+                        <h2>{{ total_viajes }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'viajes:viaje_list' %}">
+                    Ver viajes
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card stat-card card-warning">
+            <div class="stat-card-body">
+                <div class="stat-header">
+                    <div class="stat-info">
+                        <h5>Viajes Activos</h5>
+                        <h2>{{ viajes_activos }}</h2>
+                    </div>
+                    <div class="stat-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="stat-footer">
+                <a href="{% url 'viajes:viaje_list' %}">
+                    Ver activos
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<h2 class="section-title">
+    <i class="fas fa-bolt"></i>
+    Acciones Rápidas
+</h2>
+
+<div class="row mb-4">
+    {% if user.is_superuser or user.groups.all|length == 0 or user.groups.all.0.name == 'Admin' %}
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card quick-action-card">
+                <div class="card-body">
+                    <div class="quick-action-icon bg-primary">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <h5>Agregar Bus</h5>
+                    <p>Registra un nuevo bus en la flota</p>
+                    <a href="{% url 'flota:bus_create' %}" class="btn btn-primary">
+                        <i class="fas fa-bus me-2"></i>Nuevo Bus
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 col-lg-3 mb-4">
+            <div class="card quick-action-card">
+                <div class="card-body">
+                    <div class="quick-action-icon bg-success">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h5>Agregar Conductor</h5>
+                    <p>Registra un nuevo conductor</p>
+                    <a href="{% url 'conductor_create' %}" class="btn btn-success">
+                        <i class="fas fa-user-tie me-2"></i>Nuevo Conductor
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card quick-action-card">
+            <div class="card-body">
+                <div class="quick-action-icon bg-info">
+                    <i class="fas fa-route"></i>
+                </div>
+                <h5>Crear Viaje</h5>
+                <p>Programa un nuevo viaje</p>
+                <a href="{% url 'viajes:viaje_create' %}" class="btn btn-info">
+                    <i class="fas fa-plus-circle me-2"></i>Nuevo Viaje
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3 mb-4">
+        <div class="card quick-action-card">
+            <div class="card-body">
+                <div class="quick-action-icon bg-warning">
+                    <i class="fas fa-dollar-sign"></i>
+                </div>
+                <h5>Gestionar Costos</h5>
+                <p>Administra costos de viajes</p>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-warning">
+                    <i class="fas fa-calculator me-2"></i>Ver Costos
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estadísticas de Costos -->
+<h2 class="section-title">
+    <i class="fas fa-chart-pie"></i>
+    Estadísticas de Costos
+</h2>
+
+<div class="row mb-4">
+    <div class="col-lg-8 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-4"><i class="fas fa-dollar-sign me-2"></i>Resumen de Costos Totales</h5>
+            
+            <div class="row mb-4">
+                <div class="col-md-6 mb-3">
+                    <div class="info-card" style="border-left-color: #ef4444;">
+                        <h6><i class="fas fa-gas-pump"></i> Combustible</h6>
+                        <h3 class="text-danger mb-0">${{ total_costos.total_combustible|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-card" style="border-left-color: #f59e0b;">
+                        <h6><i class="fas fa-tools"></i> Mantenimiento</h6>
+                        <h3 class="text-warning mb-0">${{ total_costos.total_mantenimiento|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-card" style="border-left-color: #06b6d4;">
+                        <h6><i class="fas fa-road"></i> Peajes</h6>
+                        <h3 class="text-info mb-0">${{ total_costos.total_peajes|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="info-card" style="border-left-color: #8b5cf6;">
+                        <h6><i class="fas fa-plus-circle"></i> Otros Costos</h6>
+                        <h3 class="text-purple mb-0">${{ total_costos.total_otros|floatformat:2|default:"0.00" }}</h3>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert alert-primary d-flex justify-content-between align-items-center" style="background: linear-gradient(135deg, #1e40af 0%, #0d47a1 100%); color: white; border: none;">
+                <div>
+                    <h5 class="mb-1" style="color: white;"><i class="fas fa-calculator me-2"></i>Costo Total General</h5>
+                    <p class="mb-0" style="opacity: 0.9;">Total acumulado de todos los viajes</p>
+                </div>
+                <h2 class="mb-0" style="color: white; font-weight: 700;">${{ total_costos.total_general|floatformat:2|default:"0.00" }}</h2>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="info-card" style="border-left-color: #10b981;">
+                        <h6><i class="fas fa-chart-line"></i> Promedio por Viaje</h6>
+                        <h4 class="text-success mb-1">${{ promedio_costos.promedio_total|floatformat:2|default:"0.00" }}</h4>
+                        <small class="text-muted">Basado en {{ total_costos_registrados }} viajes registrados</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-card" style="border-left-color: #3b82f6;">
+                        <h6><i class="fas fa-calendar-alt"></i> Costos Último Mes</h6>
+                        <h4 class="text-primary mb-1">${{ costos_mes.total_mes|floatformat:2|default:"0.00" }}</h4>
+                        <small class="text-muted">{{ costos_mes.viajes_mes|default:"0" }} viajes en los últimos 30 días</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="chart-container">
+            <h5 class="mb-3"><i class="fas fa-trophy me-2"></i>Top 5 - Viajes con Mayor Costo</h5>
+            
+            {% if viajes_mayor_costo %}
+                <div class="list-group">
+                    {% for costo in viajes_mayor_costo %}
+                        <div class="list-group-item border-0 mb-2" style="background: #f9fafb; border-radius: 8px; border-left: 3px solid #ef4444 !important;">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1 fw-bold" style="color: #1f2937;">
+                                        <i class="fas fa-bus me-1" style="color: #3b82f6;"></i>
+                                        {{ costo.viaje.bus.placa }}
+                                    </h6>
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-route me-1"></i>
+                                        {{ costo.viaje.get_origen_display|truncatechars:20 }} → {{ costo.viaje.get_destino_display|truncatechars:20 }}
+                                    </small>
+                                    <small class="text-muted d-block">
+                                        <i class="fas fa-calendar me-1"></i>
+                                        {{ costo.viaje.fecha_salida|date:"d/m/Y" }}
+                                    </small>
+                                </div>
+                                <div class="text-end">
+                                    <h5 class="mb-0 text-danger fw-bold">${{ costo.costo_total|floatformat:2 }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay costos registrados</p>
+                </div>
+            {% endif %}
+
+            <div class="mt-3">
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-primary w-100">
+                    <i class="fas fa-chart-bar me-2"></i>Ver Análisis Completo
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información y Actividad Reciente -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <h2 class="section-title">
+            <i class="fas fa-clock"></i>
+            Actividad Reciente
+        </h2>
+        <div class="recent-activity">
+            {% if ultimos_viajes %}
+                {% for viaje in ultimos_viajes %}
+                    <div class="activity-item viaje">
+                        <h6>
+                            <i class="fas fa-route"></i>
+                            Viaje {{ viaje.bus.placa }}
+                        </h6>
+                        <p>
+                            <strong>{{ viaje.get_origen_display }}</strong> → <strong>{{ viaje.get_destino_display }}</strong>
+                        </p>
+                        <p>
+                            Conductor: {{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }} | 
+                            Pasajeros: {{ viaje.get_pasajeros_count }}/{{ viaje.bus.capacidad_pasajeros }}
+                        </p>
+                        <small>
+                            <i class="fas fa-calendar"></i> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}
+                            | Estado: 
+                            <span class="badge {% if viaje.estado == 'programado' %}bg-info{% elif viaje.estado == 'en_curso' %}bg-warning{% elif viaje.estado == 'completado' %}bg-success{% else %}bg-danger{% endif %}">
+                                {{ viaje.get_estado_display }}
+                            </span>
+                        </small>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay actividad reciente</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <h2 class="section-title">
+            <i class="fas fa-info-circle"></i>
+            Resumen del Sistema
+        </h2>
+
+        <div class="info-card" style="border-left-color: #3b82f6;">
+            <h6><i class="fas fa-bus"></i> Estado de la Flota</h6>
+            <p>{{ total_buses }} buses registrados en el sistema</p>
+            {% if total_buses > 0 %}
+                <p class="mb-0 mt-2">
+                    <small class="text-success"><i class="fas fa-check-circle"></i> Flota activa y operativa</small>
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="info-card" style="border-left-color: #10b981;">
+            <h6><i class="fas fa-users"></i> Pasajeros</h6>
+            <p>{{ total_pasajeros|default:"0" }} pasajeros registrados</p>
+        </div>
+
+        <div class="info-card" style="border-left-color: #06b6d4;">
+            <h6><i class="fas fa-calendar-check"></i> Viajes</h6>
+            <p>{{ viajes_activos }} viajes activos de {{ total_viajes }} totales</p>
+            {% if viajes_completados %}
+                <p class="mb-0 mt-2">
+                    <small><i class="fas fa-check"></i> {{ viajes_completados }} viajes completados</small>
+                </p>
+            {% endif %}
+        </div>
+
+        <div class="info-card" style="border-left-color: #f59e0b;">
+            <h6><i class="fas fa-chart-line"></i> Rendimiento</h6>
+            <p>Sistema funcionando correctamente</p>
+            <p class="mb-0 mt-2">
+                <small class="text-success"><i class="fas fa-check-circle"></i> Todos los servicios operativos</small>
+            </p>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
