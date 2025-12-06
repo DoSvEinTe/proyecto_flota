@@ -1,0 +1,50 @@
+⚠️ ACCIÓN REQUERIDA - ACTUALIZA TU ARCHIVO .env LOCAL
+=========================================================
+
+Tu archivo .env ahora debe incluir estas variables adicionales:
+
+1. Agrega SECRET_KEY (genera una nueva):
+   
+   SECRET_KEY=tu_secret_key_generado
+
+   Para generar una nueva SECRET_KEY segura, ejecuta:
+   python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+
+2. Agrega configuración de base de datos (opcional, solo si es diferente):
+
+   DB_NAME=flota_db
+   DB_USER=root
+   DB_PASSWORD=
+   DB_HOST=localhost
+   DB_PORT=3306
+
+3. CAMBIA tu contraseña de aplicación de Gmail (OBLIGATORIO):
+   
+   - Tu contraseña anterior fue expuesta en commits públicos
+   - Ve a: https://myaccount.google.com/apppasswords
+   - Elimina la contraseña "proyectoflota" existente
+   - Genera una nueva contraseña de aplicación
+   - Actualiza EMAIL_HOST_PASSWORD con la nueva
+
+Tu archivo .env debe verse así:
+=====================================
+
+# Seguridad
+SECRET_KEY=tu_secret_key_generado_aqui
+
+# Base de datos
+DB_NAME=flota_db
+DB_USER=root
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=3306
+
+# Email
+EMAIL_HOST_USER=EMAIL_OCULTO@example.com
+EMAIL_HOST_PASSWORD=tu_nueva_contraseña_de_aplicacion
+
+=====================================
+
+IMPORTANTE: Después de actualizar el .env, reinicia el servidor Django:
+- Ctrl+C para detener
+- python manage.py runserver
