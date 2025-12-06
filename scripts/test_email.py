@@ -28,8 +28,8 @@ def test_email():
     if not settings.EMAIL_HOST_USER or not settings.EMAIL_HOST_PASSWORD:
         print("\n❌ ERROR: Variables de entorno EMAIL_HOST_USER o EMAIL_HOST_PASSWORD no configuradas")
         print("\n💡 Configúralas con:")
-        print('   $env:EMAIL_HOST_USER = "EMAIL_OCULTO@example.com"')
-        print('   $env:EMAIL_HOST_PASSWORD = "CONTRASEÑA_OCULTA"')
+        print('   $env:EMAIL_HOST_USER = "tu_correo@gmail.com"')
+        print('   $env:EMAIL_HOST_PASSWORD = "tu_contraseña_de_aplicacion"')
         return
     
     print("\n📤 Enviando email de prueba...")

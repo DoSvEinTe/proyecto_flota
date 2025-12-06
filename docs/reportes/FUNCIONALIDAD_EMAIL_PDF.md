@@ -3,7 +3,7 @@
 ## Estado: COMPLETADO Y PROBADO
 
 ### Configuración de Email
-- **Correo**: EMAIL_OCULTO@example.com
+- **Correo**: tu_correo@gmail.com
 - **Contraseña de aplicación**: Configurada ✅
 - **Servidor SMTP**: smtp.gmail.com:587
 - **Prueba de envío**: ✅ Exitosa
@@ -143,7 +143,7 @@ python scripts/test_email.py
 **Resultado esperado**:
 ```
 ✅ ¡Email enviado exitosamente!
-   Revisa la bandeja de entrada de: EMAIL_OCULTO@example.com
+   Revisa la bandeja de entrada de: tu_correo@gmail.com
 ```
 
 ### Solución de Problemas
@@ -172,15 +172,15 @@ echo $env:EMAIL_HOST_USER
 echo $env:EMAIL_HOST_PASSWORD
 
 # Reconfigurar si es necesario
-$env:EMAIL_HOST_USER = "EMAIL_OCULTO@example.com"
-$env:EMAIL_HOST_PASSWORD = "CONTRASEÑA_OCULTA"
+$env:EMAIL_HOST_USER = "tu_correo@gmail.com"
+$env:EMAIL_HOST_PASSWORD = "tu_contraseña_de_aplicacion"
 ```
 
 ### Testing Realizado
 
 ✅ **Prueba 1**: Script test_email.py
 - Email de prueba enviado correctamente
-- Recibido en EMAIL_OCULTO@example.com
+- Recibido en tu_correo@gmail.com
 
 ✅ **Prueba 2**: Sistema Django
 - `python manage.py check` sin errores
@@ -205,4 +205,4 @@ $env:EMAIL_HOST_PASSWORD = "CONTRASEÑA_OCULTA"
 
 - Implementado: 05/12/2025
 - Sistema: FlotaGest
-- Email configurado: EMAIL_OCULTO@example.com
+- Email configurado: Según archivo .env

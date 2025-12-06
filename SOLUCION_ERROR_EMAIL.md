@@ -26,8 +26,8 @@ python manage.py runserver
 El archivo `.env` debe estar en la raíz del proyecto con este contenido:
 
 ```
-EMAIL_HOST_USER=EMAIL_OCULTO@example.com
-EMAIL_HOST_PASSWORD=CONTRASEÑA_OCULTA
+EMAIL_HOST_USER=tu_correo@gmail.com
+EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
 ```
 
 ✅ Ya está creado y configurado
@@ -78,7 +78,7 @@ python scripts/test_email.py
 **Resultado esperado:**
 ```
 ✅ ¡Email enviado exitosamente!
-   Revisa la bandeja de entrada de: EMAIL_OCULTO@example.com
+   Revisa la bandeja de entrada de: tu_correo@gmail.com
 ```
 
 ## Si el Error Persiste
@@ -97,7 +97,7 @@ print('Contraseña configurada:', bool(settings.EMAIL_HOST_PASSWORD))
 
 Deberías ver:
 ```
-EMAIL_OCULTO@example.com
+tu_correo@gmail.com
 Contraseña configurada: True
 ```
 
@@ -108,8 +108,8 @@ cat .env
 
 Debe mostrar:
 ```
-EMAIL_HOST_USER=EMAIL_OCULTO@example.com
-EMAIL_HOST_PASSWORD=CONTRASEÑA_OCULTA
+EMAIL_HOST_USER=tu_correo@gmail.com
+EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
 ```
 
 ### Opción 3: Verificar que el conductor tenga email
