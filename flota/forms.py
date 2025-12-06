@@ -23,7 +23,7 @@ class BusForm(forms.ModelForm):
 class MantenimientoForm(forms.ModelForm):
     class Meta:
         model = Mantenimiento
-        fields = ['fecha_mantenimiento', 'tipo', 'descripcion', 'observaciones', 'costo', 'proveedor', 'taller', 'kilometraje']
+        fields = ['fecha_mantenimiento', 'tipo', 'descripcion', 'observaciones', 'costo', 'proveedor', 'taller', 'kilometraje', 'comprobante']
         widgets = {
             'fecha_mantenimiento': forms.DateInput(attrs={
                 'type': 'date',
@@ -51,6 +51,10 @@ class MantenimientoForm(forms.ModelForm):
                 'class': 'form-control',
                 'min': 0
             }),
+            'comprobante': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*,.pdf'
+            }),
         }
         labels = {
             'fecha_mantenimiento': 'Fecha de Mantenimiento',
@@ -58,6 +62,7 @@ class MantenimientoForm(forms.ModelForm):
             'observaciones': 'Observaciones',
             'costo': 'Costo ($)',
             'kilometraje': 'Kilometraje (km)',
+            'comprobante': 'Comprobante (Imagen/PDF)',
         }
 
 

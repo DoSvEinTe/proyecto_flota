@@ -4,7 +4,7 @@ mysqlclient==2.2.7
 python-dotenv==1.2.1
 sqlparse==0.5.3
 tzdata==2025.2
-Pillow
+Pillow>=10.0.0
 whitenoise==6.4.0
 gunicorn==20.1.0
 django-debug-toolbar==4.4.6
@@ -12,3 +12,7 @@ django-extensions==3.2.3
 django-environ==0.10.0
 requests>=2.31.0
 reportlab>=4.0.0
+PyPDF2>=3.0.0
+python-decouple==3.8
+
+

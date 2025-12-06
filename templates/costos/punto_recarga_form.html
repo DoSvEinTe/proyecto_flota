@@ -12,7 +12,7 @@
                     <h4 class="mb-0"><i class="fas fa-gas-pump me-2"></i>Puntos de Recarga de Combustible</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post" id="form-recargas">
+                    <form method="post" id="form-recargas" enctype="multipart/form-data">
                         {% csrf_token %}
                         <table class="table table-bordered" id="tabla-recargas">
                             <thead>

@@ -114,6 +114,7 @@ class Mantenimiento(models.Model):
     proveedor = models.CharField(max_length=150, blank=True, null=True)  # Nuevo campo
     taller = models.CharField(max_length=150, blank=True)
     observaciones = models.TextField(blank=True)
+    comprobante = models.FileField(upload_to='mantenimientos/comprobantes/', blank=True, null=True, help_text='Comprobante de mantenimiento')
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:

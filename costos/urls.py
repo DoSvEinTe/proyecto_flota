@@ -8,15 +8,14 @@ urlpatterns = [
     path('', views.GestionCostosView.as_view(), name='gestion'),
     
     # Gestión de CostosViaje
-    path('lista/', views.CostosViajeListView.as_view(), name='lista'),
     path('viajes-sin-costos/', views.ViajesSinCostosListView.as_view(), name='viajes_sin_costos'),
     path('crear/', views.CostosViajeCreateView.as_view(), name='crear'),
     
-    # Redirección para compatibilidad
-    path('registrar-completo/', views.RedirectToViajesSinCostos.as_view(), name='registrar_completo_redirect'),
-    
     # Registrar costos completo (debe estar antes de <int:pk>)
     path('viaje/<int:viaje_id>/registrar-completo/', views.registrar_costos_completo, name='registrar_completo'),
+    
+    # Enviar formulario por email
+    path('viaje/<int:viaje_id>/enviar-email/', views.enviar_formulario_email, name='enviar_email'),
     
     # Mantenimientos y otros costos
     path('mantenimiento/<int:costos_pk>/', views.mantenimiento_costos, name='mantenimiento_costos'),

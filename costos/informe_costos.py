@@ -349,12 +349,24 @@ def informe_costos_pdf(request, costos_pk):
         
         peajes_data = [["#", "Lugar", "Fecha y Hora", "Monto", "Comprobante"]]
         for idx, p in enumerate(peajes, 1):
+            # Obtener el nombre del archivo si existe
+            comprobante_nombre = ""
+            if p.comprobante:
+                try:
+                    comprobante_nombre = p.comprobante.name.split('/')[-1] if p.comprobante.name else "Sin nombre"
+                    if len(comprobante_nombre) > 15:
+                        comprobante_nombre = comprobante_nombre[:15] + "..."
+                except:
+                    comprobante_nombre = "Adjunto"
+            else:
+                comprobante_nombre = "Sin comprobante"
+            
             peajes_data.append([
                 str(idx),
                 p.lugar,
                 p.fecha_pago.strftime('%d/%m/%Y %H:%M'),
                 f"${p.monto:,.0f}",
-                p.comprobante[:15] + "..." if p.comprobante and len(p.comprobante) > 15 else (p.comprobante or "Sin comprobante")
+                comprobante_nombre
             ])
         
         peajes_data.append(["", "TOTAL", "", f"${costos.peajes:,.0f}", ""])
@@ -464,21 +476,57 @@ def informe_costos_pdf(request, costos_pk):
     elements.append(Spacer(1, 0.4 * inch))
     elements.append(Paragraph("ANÁLISIS Y MÉTRICAS", subtitle_style))
     
-    # Calcular costo por kilómetro y por pasajero
-    costo_por_km = costos.costo_total / km_recorridos if km_recorridos > 0 else 0
-    costo_por_pasajero = costos.costo_total / pasajeros.count() if pasajeros.count() > 0 else 0
+    # Calcular costo por kilómetro y por pasajero (con validación de división por cero)
+    from decimal import Decimal
+    costo_por_km = Decimal('0')
+    if km_recorridos > 0:
+        try:
+            costo_por_km = costos.costo_total / Decimal(str(km_recorridos))
+        except:
+            costo_por_km = Decimal('0')
+    
+    costo_por_pasajero = Decimal('0')
+    num_pasajeros = pasajeros.count()
+    if num_pasajeros > 0:
+        try:
+            costo_por_pasajero = costos.costo_total / Decimal(str(num_pasajeros))
+        except:
+            costo_por_pasajero = Decimal('0')
+    
+    # Porcentajes de distribución (con validación)
+    porcentaje_combustible = Decimal('0')
+    porcentaje_peajes = Decimal('0')
+    porcentaje_mantenimiento = Decimal('0')
+    porcentaje_otros = Decimal('0')
+    
+    if costos.costo_total > 0:
+        try:
+            porcentaje_combustible = (costos.combustible / costos.costo_total * 100)
+            porcentaje_peajes = (costos.peajes / costos.costo_total * 100)
+            porcentaje_mantenimiento = (costos.mantenimiento / costos.costo_total * 100)
+            porcentaje_otros = (costos.otros_costos / costos.costo_total * 100)
+        except:
+            pass
+    
+    # Tasa de ocupación
+    tasa_ocupacion = Decimal('0')
+    if bus.capacidad_pasajeros > 0:
+        try:
+            tasa_ocupacion = (Decimal(str(num_pasajeros)) / Decimal(str(bus.capacidad_pasajeros)) * 100)
+        except:
+            tasa_ocupacion = Decimal('0')
     
     analisis_texto = f"""
     <b>Costo por Kilómetro:</b> ${costo_por_km:,.2f}/km<br/>
     <b>Costo por Pasajero:</b> ${costo_por_pasajero:,.2f}<br/>
     <b>Eficiencia de Combustible:</b> {consumo_promedio:,.1f} km/L<br/>
-    <b>Tasa de Ocupación:</b> {(pasajeros.count()/bus.capacidad_pasajeros*100):.1f}%<br/>
+    <b>Tasa de Ocupación:</b> {tasa_ocupacion:.1f}%<br/>
     <br/>
     <b>Distribución de Costos:</b><br/>
-    • El combustible representa el {(costos.combustible/costos.costo_total*100):.1f}% del costo total<br/>
-    • Los peajes representan el {(costos.peajes/costos.costo_total*100):.1f}% del costo total<br/>
-    • El mantenimiento representa el {(costos.mantenimiento/costos.costo_total*100):.1f}% del costo total<br/>
-    • Otros costos representan el {(costos.otros_costos/costos.costo_total*100):.1f}% del costo total
+    • El combustible representa el {porcentaje_combustible:.1f}% del costo total<br/>
+    • Los peajes representan el {porcentaje_peajes:.1f}% del costo total<br/>
+    • El mantenimiento representa el {porcentaje_mantenimiento:.1f}% del costo total<br/>
+    • Otros costos representan el {porcentaje_otros:.1f}% del costo total
     """
     elements.append(Paragraph(analisis_texto, info_style))
     

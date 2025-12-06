@@ -9,7 +9,6 @@ from django import forms
 from django.utils import timezone
 from .models import Conductor, Lugar, Pasajero
 from .permissions import admin_required, usuario_or_admin_required
-import math
 
 
 class ConductorForm(ModelForm):

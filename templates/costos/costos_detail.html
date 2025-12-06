@@ -81,6 +81,75 @@
         padding-bottom: 0.5rem;
         border-bottom: 2px solid #e9ecef;
     }
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    }
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #FFC107 0%, #FFA000 100%);
+    }
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%);
+    }
+    .bg-gradient-secondary {
+        background: linear-gradient(135deg, #757575 0%, #616161 100%);
+    }
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .comprobante-thumbnail {
+        max-width: 100%;
+        max-height: 150px;
+        object-fit: contain;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Estilos para Acordeón Mejorado */
+    .accordion-button {
+        font-size: 1.1rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: 10px !important;
+        transition: all 0.3s ease;
+    }
+    .accordion-button:not(.collapsed) {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    .accordion-button:focus {
+        box-shadow: 0 0 0 0.25rem rgba(33, 150, 243, 0.25);
+        border-color: transparent;
+    }
+    .accordion-button::after {
+        background-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        filter: brightness(0) invert(1);
+    }
+    .accordion-item {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .accordion-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15) !important;
+    }
+    .accordion-body {
+        padding: 1.5rem;
+    }
+    .accordion-collapse {
+        transition: all 0.4s ease-in-out;
+    }
+    .comprobante-thumbnail {
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .comprobante-thumbnail:hover {
+        transform: scale(1.05);
+    }
 </style>
 {% endblock %}
 
@@ -238,40 +307,29 @@
         </div>
     </div>
 
-    <!-- Tabs para Detalles -->
-    <ul class="nav nav-tabs mb-3" id="detallesTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
-                <i class="fas fa-info-circle me-2"></i>Información General
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="combustible-tab" data-bs-toggle="tab" data-bs-target="#combustible" type="button" role="tab">
-                <i class="fas fa-gas-pump me-2"></i>Combustible
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="peajes-tab" data-bs-toggle="tab" data-bs-target="#peajes" type="button" role="tab">
-                <i class="fas fa-road me-2"></i>Peajes
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="mantenimientos-tab" data-bs-toggle="tab" data-bs-target="#mantenimientos" type="button" role="tab">
-                <i class="fas fa-tools me-2"></i>Mantenimientos
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="otros-tab" data-bs-toggle="tab" data-bs-target="#otros" type="button" role="tab">
-                <i class="fas fa-ellipsis-h me-2"></i>Otros
-            </button>
-        </li>
-    </ul>
-
-    <div class="tab-content" id="detallesTabsContent">
-        <!-- Tab Información General -->
-        <div class="tab-pane fade show active" id="general" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
+    <!-- Acordeón de Detalles -->
+    <div class="accordion" id="accordionDetalles">
+        
+        <!-- Información General -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingGeneral">
+                <button class="accordion-button bg-gradient-primary text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGeneral" aria-expanded="true" aria-controls="collapseGeneral">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-info-circle fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Información General</div>
+                            <small class="opacity-75">Detalles del viaje, bus y conductor</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-primary">${{ costos.costo_total|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseGeneral" class="accordion-collapse collapse show" aria-labelledby="headingGeneral">
+                <div class="accordion-body bg-light">
                     <div class="row">
                         <div class="col-md-6">
                             <h6 class="section-title">
@@ -342,179 +400,413 @@
                 </div>
             </div>
         </div>
-
-        <!-- Tab Combustible -->
-        <div class="tab-pane fade" id="combustible" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    {% if puntos_recarga %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="text-center" style="width: 60px;">#</th>
-                                    <th>Ubicación</th>
-                                    <th class="text-center">Kilometraje</th>
-                                    <th class="text-center">Km Recorridos</th>
-                                    <th class="text-center">Litros</th>
-                                    <th class="text-center">Precio/L</th>
-                                    <th class="text-end">Costo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for punto in puntos_recarga %}
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="badge bg-primary rounded-pill">{{ punto.orden }}</span>
-                                    </td>
-                                    <td>
-                                        <strong>{{ punto.ubicacion|default:"Sin especificar" }}</strong>
+        
+        <!-- Combustible -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingCombustible">
+                <button class="accordion-button collapsed bg-gradient-primary text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCombustible" aria-expanded="false" aria-controls="collapseCombustible">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-gas-pump fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Combustible</div>
+                            <small class="opacity-75">{% if puntos_recarga %}{{ puntos_recarga|length }} recarga{{ puntos_recarga|length|pluralize }}{% else %}Sin recargas{% endif %}</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-primary">{{ total_litros|floatformat:1 }} L</div>
+                            <div class="badge bg-white text-danger ms-2">${{ costos.combustible|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseCombustible" class="accordion-collapse collapse" aria-labelledby="headingCombustible">
+                <div class="accordion-body bg-light">
+            {% if puntos_recarga %}
+                <div class="row g-4">
+                    {% for punto in puntos_recarga %}
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-gas-pump me-2"></i>Recarga #{{ punto.orden }}
+                                    </h6>
+                                    <span class="badge bg-white text-primary">${{ punto.costo_total|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="row g-3">
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-map-marker-alt me-1"></i>Ubicación
+                                                    </small>
+                                                    <strong>{{ punto.ubicacion|default:"Sin especificar" }}</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-tachometer-alt me-1"></i>Kilometraje
+                                                    </small>
+                                                    <strong>{{ punto.kilometraje|floatformat:2 }} km</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-route me-1"></i>Km Recorridos
+                                                    </small>
+                                                    <strong>{{ punto.kilometros_recorridos|floatformat:2 }} km</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-fill-drip me-1"></i>Litros Cargados
+                                                    </small>
+                                                    <strong class="text-primary">{{ punto.litros_cargados|floatformat:2 }} L</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-tag me-1"></i>Precio por Litro
+                                                    </small>
+                                                    <strong>${{ punto.precio_combustible|floatformat:0 }}</strong>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="info-box">
+                                                    <small class="text-muted d-block mb-1">
+                                                        <i class="fas fa-dollar-sign me-1"></i>Costo Total
+                                                    </small>
+                                                    <strong class="text-danger">${{ punto.costo_total|floatformat:0 }}</strong>
+                                                </div>
+                                            </div>
+                                        </div>
                                         {% if punto.observaciones %}
-                                        <br><small class="text-muted"><i class="fas fa-comment-alt me-1"></i>{{ punto.observaciones }}</small>
+                                        <div class="mt-3 p-2 bg-light rounded">
+                                            <small class="text-muted">
+                                                <i class="fas fa-comment-alt me-1"></i><strong>Observaciones:</strong> {{ punto.observaciones }}
+                                            </small>
+                                        </div>
                                         {% endif %}
-                                    </td>
-                                    <td class="text-center"><span class="badge bg-secondary">{{ punto.kilometraje|floatformat:2 }} km</span></td>
-                                    <td class="text-center">{{ punto.kilometros_recorridos|floatformat:2 }} km</td>
-                                    <td class="text-center"><strong>{{ punto.litros_cargados|floatformat:2 }}</strong> L</td>
-                                    <td class="text-center">${{ punto.precio_combustible|floatformat:0 }}</td>
-                                    <td class="text-end"><strong class="text-danger">${{ punto.costo_total|floatformat:0 }}</strong></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-success">
-                                <tr class="fw-bold">
-                                    <td colspan="3" class="text-end">TOTALES:</td>
-                                    <td class="text-center">{{ total_kilometros|floatformat:2 }} km</td>
-                                    <td class="text-center">{{ total_litros|floatformat:2 }} L</td>
-                                    <td></td>
-                                    <td class="text-end">${{ costos.combustible|floatformat:0 }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                    </div>
+                                    <div class="col-md-4">
+                                        {% if punto.comprobante %}
+                                        <div class="text-center">
+                                            <small class="text-muted d-block mb-2">
+                                                <i class="fas fa-receipt me-1"></i>Comprobante
+                                            </small>
+                                            {% if punto.comprobante.name|slice:"-4:" == ".pdf" or punto.comprobante.name|slice:"-4:" == ".PDF" %}
+                                                <a href="{{ punto.comprobante.url }}" target="_blank" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                                    <div class="mt-1">Ver PDF</div>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ punto.comprobante.url }}" target="_blank" class="d-block">
+                                                    <img src="{{ punto.comprobante.url }}" alt="Comprobante" class="comprobante-thumbnail">
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                        {% else %}
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-receipt fa-3x opacity-25"></i>
+                                            <div class="mt-2"><small>Sin comprobante</small></div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay puntos de recarga registrados para este viaje.
+                    {% endfor %}
+                </div>
+                
+                <!-- Resumen Total -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body bg-light">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <small class="text-muted d-block">Total Recorrido</small>
+                                    <h5 class="mb-0 text-primary">{{ total_kilometros|floatformat:2 }} km</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <small class="text-muted d-block">Total Litros</small>
+                                    <h5 class="mb-0 text-primary">{{ total_litros|floatformat:2 }} L</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <small class="text-muted d-block">Rendimiento</small>
+                                    <h5 class="mb-0 text-success">{% widthratio total_kilometros total_litros 1 %} km/L</h5>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="info-box">
+                                    <small class="text-muted d-block">Costo Total</small>
+                                    <h5 class="mb-0 text-danger">${{ costos.combustible|floatformat:0 }}</h5>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay puntos de recarga registrados para este viaje.
+                </div>
+            {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Tab Peajes -->
-        <div class="tab-pane fade" id="peajes" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    {% if costos.viaje.peajes.count > 0 %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="text-center" style="width: 60px;">#</th>
-                                    <th><i class="fas fa-map-marker-alt me-2 text-primary"></i>Lugar</th>
-                                    <th><i class="fas fa-calendar me-2 text-primary"></i>Fecha Pago</th>
-                                    <th class="text-end"><i class="fas fa-dollar-sign me-2 text-primary"></i>Monto</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for peaje in costos.viaje.peajes.all %}
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="badge bg-warning text-dark rounded-pill">{{ forloop.counter }}</span>
-                                    </td>
-                                    <td><strong>{{ peaje.lugar }}</strong></td>
-                                    <td>{{ peaje.fecha_pago|date:"d/m/Y H:i" }}</td>
-                                    <td class="text-end"><strong class="text-warning">${{ peaje.monto|floatformat:0 }}</strong></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-success">
-                                <tr class="fw-bold">
-                                    <td colspan="3" class="text-end">TOTAL PEAJES:</td>
-                                    <td class="text-end">${{ costos.peajes|floatformat:0 }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+        <!-- Peajes -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingPeajes">
+                <button class="accordion-button collapsed bg-gradient-warning text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePeajes" aria-expanded="false" aria-controls="collapsePeajes">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-road fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Peajes</div>
+                            <small class="opacity-75">{% if costos.viaje.peajes.count > 0 %}{{ costos.viaje.peajes.count }} peaje{{ costos.viaje.peajes.count|pluralize }}{% else %}Sin peajes{% endif %}</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-warning">${{ costos.peajes|floatformat:0 }}</div>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay peajes registrados para este viaje.
+                </button>
+            </h2>
+            <div id="collapsePeajes" class="accordion-collapse collapse" aria-labelledby="headingPeajes">
+                <div class="accordion-body bg-light">
+            {% if costos.viaje.peajes.count > 0 %}
+                <div class="row g-4">
+                    {% for peaje in costos.viaje.peajes.all %}
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-gradient-warning text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-road me-2"></i>Peaje #{{ forloop.counter }}
+                                    </h6>
+                                    <span class="badge bg-white text-warning">${{ peaje.monto|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-{% if peaje.comprobante %}7{% else %}12{% endif %}">
+                                        <div class="info-box mb-3">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-map-marker-alt me-1"></i>Lugar
+                                            </small>
+                                            <strong>{{ peaje.lugar }}</strong>
+                                        </div>
+                                        <div class="info-box mb-3">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-calendar me-1"></i>Fecha de Pago
+                                            </small>
+                                            <strong>{{ peaje.fecha_pago|date:"d/m/Y H:i" }}</strong>
+                                        </div>
+                                        <div class="info-box">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-dollar-sign me-1"></i>Monto
+                                            </small>
+                                            <strong class="text-warning">${{ peaje.monto|floatformat:0 }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if peaje.comprobante %}
+                                    <div class="col-md-5">
+                                        <div class="text-center">
+                                            <small class="text-muted d-block mb-2">
+                                                <i class="fas fa-receipt me-1"></i>Comprobante
+                                            </small>
+                                            {% if peaje.comprobante.name|slice:"-4:" == ".pdf" or peaje.comprobante.name|slice:"-4:" == ".PDF" %}
+                                                <a href="{{ peaje.comprobante.url }}" target="_blank" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                                    <div class="mt-1">Ver PDF</div>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ peaje.comprobante.url }}" target="_blank" class="d-block">
+                                                    <img src="{{ peaje.comprobante.url }}" alt="Comprobante" class="comprobante-thumbnail">
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <!-- Total Peajes -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body bg-light text-center">
+                        <small class="text-muted d-block">Total en Peajes</small>
+                        <h4 class="mb-0 text-warning">${{ costos.peajes|floatformat:0 }}</h4>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay peajes registrados para este viaje.
+                </div>
+            {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Tab Mantenimientos -->
-        <div class="tab-pane fade" id="mantenimientos" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    {% if costos.mantenimientos.count > 0 %}
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th class="text-center" style="width: 60px;">#</th>
-                                    <th>Tipo</th>
-                                    <th>Descripción</th>
-                                    <th class="text-center">Fecha</th>
-                                    <th class="text-center">Kilometraje</th>
-                                    <th class="text-end">Costo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for mant in costos.mantenimientos.all %}
-                                <tr>
-                                    <td class="text-center">
-                                        <span class="badge bg-info rounded-pill">{{ forloop.counter }}</span>
-                                    </td>
-                                    <td><span class="badge bg-warning text-dark">{{ mant.get_tipo_display }}</span></td>
-                                    <td>{{ mant.descripcion }}</td>
-                                    <td class="text-center">{{ mant.fecha_mantenimiento|date:"d/m/Y" }}</td>
-                                    <td class="text-center"><span class="badge bg-secondary">{{ mant.kilometraje }} km</span></td>
-                                    <td class="text-end"><strong class="text-info">${{ mant.costo|floatformat:0 }}</strong></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                            <tfoot class="table-success">
-                                <tr class="fw-bold">
-                                    <td colspan="5" class="text-end">TOTAL MANTENIMIENTOS:</td>
-                                    <td class="text-end">${{ costos.mantenimiento|floatformat:0 }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+        <!-- Mantenimientos -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingMantenimientos">
+                <button class="accordion-button collapsed bg-gradient-info text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseMantenimientos" aria-expanded="false" aria-controls="collapseMantenimientos">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-tools fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Mantenimientos</div>
+                            <small class="opacity-75">{% if costos.mantenimientos.count > 0 %}{{ costos.mantenimientos.count }} mantenimiento{{ costos.mantenimientos.count|pluralize }}{% else %}Sin mantenimientos{% endif %}</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-info">${{ costos.mantenimiento|floatformat:0 }}</div>
+                        </div>
                     </div>
-                    {% else %}
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No hay mantenimientos asociados a este viaje.
+                </button>
+            </h2>
+            <div id="collapseMantenimientos" class="accordion-collapse collapse" aria-labelledby="headingMantenimientos">
+                <div class="accordion-body bg-light">
+            {% if costos.mantenimientos.count > 0 %}
+                <div class="row g-4">
+                    {% for mant in costos.mantenimientos.all %}
+                    <div class="col-md-6">
+                        <div class="card border-0 shadow-sm h-100">
+                            <div class="card-header bg-gradient-info text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-tools me-2"></i>{{ mant.get_tipo_display }}
+                                    </h6>
+                                    <span class="badge bg-white text-info">${{ mant.costo|floatformat:0 }}</span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-{% if mant.comprobante %}7{% else %}12{% endif %}">
+                                        <div class="info-box mb-3">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-file-alt me-1"></i>Descripción
+                                            </small>
+                                            <strong>{{ mant.descripcion }}</strong>
+                                        </div>
+                                        <div class="info-box mb-3">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-calendar me-1"></i>Fecha
+                                            </small>
+                                            <strong>{{ mant.fecha_mantenimiento|date:"d/m/Y" }}</strong>
+                                        </div>
+                                        <div class="info-box mb-3">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-tachometer-alt me-1"></i>Kilometraje
+                                            </small>
+                                            <strong>{{ mant.kilometraje|floatformat:0 }} km</strong>
+                                        </div>
+                                        <div class="info-box">
+                                            <small class="text-muted d-block mb-1">
+                                                <i class="fas fa-dollar-sign me-1"></i>Costo
+                                            </small>
+                                            <strong class="text-info">${{ mant.costo|floatformat:0 }}</strong>
+                                        </div>
+                                    </div>
+                                    {% if mant.comprobante %}
+                                    <div class="col-md-5">
+                                        <div class="text-center">
+                                            <small class="text-muted d-block mb-2">
+                                                <i class="fas fa-receipt me-1"></i>Comprobante
+                                            </small>
+                                            {% if mant.comprobante.name|slice:"-4:" == ".pdf" or mant.comprobante.name|slice:"-4:" == ".PDF" %}
+                                                <a href="{{ mant.comprobante.url }}" target="_blank" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-file-pdf fa-2x"></i>
+                                                    <div class="mt-1">Ver PDF</div>
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ mant.comprobante.url }}" target="_blank" class="d-block">
+                                                    <img src="{{ mant.comprobante.url }}" alt="Comprobante" class="comprobante-thumbnail">
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% endif %}
+                    {% endfor %}
+                </div>
+                
+                <!-- Total Mantenimientos -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-body bg-light text-center">
+                        <small class="text-muted d-block">Total en Mantenimientos</small>
+                        <h4 class="mb-0 text-info">${{ costos.mantenimiento|floatformat:0 }}</h4>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    No hay mantenimientos asociados a este viaje.
+                </div>
+            {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Tab Otros Costos -->
-        <div class="tab-pane fade" id="otros" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body text-center py-5">
-                    <div class="mb-4">
-                        <i class="fas fa-receipt fa-3x text-secondary mb-3"></i>
-                        <h6 class="section-title text-center">Otros Costos</h6>
+        <!-- Otros Costos -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingOtros">
+                <button class="accordion-button collapsed bg-gradient-secondary text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOtros" aria-expanded="false" aria-controls="collapseOtros">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-receipt fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">Otros Costos</div>
+                            <small class="opacity-75">Costos adicionales del viaje</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-secondary">${{ costos.otros_costos|floatformat:0 }}</div>
+                        </div>
                     </div>
-                    <div class="d-inline-block bg-light rounded-3 p-4">
-                        <small class="text-muted d-block mb-2">Monto Total</small>
-                        <h2 class="mb-0 text-primary">${{ costos.otros_costos|floatformat:0 }}</h2>
-                    </div>
-                    {% if costos.otros_costos > 0 and costos.observaciones %}
-                    <hr class="my-4">
-                    <div class="text-start">
-                        <h6 class="section-title"><i class="fas fa-comment-dots me-2"></i>Detalles</h6>
-                        <p class="text-muted mb-0 ps-3">{{ costos.observaciones }}</p>
-                    </div>
+                </button>
+            </h2>
+            <div id="collapseOtros" class="accordion-collapse collapse" aria-labelledby="headingOtros">
+                <div class="accordion-body bg-light">
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-receipt fa-3x text-secondary mb-3"></i>
+                            <h6 class="section-title text-center">Otros Costos</h6>
+                        </div>
+                        <div class="d-inline-block bg-white rounded-3 p-4 shadow-sm">
+                            <small class="text-muted d-block mb-2">Monto Total</small>
+                            <h2 class="mb-0 text-primary">${{ costos.otros_costos|floatformat:0 }}</h2>
+                        </div>
+                        {% if costos.otros_costos > 0 and costos.observaciones %}
+                        <hr class="my-4">
+                        <div class="text-start">
+                            <h6 class="section-title"><i class="fas fa-comment-dots me-2"></i>Detalles</h6>
+                            <p class="text-muted mb-0 ps-3">{{ costos.observaciones }}</p>
+                        </div>
                     {% endif %}
+                    </div>
                 </div>
             </div>
         </div>

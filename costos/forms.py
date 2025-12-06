@@ -61,13 +61,14 @@ class PuntoRecargaForm(forms.ModelForm):
     """
     class Meta:
         model = PuntoRecarga
-        fields = ['orden', 'kilometraje', 'precio_combustible', 'litros_cargados', 'ubicacion', 'observaciones']
+        fields = ['orden', 'kilometraje', 'precio_combustible', 'litros_cargados', 'ubicacion', 'comprobante', 'observaciones']
         widgets = {
             'orden': forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}),
             'kilometraje': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'precio_combustible': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'litros_cargados': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'ubicacion': forms.TextInput(attrs={'class': 'form-control'}),
+            'comprobante': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*,.pdf'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
         }
         labels = {
@@ -76,6 +77,7 @@ class PuntoRecargaForm(forms.ModelForm):
             'precio_combustible': 'Precio por Litro (CLP)',
             'litros_cargados': 'Litros Cargados',
             'ubicacion': 'Ubicación del Punto',
+            'comprobante': 'Comprobante (Imagen/PDF)',
             'observaciones': 'Observaciones',
         }
         help_texts = {
@@ -83,6 +85,7 @@ class PuntoRecargaForm(forms.ModelForm):
             'kilometraje': 'Kilometraje del bus al llegar a este punto',
             'precio_combustible': 'Precio del combustible en CLP por litro',
             'litros_cargados': 'Cantidad de litros cargados',
+            'comprobante': 'Adjunte foto o PDF del comprobante',
         }
 
     def __init__(self, *args, costos_viaje=None, **kwargs):

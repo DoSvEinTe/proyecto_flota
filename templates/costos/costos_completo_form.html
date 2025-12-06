@@ -9,7 +9,10 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="mb-1"><i class="fas fa-dollar-sign me-2"></i>Registrar Costos de Viaje</h2>
+                    <h2 class="mb-1">
+                        <i class="fas fa-dollar-sign me-2"></i>
+                        {% if es_edicion %}Editar{% else %}Registrar{% endif %} Costos de Viaje
+                    </h2>
                     <p class="text-muted">Complete toda la información del viaje en un solo formulario</p>
                 </div>
                 <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary">
@@ -138,10 +141,68 @@
             <div class="card-body">
                 <!-- Formularios de mantenimientos -->
                 <div id="mantenimientos-container">
+                    {% if mantenimientos_existentes %}
+                        {% for mant in mantenimientos_existentes %}
+                        <div class="mantenimiento-item mb-4 p-4" style="background-color: #f8f9fa; border-radius: 8px;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="mb-0"><i class="fas fa-wrench me-2"></i>Mantenimiento #{{ forloop.counter }}</h6>
+                                <button type="button" class="btn btn-sm btn-danger remove-mantenimiento">
+                                    <i class="fas fa-trash me-1"></i>Eliminar
+                                </button>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Fecha</label>
+                                    <input type="date" name="nuevo_mant_fecha_{{ forloop.counter }}" class="form-control" value="{{ mant.fecha_mantenimiento|date:'Y-m-d' }}" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Tipo</label>
+                                    <select name="nuevo_mant_tipo_{{ forloop.counter }}" class="form-select" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="preventivo" {% if mant.tipo == 'preventivo' %}selected{% endif %}>Preventivo</option>
+                                        <option value="correctivo" {% if mant.tipo == 'correctivo' %}selected{% endif %}>Correctivo</option>
+                                        <option value="predictivo" {% if mant.tipo == 'predictivo' %}selected{% endif %}>Predictivo</option>
+                                        <option value="mecanico" {% if mant.tipo == 'mecanico' %}selected{% endif %}>Mecánico</option>
+                                        <option value="electrico" {% if mant.tipo == 'electrico' %}selected{% endif %}>Eléctrico</option>
+                                        <option value="otro" {% if mant.tipo == 'otro' %}selected{% endif %}>Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Costo</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="number" name="nuevo_mant_costo_{{ forloop.counter }}" class="form-control" value="{{ mant.costo }}" step="0.01" min="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Kilometraje</label>
+                                    <input type="number" name="nuevo_mant_kilometraje_{{ forloop.counter }}" class="form-control" value="{{ mant.kilometraje }}" min="0">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Proveedor</label>
+                                    <input type="text" name="nuevo_mant_proveedor_{{ forloop.counter }}" class="form-control" value="{{ mant.proveedor }}">
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Taller</label>
+                                    <input type="text" name="nuevo_mant_taller_{{ forloop.counter }}" class="form-control" value="{{ mant.taller }}">
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Descripción</label>
+                                    <textarea name="nuevo_mant_descripcion_{{ forloop.counter }}" class="form-control" rows="2" required>{{ mant.descripcion }}</textarea>
+                                </div>
+                                <div class="col-md-12 mb-3">
+                                    <label class="form-label">Observaciones</label>
+                                    <textarea name="nuevo_mant_observaciones_{{ forloop.counter }}" class="form-control" rows="2">{{ mant.observaciones }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
                     <p class="text-muted text-center py-3" id="no-mantenimientos-msg">
                         <i class="fas fa-tools fa-2x mb-2 d-block"></i>
                         No hay mantenimientos agregados. Haz clic en "Agregar Mantenimiento" para crear uno nuevo.
                     </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -168,12 +229,25 @@
                             </tr>
                         </thead>
                         <tbody id="peajes-container">
+                            {% if peajes_existentes %}
+                                {% for peaje in peajes_existentes %}
+                                <tr class="peaje-item" data-index="{{ forloop.counter }}">
+                                    <td><input type="text" class="form-control form-control-sm" value="{{ forloop.counter }}" readonly></td>
+                                    <td><input type="text" name="peaje_lugar_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ peaje.lugar|default:'' }}" required></td>
+                                    <td><input type="text" name="peaje_monto_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ peaje.monto }}" inputmode="decimal" placeholder="0.00" required></td>
+                                    <td><input type="date" name="peaje_fecha_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ peaje.fecha_pago|date:'Y-m-d' }}" required></td>
+                                    <td><input type="file" name="peaje_voucher_{{ forloop.counter }}" class="form-control form-control-sm" accept="image/*,.pdf"></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger remove-peaje"><i class="fas fa-trash"></i></button></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-4" id="no-peajes-msg">
                                     <i class="fas fa-road fa-2x mb-2 d-block"></i>
                                     No hay peajes agregados. Haz clic en "Agregar" para crear uno nuevo.
                                 </td>
                             </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -197,7 +271,6 @@
                                 <th style="width: 150px;">LUGAR</th>
                                 <th style="width: 120px;">SUCURSAL</th>
                                 <th style="width: 120px;">KM CAMIÓN</th>
-                                <th style="width: 100px;">MONTO</th>
                                 <th style="width: 120px;">FECHA PAGO</th>
                                 <th style="width: 100px;">LITROS</th>
                                 <th style="width: 120px;">PRECIO COMB</th>
@@ -206,12 +279,28 @@
                             </tr>
                         </thead>
                         <tbody id="recargas-container">
+                            {% if puntos_recarga_existentes %}
+                                {% for punto in puntos_recarga_existentes %}
+                                <tr class="recarga-item" data-index="{{ forloop.counter }}">
+                                    <td><input type="text" class="form-control form-control-sm" value="{{ punto.orden }}" readonly></td>
+                                    <td><input type="text" name="recarga_lugar_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.ubicacion|default:'' }}" required></td>
+                                    <td><input type="text" name="recarga_sucursal_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.ubicacion|default:'' }}"></td>
+                                    <td><input type="text" name="recarga_kilometraje_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.kilometraje }}" inputmode="decimal" placeholder="0.00" required></td>
+                                    <td><input type="date" name="recarga_fecha_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.fecha_pago|default:'' }}"></td>
+                                    <td><input type="text" name="recarga_litros_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.litros_cargados }}" inputmode="decimal" placeholder="0.00" required></td>
+                                    <td><input type="text" name="recarga_precio_{{ forloop.counter }}" class="form-control form-control-sm" value="{{ punto.precio_combustible }}" inputmode="decimal" placeholder="0.00" required></td>
+                                    <td><input type="file" name="recarga_voucher_{{ forloop.counter }}" class="form-control form-control-sm" accept="image/*,.pdf"></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger remove-recarga-btn"><i class="fas fa-trash"></i></button></td>
+                                </tr>
+                                {% endfor %}
+                            {% else %}
                             <tr class="text-center text-muted" id="no-recargas-msg">
-                                <td colspan="10" class="py-4">
+                                <td colspan="9" class="py-4">
                                     <i class="fas fa-gas-pump fa-2x mb-2 d-block"></i>
                                     No hay puntos de recarga agregados
                                 </td>
                             </tr>
+                            {% endif %}
                         </tbody>
                     </table>
                 </div>
@@ -263,13 +352,41 @@
                 <div class="mb-4">
                     <h6 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Costos Agregados</h6>
                     <div id="otros-costos-container">
+                        {% if otros_costos_existentes %}
+                            {% for otro in otros_costos_existentes %}
+                            <div class="otro-costo-item card mb-3" data-index="{{ forloop.counter }}">
+                                <div class="card-body">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-3">
+                                            <strong>{{ otro.tipo }}</strong>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <small class="text-muted">{{ otro.descripcion }}</small>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <strong class="text-success">${{ otro.monto|floatformat:0 }}</strong>
+                                        </div>
+                                        <div class="col-md-2 text-end">
+                                            <button type="button" class="btn btn-sm btn-danger remove-otro-costo" data-index="{{ forloop.counter }}">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="otro_costo_tipo_{{ forloop.counter }}" value="{{ otro.tipo }}" data-otro-costo="{{ forloop.counter }}">
+                                    <input type="hidden" name="otro_costo_monto_{{ forloop.counter }}" value="{{ otro.monto }}" data-otro-costo="{{ forloop.counter }}">
+                                    <input type="hidden" name="otro_costo_descripcion_{{ forloop.counter }}" value="{{ otro.descripcion }}" data-otro-costo="{{ forloop.counter }}">
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
                         <p class="text-muted text-center py-3" id="no-otros-costos-msg">
                             <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
                             No hay otros costos agregados
                         </p>
+                        {% endif %}
                     </div>
                     <div class="mt-3">
-                        <strong>Total Otros Costos: $<span id="total-otros-costos">0.00</span></strong>
+                        <strong>Total Otros Costos: $<span id="total-otros-costos">{% if otros_costos_existentes %}{{ otros_costos_existentes|length|default:0 }}{% else %}0.00{% endif %}</span></strong>
                     </div>
                 </div>
 
@@ -298,7 +415,7 @@
                 <button type="submit" class="btn btn-primary btn-lg px-5">
                     <i class="fas fa-save me-2"></i>Guardar Costos del Viaje
                 </button>
-                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary btn-lg px-5 ms-3">
+                <a href="{% url 'costos:gestion' %}" class="btn btn-lg px-5 ms-3" style="background-color: #6c757d; color: white; border: 2px solid #6c757d; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                     <i class="fas fa-times me-2"></i>Cancelar
                 </a>
             </div>
@@ -308,11 +425,46 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let peajeIndex = 1;
-    let recargaIndex = 1;
-    let mantenimientoIndex = 0;
-    let otroCostoIndex = 0;
+    let peajeIndex = {{ peajes_existentes|length|default:0 }};
+    let recargaIndex = {{ puntos_recarga_existentes|length|default:0 }};
+    let mantenimientoIndex = {{ mantenimientos_existentes|length|default:0 }};
+    let otroCostoIndex = {{ otros_costos_existentes|length|default:0 }};
     let otrosCostosData = [];
+
+    // Cargar otros costos existentes
+    {% if otros_costos_existentes %}
+        {% for otro in otros_costos_existentes %}
+            otrosCostosData.push({
+                tipo: "{{ otro.tipo }}",
+                monto: parseFloat("{{ otro.monto|default:'0' }}") || 0,
+                descripcion: "{{ otro.descripcion }}",
+                voucher: null
+            });
+        {% endfor %}
+        // Calcular total inicial
+        actualizarTotalOtrosCostos();
+    {% endif %}
+
+    // Ocultar mensajes de "no hay datos" si existen datos
+    {% if peajes_existentes %}
+        const noPeajesMsg = document.getElementById('no-peajes-msg');
+        if (noPeajesMsg) noPeajesMsg.style.display = 'none';
+    {% endif %}
+    
+    {% if puntos_recarga_existentes %}
+        const noRecargasMsg = document.getElementById('no-recargas-msg');
+        if (noRecargasMsg) noRecargasMsg.style.display = 'none';
+    {% endif %}
+    
+    {% if mantenimientos_existentes %}
+        const noMantMsg = document.getElementById('no-mantenimientos-msg');
+        if (noMantMsg) noMantMsg.style.display = 'none';
+    {% endif %}
+    
+    {% if otros_costos_existentes %}
+        const noOtrosMsg = document.getElementById('no-otros-costos-msg');
+        if (noOtrosMsg) noOtrosMsg.style.display = 'none';
+    {% endif %}
 
     // Agregar mantenimiento
     document.getElementById('agregar-mantenimiento').addEventListener('click', function() {
@@ -492,13 +644,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="text" name="recarga_lugar_${recargaIndex}" class="form-control form-control-sm" placeholder="Lugar">
             </td>
             <td>
-                <input type="text" name="recarga_sucursal_${recargaIndex}" class="form-control form-control-sm" placeholder="Sucursal">
+                <select name="recarga_sucursal_${recargaIndex}" class="form-select form-select-sm">
+                    <option value="">-- Seleccione --</option>
+                    <option value="COPEC">COPEC</option>
+                    <option value="Shell">Shell</option>
+                    <option value="Petrobras">Petrobras</option>
+                    <option value="ENEX">ENEX</option>
+                    <option value="Terpel">Terpel</option>
+                    <option value="Otro">Otro</option>
+                </select>
             </td>
             <td>
                 <input type="number" name="recarga_kilometraje_${recargaIndex}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
-            </td>
-            <td>
-                <input type="number" name="recarga_monto_${recargaIndex}" class="form-control form-control-sm monto-recarga" step="0.01" min="0" placeholder="0.00" readonly>
             </td>
             <td>
                 <input type="date" name="recarga_fecha_${recargaIndex}" class="form-control form-control-sm">

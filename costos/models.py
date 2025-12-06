@@ -59,6 +59,7 @@ class PuntoRecarga(models.Model):
     kilometros_recorridos = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0, help_text='Kilómetros desde el punto anterior')
     costo_total = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0, help_text='Costo total de esta recarga')
     ubicacion = models.CharField(max_length=200, blank=True, help_text='Nombre o ubicación del punto de recarga')
+    comprobante = models.FileField(upload_to='combustible/comprobantes/', blank=True, null=True, help_text='Comprobante de recarga')
     observaciones = models.TextField(blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 
