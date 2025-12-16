@@ -34,7 +34,7 @@ class ViajeForm(ModelForm):
             'destino_nombre', 'destino_ciudad', 'destino_provincia', 'destino_pais',
             'latitud_destino', 'longitud_destino',
             'fecha_salida', 'fecha_llegada_estimada', 'fecha_llegada_real',
-            'estado', 'observaciones'
+            'observaciones'
         ]
         widgets = {
             'bus': forms.Select(attrs={'class': 'form-control'}),
@@ -103,7 +103,6 @@ class ViajeForm(ModelForm):
                 'type': 'datetime-local',
                 'placeholder': 'Fecha y hora real de llegada (opcional)'
             }),
-            'estado': forms.Select(attrs={'class': 'form-control'}),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -173,6 +172,8 @@ class ViajeCreateView(CreateView):
     success_url = reverse_lazy('viajes:viaje_list')
 
     def form_valid(self, form):
+        # Establecer automáticamente el estado como PROGRAMADO
+        form.instance.estado = 'programado'
         messages.success(
             self.request,
             f'Viaje {form.instance.bus.placa} creado exitosamente.'

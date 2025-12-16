@@ -57,7 +57,10 @@ class ViajesSinCostosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        return Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')
+        queryset = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')
+        # Actualizar estado a EN CURSO para viajes pendientes de registro
+        queryset.filter(estado='programado').update(estado='en_curso')
+        return queryset
 
 
 class CostosViajeCreateView(LoginRequiredMixin, View):
@@ -72,6 +75,9 @@ class CostosViajeCreateView(LoginRequiredMixin, View):
         viaje_id = request.POST.get('viaje')
         if viaje_id:
             viaje = Viaje.objects.get(pk=viaje_id)
+            # Cambiar estado a EN CURSO al iniciar registro de costos
+            viaje.estado = 'en_curso'
+            viaje.save()
             costos_viaje = CostosViaje.objects.create(viaje=viaje)
             return redirect('costos:registrar_km_inicial', costos_pk=costos_viaje.pk)
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
@@ -127,6 +133,11 @@ class CostosViajeDetailView(LoginRequiredMixin, DetailView):
     context_object_name = 'costos'
 
     def get_context_data(self, **kwargs):
+        # Cambiar estado del viaje a COMPLETADO cuando se accede al detalle
+        if self.object.viaje.estado != 'completado':
+            self.object.viaje.estado = 'completado'
+            self.object.viaje.save()
+        
         context = super().get_context_data(**kwargs)
         context['puntos_recarga'] = self.object.puntos_recarga.all()
         context['total_kilometros'] = sum(p.kilometros_recorridos for p in context['puntos_recarga'])
@@ -274,6 +285,11 @@ class GestionCostosView(LoginRequiredMixin, View):
     def get(self, request):
         # Obtener viajes sin costos asignados
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
+        viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
+        
+        # Actualizar estado a EN CURSO para viajes pendientes de registro
+        viajes_sin_costos.filter(estado='programado').update(estado='en_curso')
+        # Re-consultar para obtener el estado actualizado
         viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
 
         # Obtener todos los costos registrados para el CRUD
