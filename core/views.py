@@ -108,15 +108,43 @@ class LugarForm(ModelForm):
 
 
 class PasajeroForm(ModelForm):
+    tipo_documento = forms.ChoiceField(
+        choices=[('rut', 'RUT/Cédula'), ('pasaporte', 'Pasaporte')],
+        widget=forms.RadioSelect(attrs={'class': 'form-check-input'}),
+        initial='rut',
+        label='Tipo de Documento'
+    )
+    
     class Meta:
         model = Pasajero
-        fields = ['nombre_completo', 'rut', 'telefono', 'correo']
+        fields = ['nombre_completo', 'rut', 'pasaporte', 'telefono', 'correo']
         widgets = {
             'nombre_completo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre completo del pasajero'}),
-            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)'}),
+            'rut': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT (ej: 12345678-9)', 'id': 'id_rut'}),
+            'pasaporte': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de pasaporte', 'id': 'id_pasaporte'}),
             'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de teléfono'}),
             'correo': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
         }
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        rut = cleaned_data.get('rut')
+        pasaporte = cleaned_data.get('pasaporte')
+        tipo_documento = cleaned_data.get('tipo_documento')
+        
+        # Validar que se ingrese RUT o Pasaporte según la selección
+        if tipo_documento == 'rut':
+            if not rut:
+                raise forms.ValidationError('Debe ingresar un RUT/Cédula')
+            # Limpiar pasaporte si se seleccionó RUT
+            cleaned_data['pasaporte'] = None
+        elif tipo_documento == 'pasaporte':
+            if not pasaporte:
+                raise forms.ValidationError('Debe ingresar un número de pasaporte')
+            # Limpiar RUT si se seleccionó Pasaporte
+            cleaned_data['rut'] = None
+        
+        return cleaned_data
 
 
 # Vistas para Conductores

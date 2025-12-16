@@ -2,6 +2,48 @@
 
 {% block title %}Pasajeros del Viaje - Sistema de Gestión de Flota{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Ocultar radio buttons originales */
+    input[name="tipo_documento"] {
+        display: none;
+    }
+    
+    /* Estilo de los botones de tipo de documento */
+    .btn-group label.btn {
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    /* Estado seleccionado */
+    input[name="tipo_documento"]:checked + label.btn {
+        background-color: #0d6efd;
+        color: white;
+        border-color: #0d6efd;
+    }
+    
+    /* Hover en botones no seleccionados */
+    .btn-group label.btn:hover {
+        background-color: rgba(13, 110, 253, 0.1);
+    }
+    
+    /* Iconos en input groups */
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: none;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: #86b7fe;
+        background-color: #e7f1ff;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Pasajeros del Viaje</h2>
@@ -49,8 +91,10 @@
         <div class="card-body">
             <form method="post" action="{% url 'viajes:crear_pasajero_desde_viaje' viaje.pk %}">
                 {% csrf_token %}
+                
+                <!-- Nombre Completo -->
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-12 mb-3">
                         <label for="{{ pasajero_form.nombre_completo.id_for_label }}" class="form-label">Nombre Completo *</label>
                         {{ pasajero_form.nombre_completo }}
                         {% if pasajero_form.nombre_completo.errors %}
@@ -61,12 +105,49 @@
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ pasajero_form.rut.id_for_label }}" class="form-label">RUT *</label>
-                        {{ pasajero_form.rut }}
+                </div>
+
+                <!-- Tipo de Documento -->
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <label class="form-label d-block mb-2">Tipo de Documento *</label>
+                        <div class="btn-group" role="group">
+                            {% for radio in pasajero_form.tipo_documento %}
+                                {{ radio.tag }}
+                                <label class="btn btn-outline-primary" for="{{ radio.id_for_label }}">
+                                    <i class="fas {% if radio.choice_value == 'rut' %}fa-id-card{% else %}fa-passport{% endif %} me-2"></i>
+                                    {{ radio.choice_label }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Campos RUT/Pasaporte (alternos) -->
+                <div class="row">
+                    <div class="col-md-6 mb-3" id="rut_field">
+                        <label for="{{ pasajero_form.rut.id_for_label }}" class="form-label">RUT/Cédula *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                            {{ pasajero_form.rut }}
+                        </div>
                         {% if pasajero_form.rut.errors %}
-                            <div class="text-danger">
+                            <div class="text-danger mt-1">
                                 {% for error in pasajero_form.rut.errors %}
+                                    <small>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3" id="pasaporte_field" style="display: none;">
+                        <label for="{{ pasajero_form.pasaporte.id_for_label }}" class="form-label">Número de Pasaporte *</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-passport"></i></span>
+                            {{ pasajero_form.pasaporte }}
+                        </div>
+                        {% if pasajero_form.pasaporte.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in pasajero_form.pasaporte.errors %}
                                     <small>{{ error }}</small>
                                 {% endfor %}
                             </div>
@@ -136,7 +217,7 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Nombre Completo</th>
-                            <th>RUT</th>
+                            <th>Documento</th>
                             <th>Teléfono</th>
                             <th>Correo</th>
                             <th>Asiento</th>
@@ -151,7 +232,15 @@
                             <td>
                                 <strong>{{ viaje_pasajero.pasajero.nombre_completo }}</strong>
                             </td>
-                            <td>{{ viaje_pasajero.pasajero.rut }}</td>
+                            <td>
+                                {% if viaje_pasajero.pasajero.rut %}
+                                    <span class="badge bg-primary"><i class="fas fa-id-card me-1"></i>{{ viaje_pasajero.pasajero.rut }}</span>
+                                {% elif viaje_pasajero.pasajero.pasaporte %}
+                                    <span class="badge bg-success"><i class="fas fa-passport me-1"></i>{{ viaje_pasajero.pasajero.pasaporte }}</span>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
                             <td>{{ viaje_pasajero.pasajero.telefono|default:"-" }}</td>
                             <td>{{ viaje_pasajero.pasajero.correo|default:"-" }}</td>
                             <td>
@@ -233,8 +322,47 @@
 </div>
 
 <script>
-// Actualizar automáticamente el contador de pasajeros
+// Alternar campos RUT/Pasaporte según selección
 document.addEventListener('DOMContentLoaded', function() {
+    const tipoDocumentoRadios = document.querySelectorAll('input[name="tipo_documento"]');
+    const rutField = document.getElementById('rut_field');
+    const pasaporteField = document.getElementById('pasaporte_field');
+    const rutInput = document.getElementById('id_rut');
+    const pasaporteInput = document.getElementById('id_pasaporte');
+    
+    function toggleDocumentFields(tipoDoc) {
+        if (tipoDoc === 'rut') {
+            rutField.style.display = 'block';
+            pasaporteField.style.display = 'none';
+            if (rutInput) rutInput.required = true;
+            if (pasaporteInput) {
+                pasaporteInput.required = false;
+                pasaporteInput.value = '';
+            }
+        } else if (tipoDoc === 'pasaporte') {
+            rutField.style.display = 'none';
+            pasaporteField.style.display = 'block';
+            if (pasaporteInput) pasaporteInput.required = true;
+            if (rutInput) {
+                rutInput.required = false;
+                rutInput.value = '';
+            }
+        }
+    }
+    
+    tipoDocumentoRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            toggleDocumentFields(this.value);
+        });
+    });
+    
+    // Establecer estado inicial
+    const checkedRadio = document.querySelector('input[name="tipo_documento"]:checked');
+    if (checkedRadio) {
+        toggleDocumentFields(checkedRadio.value);
+    }
+    
+    // Actualizar automáticamente el contador de pasajeros
     const totalPasajeros = {{ pasajeros_en_viaje|length }};
     const capacidadBus = {{ viaje.bus.capacidad_pasajeros }};
     

@@ -106,7 +106,9 @@
                                     <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                                     <td>
-                                        {% if viaje.estado == 'completado' %}
+                                        {% if viaje.estado_display %}
+                                            <span class="badge bg-warning text-dark">EN CURSO</span>
+                                        {% elif viaje.estado == 'completado' %}
                                             <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
                                         {% elif viaje.estado == 'en_curso' %}
                                             <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
@@ -160,19 +162,20 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-striped table-bordered align-middle">
+                        <table class="table table-striped table-bordered align-middle text-center">
                             <thead class="table-primary">
                                 <tr>
-                                    <th>Placa</th>
-                                    <th>Modelo</th>
-                                    <th>Viaje</th>
-                                    <th>Fecha</th>
-                                    <th>Puntos Recarga</th>
-                                    <th>Peajes</th>
-                                    <th>Combustible</th>
-                                    <th>Otros Costos</th>
-                                    <th>Costo Total</th>
-                                    <th>Acciones</th>
+                                    <th style="width: 8%;">Placa</th>
+                                    <th style="width: 10%;">Modelo</th>
+                                    <th style="width: 18%;">Viaje</th>
+                                    <th style="width: 8%;">Fecha</th>
+                                    <th style="width: 10%;">Estado</th>
+                                    <th style="width: 7%;">Puntos Recarga</th>
+                                    <th style="width: 6%;">Peajes</th>
+                                    <th style="width: 10%;">Combustible</th>
+                                    <th style="width: 10%;">Otros Costos</th>
+                                    <th style="width: 10%;">Costo Total</th>
+                                    <th style="width: 13%;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -180,20 +183,29 @@
                                 <tr>
                                     <td><strong>{{ costos.viaje.bus.placa }}</strong></td>
                                     <td>{{ costos.viaje.bus.modelo }}</td>
-                                    <td>
-                                        {{ costos.viaje.get_origen_display|truncatewords:2 }} → 
-                                        {{ costos.viaje.get_destino_display|truncatewords:2 }}
+                                    <td class="text-start">
+                                        <small>{{ costos.viaje.get_origen_display|truncatewords:2 }} → 
+                                        {{ costos.viaje.get_destino_display|truncatewords:2 }}</small>
                                     </td>
                                     <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if costos.viaje.estado == 'completado' %}
+                                            <span class="badge bg-success w-100">COMPLETADO</span>
+                                        {% elif costos.viaje.estado == 'en_curso' %}
+                                            <span class="badge bg-warning text-dark w-100">EN CURSO</span>
+                                        {% else %}
+                                            <span class="badge bg-info text-dark w-100">{{ costos.viaje.get_estado_display }}</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
                                     </td>
                                     <td>
-                                        <span class="badge bg-warning">{{ costos.viaje.peajes.count }}</span>
+                                        <span class="badge bg-warning text-dark">{{ costos.viaje.peajes.count }}</span>
                                     </td>
-                                    <td>CLP ${{ costos.combustible|floatformat:0 }}</td>
-                                    <td>CLP ${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</td>
-                                    <td><strong>CLP ${{ costos.costo_total|floatformat:0 }}</strong></td>
+                                    <td><strong>${{ costos.combustible|floatformat:0 }}</strong></td>
+                                    <td><strong>${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</strong></td>
+                                    <td><strong class="text-success">${{ costos.costo_total|floatformat:0 }}</strong></td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="{% url 'costos:detalle' costos.pk %}" class="btn btn-info" title="Ver Detalles">

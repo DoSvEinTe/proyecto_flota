@@ -99,15 +99,7 @@
                     <td>{{ viaje.get_destino_display|truncatechars:25 }}</td>
                     <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                     <td>
-                        {% if viaje.estado == 'completado' %}
-                            <span class="badge bg-success">COMPLETADO</span>
-                        {% elif viaje.estado == 'en_curso' %}
-                            <span class="badge bg-warning text-dark">EN CURSO</span>
-                        {% elif viaje.estado == 'programado' %}
-                            <span class="badge bg-info text-dark">PROGRAMADO</span>
-                        {% else %}
-                            <span class="badge bg-danger">CANCELADO</span>
-                        {% endif %}
+                        <span class="badge bg-info text-dark">PROGRAMADO</span>
                     </td>
                     <td>
                         <span class="passenger-badge">

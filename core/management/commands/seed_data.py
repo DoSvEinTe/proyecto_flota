@@ -1,224 +1,504 @@
 from django.core.management.base import BaseCommand
-from django.db import transaction
 from django.utils import timezone
-from datetime import timedelta, date
-
-from flota.models import Bus, DocumentoVehiculo, Mantenimiento
-from core.models import Conductor, Lugar, Pasajero
-from viajes.models import Viaje
-from costos.models import CostosViaje
+from datetime import timedelta
+from core.models import Conductor, Pasajero, Lugar
+from flota.models import Bus
+from viajes.models import Viaje, ViajePasajero
 
 
 class Command(BaseCommand):
-    help = 'Siembra datos de ejemplo para desarrollo: buses, conductores, lugares, pasajeros, viajes y costos.'
+    help = 'Carga datos de prueba en la base de datos (Buses, Conductores, Viajes, Pasajeros)'
 
-    @transaction.atomic
+    def add_arguments(self, parser):
+        parser.add_argument(
+            '--clean',
+            action='store_true',
+            help='Elimina todos los datos de prueba antes de crear nuevos',
+        )
+
     def handle(self, *args, **options):
-        self.stdout.write('Iniciando siembra de datos de ejemplo...')
-
-        # Buses
-        buses_data = [
-            {
-                'placa': 'PQR-123',
-                'marca': 'Mercedes',
-                'modelo': 'Sprinter 2018',
-                'año_fabricacion': 2018,
-                'capacidad_pasajeros': 20,
-                'kilometraje_inicial': 120000,
-                'numero_chasis': 'CHS-PQR-123',
-                'numero_motor': 'ENG-PQR-01',
-                'estado': 'activo',
-                'fecha_adquisicion': date.today() - timedelta(days=365 * 4),
-            },
-            {
-                'placa': 'ABC-999',
-                'marca': 'Volvo',
-                'modelo': 'B9R',
-                'año_fabricacion': 2015,
-                'capacidad_pasajeros': 45,
-                'kilometraje_inicial': 300000,
-                'numero_chasis': 'CHS-ABC-999',
-                'numero_motor': 'ENG-ABC-09',
-                'estado': 'activo',
-                'fecha_adquisicion': date.today() - timedelta(days=365 * 6),
-            },
-            {
-                'placa': 'DEF-456',
-                'marca': 'Scania',
-                'modelo': 'K360',
-                'año_fabricacion': 2017,
-                'capacidad_pasajeros': 40,
-                'kilometraje_inicial': 200000,
-                'numero_chasis': 'CHS-DEF-456',
-                'numero_motor': 'ENG-DEF-02',
-                'estado': 'activo',
-                'fecha_adquisicion': date.today() - timedelta(days=365 * 5),
-            },
-            {
-                'placa': 'GHI-321',
-                'marca': 'Iveco',
-                'modelo': 'Urbanway',
-                'año_fabricacion': 2019,
-                'capacidad_pasajeros': 30,
-                'kilometraje_inicial': 90000,
-                'numero_chasis': 'CHS-GHI-321',
-                'numero_motor': 'ENG-GHI-03',
-                'estado': 'mantenimiento',
-                'fecha_adquisicion': date.today() - timedelta(days=365 * 3),
-            },
-        ]
-
-        buses = []
-        for b in buses_data:
-            bus, created = Bus.objects.get_or_create(
-                placa=b['placa'],
-                defaults={
-                    'marca': b['marca'],
-                    'modelo': b['modelo'],
-                    'año_fabricacion': b['año_fabricacion'],
-                    'capacidad_pasajeros': b['capacidad_pasajeros'],
-                    'kilometraje_inicial': b['kilometraje_inicial'],
-                    'numero_chasis': b['numero_chasis'],
-                    'numero_motor': b['numero_motor'],
-                    'estado': b['estado'],
-                    'fecha_adquisicion': b['fecha_adquisicion'],
-                }
-            )
-            buses.append(bus)
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Bus: {bus.placa}")
-
-        # Conductores
+        if options['clean']:
+            self.stdout.write(self.style.WARNING('\n🗑️  Limpiando datos de prueba anteriores...'))
+            
+            # Eliminar en orden para respetar las relaciones
+            deleted_viaje_pasajero = ViajePasajero.objects.all().delete()[0]
+            deleted_viajes = Viaje.objects.all().delete()[0]
+            deleted_pasajeros = Pasajero.objects.all().delete()[0]
+            deleted_buses = Bus.objects.all().delete()[0]
+            deleted_conductores = Conductor.objects.all().delete()[0]
+            deleted_lugares = Lugar.objects.all().delete()[0]
+            
+            self.stdout.write(f'  ✅ Eliminados: {deleted_viaje_pasajero} asignaciones, {deleted_viajes} viajes, {deleted_pasajeros} pasajeros, {deleted_buses} buses, {deleted_conductores} conductores, {deleted_lugares} lugares')
+        
+        self.stdout.write(self.style.SUCCESS('\n🚀 Iniciando carga de datos de prueba...'))
+        
+        # Crear Conductores
+        self.stdout.write('\n👤 Creando conductores...')
         conductores_data = [
-            {'nombre': 'Juan', 'apellido': 'Pérez', 'cedula': '0102030405', 'email': 'juan.perez@example.com', 'telefono': '0991234567', 'fecha_contratacion': date.today() - timedelta(days=400)},
-            {'nombre': 'Luis', 'apellido': 'Martínez', 'cedula': '0102030406', 'email': 'luis.martinez@example.com', 'telefono': '0997654321', 'fecha_contratacion': date.today() - timedelta(days=200)},
-            {'nombre': 'María', 'apellido': 'Ramos', 'cedula': '0102030407', 'email': 'maria.ramos@example.com', 'telefono': '0995556666', 'fecha_contratacion': date.today() - timedelta(days=150)},
-            {'nombre': 'José', 'apellido': 'Vega', 'cedula': '0102030408', 'email': 'jose.vega@example.com', 'telefono': '0994443333', 'fecha_contratacion': date.today() - timedelta(days=30)},
+            {
+                'nombre': 'Juan',
+                'apellido': 'Pérez',
+                'cedula': '12345678-9',
+                'email': 'juan.perez@flota.com',
+                'telefono': '+56912345678',
+                'fecha_contratacion': timezone.now().date() - timedelta(days=365),
+                'licencias': 'A3, B',
+                'activo': True
+            },
+            {
+                'nombre': 'María',
+                'apellido': 'González',
+                'cedula': '98765432-1',
+                'email': 'maria.gonzalez@flota.com',
+                'telefono': '+56987654321',
+                'fecha_contratacion': timezone.now().date() - timedelta(days=730),
+                'licencias': 'A2, A3',
+                'activo': True
+            },
+            {
+                'nombre': 'Carlos',
+                'apellido': 'Rodríguez',
+                'cedula': '11223344-5',
+                'email': 'carlos.rodriguez@flota.com',
+                'telefono': '+56911223344',
+                'fecha_contratacion': timezone.now().date() - timedelta(days=180),
+                'licencias': 'A3',
+                'activo': True
+            },
+            {
+                'nombre': 'Ana',
+                'apellido': 'Martínez',
+                'cedula': '55667788-9',
+                'email': 'ana.martinez@flota.com',
+                'telefono': '+56955667788',
+                'fecha_contratacion': timezone.now().date() - timedelta(days=90),
+                'licencias': 'A2, B',
+                'activo': True
+            },
         ]
+        
         conductores = []
-        for c in conductores_data:
+        for data in conductores_data:
             conductor, created = Conductor.objects.get_or_create(
-                cedula=c['cedula'],
-                defaults={
-                    'nombre': c['nombre'],
-                    'apellido': c['apellido'],
-                    'email': c['email'],
-                    'telefono': c['telefono'],
-                    'fecha_contratacion': c['fecha_contratacion'],
-                }
+                cedula=data['cedula'],
+                defaults=data
             )
             conductores.append(conductor)
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Conductor: {conductor}")
-
-        # Lugares
-        lugares_data = [
-            {'nombre': 'Terminal Norte', 'ciudad': 'Quito', 'provincia': 'Pichincha'},
-            {'nombre': 'Terminal Sur', 'ciudad': 'Guayaquil', 'provincia': 'Guayas'},
-            {'nombre': 'Parada Central', 'ciudad': 'Cuenca', 'provincia': 'Azuay'},
-            {'nombre': 'Estación Central', 'ciudad': 'Ambato', 'provincia': 'Tungurahua'},
-            {'nombre': 'Parada Plaza', 'ciudad': 'Machala', 'provincia': 'El Oro'},
+            if created:
+                self.stdout.write(f'  ✅ Conductor creado: {conductor.nombre} {conductor.apellido}')
+            else:
+                self.stdout.write(f'  ℹ️  Conductor ya existe: {conductor.nombre} {conductor.apellido}')
+        
+        # Crear Buses
+        self.stdout.write('\n🚌 Creando buses...')
+        buses_data = [
+            {
+                'placa': 'AA2233',
+                'modelo': 'Mercedes-Benz Sprinter',
+                'marca': 'Mercedes-Benz',
+                'año_fabricacion': 2020,
+                'capacidad_pasajeros': 20,
+                'numero_motor': 'MB2020-001',
+                'numero_chasis': 'CHASIS-001',
+                'kilometraje_ingreso': 15000,
+                'estado': 'activo',
+                'fecha_adquisicion': timezone.now().date() - timedelta(days=1460)  # ~4 años
+            },
+            {
+                'placa': 'BB4455',
+                'modelo': 'Iveco Daily',
+                'marca': 'Iveco',
+                'año_fabricacion': 2019,
+                'capacidad_pasajeros': 16,
+                'numero_motor': 'IVECO2019-002',
+                'numero_chasis': 'CHASIS-002',
+                'kilometraje_ingreso': 28000,
+                'estado': 'activo',
+                'fecha_adquisicion': timezone.now().date() - timedelta(days=1825)  # ~5 años
+            },
+            {
+                'placa': 'CC6677',
+                'modelo': 'Ford Transit',
+                'marca': 'Ford',
+                'año_fabricacion': 2021,
+                'capacidad_pasajeros': 15,
+                'numero_motor': 'FORD2021-003',
+                'numero_chasis': 'CHASIS-003',
+                'kilometraje_ingreso': 8500,
+                'estado': 'activo',
+                'fecha_adquisicion': timezone.now().date() - timedelta(days=1095)  # ~3 años
+            },
+            {
+                'placa': 'DD8899',
+                'modelo': 'Volkswagen Crafter',
+                'marca': 'Volkswagen',
+                'año_fabricacion': 2018,
+                'capacidad_pasajeros': 18,
+                'numero_motor': 'VW2018-004',
+                'numero_chasis': 'CHASIS-004',
+                'kilometraje_ingreso': 45000,
+                'estado': 'activo',
+                'fecha_adquisicion': timezone.now().date() - timedelta(days=2190)  # ~6 años
+            },
+            {
+                'placa': 'EE1122',
+                'modelo': 'Hyundai H350',
+                'marca': 'Hyundai',
+                'año_fabricacion': 2022,
+                'capacidad_pasajeros': 17,
+                'numero_motor': 'HY2022-005',
+                'numero_chasis': 'CHASIS-005',
+                'kilometraje_ingreso': 3200,
+                'estado': 'activo',
+                'fecha_adquisicion': timezone.now().date() - timedelta(days=730)  # ~2 años
+            },
         ]
+        
+        buses = []
+        for data in buses_data:
+            bus, created = Bus.objects.get_or_create(
+                placa=data['placa'],
+                defaults=data
+            )
+            buses.append(bus)
+            if created:
+                self.stdout.write(f'  ✅ Bus creado: {bus.placa} - {bus.modelo}')
+            else:
+                self.stdout.write(f'  ℹ️  Bus ya existe: {bus.placa} - {bus.modelo}')
+        
+        # Crear Lugares
+        self.stdout.write('\n📍 Creando lugares...')
+        lugares_data = [
+            {
+                'nombre': 'Terminal Central',
+                'ciudad': 'Santiago',
+                'provincia': 'Santiago',
+                'pais': 'Chile',
+                'latitud': -33.4489,
+                'longitud': -70.6693
+            },
+            {
+                'nombre': 'Terminal Valparaíso',
+                'ciudad': 'Valparaíso',
+                'provincia': 'Valparaíso',
+                'pais': 'Chile',
+                'latitud': -33.0472,
+                'longitud': -71.6127
+            },
+            {
+                'nombre': 'Terminal Viña del Mar',
+                'ciudad': 'Viña del Mar',
+                'provincia': 'Valparaíso',
+                'pais': 'Chile',
+                'latitud': -33.0245,
+                'longitud': -71.5518
+            },
+            {
+                'nombre': 'Terminal Rancagua',
+                'ciudad': 'Rancagua',
+                'provincia': 'Cachapoal',
+                'pais': 'Chile',
+                'latitud': -34.1704,
+                'longitud': -70.7407
+            },
+            {
+                'nombre': 'Terminal Concepción',
+                'ciudad': 'Concepción',
+                'provincia': 'Concepción',
+                'pais': 'Chile',
+                'latitud': -36.8270,
+                'longitud': -73.0498
+            },
+        ]
+        
         lugares = []
-        for l in lugares_data:
+        for data in lugares_data:
             lugar, created = Lugar.objects.get_or_create(
-                nombre=l['nombre'], ciudad=l['ciudad'], defaults={'provincia': l.get('provincia', '')}
+                nombre=data['nombre'],
+                ciudad=data['ciudad'],
+                defaults=data
             )
             lugares.append(lugar)
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Lugar: {lugar}")
-
-        # Pasajeros
-        pasajeros_data = [
-            {'nombre_completo': 'María López', 'rut': 'RUT001', 'telefono': '0991112222', 'correo': 'maria.lopez@example.com'},
-            {'nombre_completo': 'Carlos Gómez', 'rut': 'RUT002', 'telefono': '0993334444', 'correo': 'carlos.gomez@example.com'},
-            {'nombre_completo': 'Ana Torres', 'rut': 'RUT003', 'telefono': '0997778888', 'correo': 'ana.torres@example.com'},
-            {'nombre_completo': 'Pedro Castillo', 'rut': 'RUT004', 'telefono': '0992223333', 'correo': 'pedro.castillo@example.com'},
-            {'nombre_completo': 'Lucía Fernández', 'rut': 'RUT005', 'telefono': '0999990000', 'correo': 'lucia.fernandez@example.com'},
-        ]
-        pasajeros = []
-        for p in pasajeros_data:
-            pasajero, created = Pasajero.objects.get_or_create(
-                rut=p['rut'],
-                defaults={'nombre_completo': p['nombre_completo'], 'telefono': p['telefono'], 'correo': p['correo']}
-            )
-            pasajeros.append(pasajero)
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Pasajero: {pasajero}")
-
-        # Viajes (crear uno por bus)
-        now = timezone.now()
-        for i, bus in enumerate(buses):
-            conductor = conductores[i % len(conductores)]
-            origen = lugares[i % len(lugares)]
-            destino = lugares[(i + 1) % len(lugares)]
-            fecha_salida = now + timedelta(days=1 + i)
-            fecha_llegada = fecha_salida + timedelta(hours=3 + i)
-
-            viaje, created = Viaje.objects.get_or_create(
-                bus=bus,
-                conductor=conductor,
-                lugar_origen=origen,
-                lugar_destino=destino,
-                fecha_salida=fecha_salida,
-                defaults={
-                    'fecha_llegada_estimada': fecha_llegada,
-                    'estado': ['programado', 'en_curso', 'completado', 'cancelado'][i % 4],
-                    'observaciones': 'Viaje de ejemplo creado por seed_data',
-                }
-            )
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Viaje: {viaje}")
-
-            # Asociar pasajeros al viaje (si no están)
-            # Asociar algunos pasajeros al viaje (no todos)
-            for j, pasajero in enumerate(pasajeros):
-                if j % 2 == i % 2 and not viaje.pasajeros.filter(pk=pasajero.pk).exists():
-                    viaje.pasajeros.add(pasajero)
-
-            # Costos del viaje
-            if not hasattr(viaje, 'costos'):
-                costos = CostosViaje.objects.create(
-                    viaje=viaje,
-                    combustible=120.00 + i * 25,
-                    mantenimiento=30.00 + i * 10,
-                    peajes=5.00 + i * 2,
-                    otros_costos=2.00,
-                )
-                costos.save()
-                self.stdout.write(f"Creado Costos para viaje {viaje}")
+            if created:
+                self.stdout.write(f'  ✅ Lugar creado: {lugar.nombre}, {lugar.ciudad}')
             else:
-                self.stdout.write(f"Costos ya existen para viaje {viaje}")
-
-            # Crear algunos peajes de ejemplo
-            try:
-                from costos.models import Peaje
-                for k in range(2):
-                    Peaje.objects.get_or_create(
-                        viaje=viaje,
-                        lugar=f'Peaje {k+1} - {viaje.lugar_origen.ciudad}',
-                        defaults={'monto': 2.50 + k, 'fecha_pago': now + timedelta(hours=k+1)}
+                self.stdout.write(f'  ℹ️  Lugar ya existe: {lugar.nombre}, {lugar.ciudad}')
+        
+        # Crear Pasajeros
+        self.stdout.write('\n👥 Creando pasajeros...')
+        pasajeros_data = [
+            {
+                'nombre_completo': 'Pedro Sánchez López',
+                'rut': '15234567-8',
+                'telefono': '+56915234567',
+                'correo': 'pedro.sanchez@email.com'
+            },
+            {
+                'nombre_completo': 'Laura Fernández Castro',
+                'rut': '16345678-9',
+                'telefono': '+56916345678',
+                'correo': 'laura.fernandez@email.com'
+            },
+            {
+                'nombre_completo': 'Diego Torres Muñoz',
+                'rut': '17456789-0',
+                'telefono': '+56917456789',
+                'correo': 'diego.torres@email.com'
+            },
+            {
+                'nombre_completo': 'Carmen Silva Rojas',
+                'rut': '18567890-1',
+                'telefono': '+56918567890',
+                'correo': 'carmen.silva@email.com'
+            },
+            {
+                'nombre_completo': 'Roberto Vargas Díaz',
+                'rut': '19678901-2',
+                'telefono': '+56919678901',
+                'correo': 'roberto.vargas@email.com'
+            },
+            {
+                'nombre_completo': 'Patricia Morales Vera',
+                'rut': '20789012-3',
+                'telefono': '+56920789012',
+                'correo': 'patricia.morales@email.com'
+            },
+            {
+                'nombre_completo': 'John Smith',
+                'pasaporte': 'US123456789',
+                'telefono': '+1234567890',
+                'correo': 'john.smith@email.com'
+            },
+            {
+                'nombre_completo': 'Maria García',
+                'pasaporte': 'AR987654321',
+                'telefono': '+5491123456789',
+                'correo': 'maria.garcia@email.com'
+            },
+        ]
+        
+        pasajeros = []
+        for data in pasajeros_data:
+            if 'rut' in data and data.get('rut'):
+                pasajero, created = Pasajero.objects.get_or_create(
+                    rut=data['rut'],
+                    defaults=data
+                )
+            elif 'pasaporte' in data and data.get('pasaporte'):
+                pasajero, created = Pasajero.objects.get_or_create(
+                    pasaporte=data['pasaporte'],
+                    defaults=data
+                )
+            else:
+                continue
+            pasajeros.append(pasajero)
+            if created:
+                doc = data.get('rut') or data.get('pasaporte')
+                self.stdout.write(f'  ✅ Pasajero creado: {pasajero.nombre_completo} ({doc})')
+            else:
+                self.stdout.write(f'  ℹ️  Pasajero ya existe: {pasajero.nombre_completo}')
+        
+        # Crear Viajes
+        self.stdout.write('\n🚍 Creando viajes...')
+        viajes_data = [
+            {
+                'bus': buses[0],
+                'conductor': conductores[0],
+                'origen_nombre': 'Terminal Central',
+                'origen_ciudad': 'Santiago',
+                'origen_provincia': 'Santiago',
+                'origen_pais': 'Chile',
+                'latitud_origen': -33.4489,
+                'longitud_origen': -70.6693,
+                'destino_nombre': 'Terminal Valparaíso',
+                'destino_ciudad': 'Valparaíso',
+                'destino_provincia': 'Valparaíso',
+                'destino_pais': 'Chile',
+                'latitud_destino': -33.0472,
+                'longitud_destino': -71.6127,
+                'fecha_salida': timezone.now() + timedelta(days=1, hours=8),
+                'fecha_llegada_estimada': timezone.now() + timedelta(days=1, hours=10),
+                'distancia_km': 120.5,
+                'estado': 'programado',
+                'observaciones': 'Viaje regular Santiago-Valparaíso'
+            },
+            {
+                'bus': buses[1],
+                'conductor': conductores[1],
+                'origen_nombre': 'Terminal Santiago',
+                'origen_ciudad': 'Santiago',
+                'origen_provincia': 'Santiago',
+                'origen_pais': 'Chile',
+                'latitud_origen': -33.4489,
+                'longitud_origen': -70.6693,
+                'destino_nombre': 'Terminal Viña del Mar',
+                'destino_ciudad': 'Viña del Mar',
+                'destino_provincia': 'Valparaíso',
+                'destino_pais': 'Chile',
+                'latitud_destino': -33.0245,
+                'longitud_destino': -71.5518,
+                'fecha_salida': timezone.now() + timedelta(days=2, hours=9),
+                'fecha_llegada_estimada': timezone.now() + timedelta(days=2, hours=11, minutes=30),
+                'distancia_km': 130.8,
+                'estado': 'programado',
+                'observaciones': 'Viaje especial con grupo turístico'
+            },
+            {
+                'bus': buses[2],
+                'conductor': conductores[2],
+                'origen_nombre': 'Terminal Santiago',
+                'origen_ciudad': 'Santiago',
+                'origen_provincia': 'Santiago',
+                'origen_pais': 'Chile',
+                'latitud_origen': -33.4489,
+                'longitud_origen': -70.6693,
+                'destino_nombre': 'Terminal Rancagua',
+                'destino_ciudad': 'Rancagua',
+                'destino_provincia': 'Cachapoal',
+                'destino_pais': 'Chile',
+                'latitud_destino': -34.1704,
+                'longitud_destino': -70.7407,
+                'fecha_salida': timezone.now() + timedelta(days=3, hours=7),
+                'fecha_llegada_estimada': timezone.now() + timedelta(days=3, hours=8, minutes=30),
+                'distancia_km': 87.3,
+                'estado': 'programado',
+                'observaciones': 'Viaje diario'
+            },
+            {
+                'bus': buses[3],
+                'conductor': conductores[3],
+                'origen_nombre': 'Terminal Santiago',
+                'origen_ciudad': 'Santiago',
+                'origen_provincia': 'Santiago',
+                'origen_pais': 'Chile',
+                'latitud_origen': -33.4489,
+                'longitud_origen': -70.6693,
+                'destino_nombre': 'Terminal Concepción',
+                'destino_ciudad': 'Concepción',
+                'destino_provincia': 'Concepción',
+                'destino_pais': 'Chile',
+                'latitud_destino': -36.8270,
+                'longitud_destino': -73.0498,
+                'fecha_salida': timezone.now() + timedelta(days=4, hours=6),
+                'fecha_llegada_estimada': timezone.now() + timedelta(days=4, hours=12),
+                'distancia_km': 515.2,
+                'estado': 'programado',
+                'observaciones': 'Viaje interurbano largo'
+            },
+            {
+                'bus': buses[4],
+                'conductor': conductores[0],
+                'origen_nombre': 'Terminal Valparaíso',
+                'origen_ciudad': 'Valparaíso',
+                'origen_provincia': 'Valparaíso',
+                'origen_pais': 'Chile',
+                'latitud_origen': -33.0472,
+                'longitud_origen': -71.6127,
+                'destino_nombre': 'Terminal Viña del Mar',
+                'destino_ciudad': 'Viña del Mar',
+                'destino_provincia': 'Valparaíso',
+                'destino_pais': 'Chile',
+                'latitud_destino': -33.0245,
+                'longitud_destino': -71.5518,
+                'fecha_salida': timezone.now() + timedelta(days=5, hours=10),
+                'fecha_llegada_estimada': timezone.now() + timedelta(days=5, hours=10, minutes=30),
+                'distancia_km': 8.5,
+                'estado': 'programado',
+                'observaciones': 'Viaje corto entre ciudades costeras'
+            },
+        ]
+        
+        viajes_creados = []
+        for i, data in enumerate(viajes_data):
+            # Buscar viaje existente por origen-destino-bus-conductor
+            viaje = Viaje.objects.filter(
+                bus=data['bus'],
+                conductor=data['conductor'],
+                origen_ciudad=data['origen_ciudad'],
+                destino_ciudad=data['destino_ciudad'],
+                estado='programado'
+            ).first()
+            
+            if viaje:
+                # Actualizar fechas si el viaje existe
+                viaje.fecha_salida = data['fecha_salida']
+                viaje.fecha_llegada_estimada = data['fecha_llegada_estimada']
+                viaje.save()
+                viajes_creados.append(viaje)
+                self.stdout.write(f'  ℹ️  Viaje {i+1} ya existe (fechas actualizadas): {viaje.origen_ciudad} → {viaje.destino_ciudad}')
+            else:
+                # Crear nuevo viaje
+                viaje = Viaje.objects.create(**data)
+                viajes_creados.append(viaje)
+                self.stdout.write(f'  ✅ Viaje {i+1} creado: {viaje.origen_ciudad} → {viaje.destino_ciudad}')
+        
+        # Asignar pasajeros a viajes
+        self.stdout.write('\n🎫 Asignando pasajeros a viajes...')
+        if viajes_creados and pasajeros:
+            # Viaje 1 (Santiago-Valparaíso): 4 pasajeros
+            if len(viajes_creados) > 0 and len(pasajeros) >= 4:
+                for idx, pasajero in enumerate(pasajeros[:4], 1):
+                    viaje_pasajero, created = ViajePasajero.objects.get_or_create(
+                        viaje=viajes_creados[0],
+                        pasajero=pasajero,
+                        defaults={'asiento': f'A{idx}'}
                     )
-            except Exception:
-                pass
-
-        # Documentos y mantenimientos ejemplo para todos los buses
-        for idx, busx in enumerate(buses):
-            docnum = f'SOAT-00{idx+1}'
-            doc, created = DocumentoVehiculo.objects.get_or_create(
-                bus=busx,
-                tipo='soat',
-                numero_documento=docnum,
-                defaults={
-                    'fecha_emision': date.today() - timedelta(days=200 + idx * 10),
-                    'fecha_vencimiento': date.today() + timedelta(days=165 - idx * 5),
-                    'observaciones': f'SOAT de ejemplo {idx+1}',
-                }
-            )
-            self.stdout.write(f"{'Creado' if created else 'Existe'} DocumentoVehiculo: {doc}")
-
-            mant, created = Mantenimiento.objects.get_or_create(
-                bus=busx,
-                tipo='preventivo',
-                descripcion=f'Mantenimiento {idx+1} - revisión general',
-                fecha_mantenimiento=date.today() - timedelta(days=30 + idx * 10),
-                defaults={'kilometraje': busx.kilometraje_inicial + 100 * (idx+1), 'costo': 80.00 + idx * 20, 'taller': 'Taller Central'}
-            )
-            self.stdout.write(f"{'Creado' if created else 'Existe'} Mantenimiento: {mant}")
-
-        self.stdout.write(self.style.SUCCESS('Siembra completada correctamente.'))
+                    if created:
+                        self.stdout.write(f'  ✅ {pasajero.nombre_completo} asignado a Viaje 1 (Asiento A{idx})')
+            
+            # Viaje 2 (Santiago-Viña del Mar): 3 pasajeros
+            if len(viajes_creados) > 1 and len(pasajeros) >= 7:
+                for idx, pasajero in enumerate(pasajeros[4:7], 1):
+                    viaje_pasajero, created = ViajePasajero.objects.get_or_create(
+                        viaje=viajes_creados[1],
+                        pasajero=pasajero,
+                        defaults={'asiento': f'B{idx}'}
+                    )
+                    if created:
+                        self.stdout.write(f'  ✅ {pasajero.nombre_completo} asignado a Viaje 2 (Asiento B{idx})')
+            
+            # Viaje 3 (Santiago-Rancagua): 2 pasajeros (incluyendo extranjeros)
+            if len(viajes_creados) > 2 and len(pasajeros) >= 8:
+                for idx, pasajero in enumerate(pasajeros[6:8], 1):
+                    viaje_pasajero, created = ViajePasajero.objects.get_or_create(
+                        viaje=viajes_creados[2],
+                        pasajero=pasajero,
+                        defaults={'asiento': f'C{idx}'}
+                    )
+                    if created:
+                        self.stdout.write(f'  ✅ {pasajero.nombre_completo} asignado a Viaje 3 (Asiento C{idx})')
+            
+            # Viaje 4 (Santiago-Concepción): 5 pasajeros (viaje largo)
+            if len(viajes_creados) > 3 and len(pasajeros) >= 5:
+                for idx, pasajero in enumerate(pasajeros[:5], 1):
+                    viaje_pasajero, created = ViajePasajero.objects.get_or_create(
+                        viaje=viajes_creados[3],
+                        pasajero=pasajero,
+                        defaults={'asiento': f'D{idx}'}
+                    )
+                    if created:
+                        self.stdout.write(f'  ✅ {pasajero.nombre_completo} asignado a Viaje 4 (Asiento D{idx})')
+            
+            # Viaje 5 (Valparaíso-Viña): 2 pasajeros (viaje corto)
+            if len(viajes_creados) > 4 and len(pasajeros) >= 2:
+                for idx, pasajero in enumerate(pasajeros[:2], 1):
+                    viaje_pasajero, created = ViajePasajero.objects.get_or_create(
+                        viaje=viajes_creados[4],
+                        pasajero=pasajero,
+                        defaults={'asiento': f'E{idx}'}
+                    )
+                    if created:
+                        self.stdout.write(f'  ✅ {pasajero.nombre_completo} asignado a Viaje 5 (Asiento E{idx})')
+        
+        # Resumen
+        self.stdout.write('\n' + '='*60)
+        self.stdout.write(self.style.SUCCESS('✅ Datos de prueba cargados exitosamente!'))
+        self.stdout.write('='*60)
+        self.stdout.write(f'📊 Resumen:')
+        self.stdout.write(f'  • Conductores: {Conductor.objects.count()}')
+        self.stdout.write(f'  • Buses: {Bus.objects.count()}')
+        self.stdout.write(f'  • Lugares: {Lugar.objects.count()}')
+        self.stdout.write(f'  • Pasajeros: {Pasajero.objects.count()}')
+        self.stdout.write(f'  • Viajes: {Viaje.objects.count()}')
+        self.stdout.write(f'  • Asignaciones Pasajero-Viaje: {ViajePasajero.objects.count()}')
+        self.stdout.write('='*60)

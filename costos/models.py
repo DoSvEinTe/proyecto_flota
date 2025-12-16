@@ -36,6 +36,12 @@ class CostosViaje(models.Model):
             self.mantenimiento = sum(int(m.costo) for m in self.mantenimientos.all())
         # Sumar todos los valores (ya son enteros)
         self.costo_total = int(self.combustible) + int(self.mantenimiento) + int(self.peajes) + int(self.otros_costos)
+        
+        # Cambiar automáticamente el estado del viaje a COMPLETADO
+        if self.viaje.estado != 'completado':
+            self.viaje.estado = 'completado'
+            self.viaje.save()
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

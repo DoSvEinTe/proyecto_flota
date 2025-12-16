@@ -121,6 +121,9 @@ def otros_costos(request, costos_pk):
             if justificacion_otros:
                 costos_viaje.observaciones = (costos_viaje.observaciones or '') + f"\nJustificación otros costos: {justificacion_otros}"
             costos_viaje.save()
+        # Cambiar estado del viaje a COMPLETADO al finalizar el registro
+        costos_viaje.viaje.estado = 'completado'
+        costos_viaje.viaje.save()
         return redirect('costos:detalle', pk=costos_pk)
     return render(request, 'costos/otros_costos_form.html', {'costos_pk': costos_pk})
 class CostosViajeDetailView(LoginRequiredMixin, DetailView):
@@ -283,6 +286,10 @@ class GestionCostosView(LoginRequiredMixin, View):
         # Obtener viajes sin costos asignados
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
         viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
+        
+        # Agregar un atributo temporal para mostrar "EN CURSO" en la tabla
+        for viaje in viajes_sin_costos:
+            viaje.estado_display = 'en_curso'
 
         # Obtener todos los costos registrados para el CRUD
         costos_list = CostosViaje.objects.select_related('viaje', 'viaje__bus').prefetch_related('puntos_recarga').all()

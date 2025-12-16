@@ -445,14 +445,23 @@ def generar_pdf_pasajeros(request, pk):
     elements.append(Spacer(1, 20))
     
     # Tabla de pasajeros
-    data = [['#', 'Nombre Completo', 'RUT', 'Teléfono', 'Asiento', 'Observaciones']]
+    data = [['#', 'Nombre Completo', 'Documento', 'Teléfono', 'Asiento', 'Observaciones']]
     
     for idx, vp in enumerate(pasajeros_en_viaje, 1):
         pasajero = vp.pasajero
+        # Determinar el documento (RUT o Pasaporte)
+        documento = ''
+        if pasajero.rut:
+            documento = f'RUT: {pasajero.rut}'
+        elif pasajero.pasaporte:
+            documento = f'PP: {pasajero.pasaporte}'
+        else:
+            documento = 'N/A'
+        
         data.append([
             str(idx),
             pasajero.nombre_completo,
-            pasajero.rut or 'N/A',
+            documento,
             pasajero.telefono or 'N/A',
             vp.asiento or 'Sin asignar',
             vp.observaciones or '-'
