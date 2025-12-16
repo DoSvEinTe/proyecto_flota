@@ -3,6 +3,117 @@
 
 {% block title %}Viajes sin Costos - Sistema de Gestión de Flota{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Botón desplegable circular con efecto */
+    .btn-toggle-viaje {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-toggle-viaje:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+    
+    .btn-toggle-viaje i {
+        color: white;
+        font-size: 14px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .btn-toggle-viaje[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+    
+    /* Animación suave para el colapso */
+    .collapse {
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Estilo mejorado para la fila anidada de vuelta */
+    .viaje-vuelta-container {
+        background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+        border-left: 4px solid #6c757d;
+        margin: 8px 0 8px 40px;
+        border-radius: 0 8px 8px 0;
+        box-shadow: inset 2px 0 6px rgba(0,0,0,0.05);
+        animation: slideIn 0.4s ease-out;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    .viaje-vuelta-container table tr {
+        background-color: transparent !important;
+    }
+    
+    .viaje-vuelta-container table td {
+        padding: 12px 8px;
+        border: none;
+    }
+    
+    /* Icono de flecha de vuelta mejorado */
+    .icon-vuelta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        background: #6c757d;
+        border-radius: 4px;
+        color: white;
+        font-size: 12px;
+        margin-right: 8px;
+    }
+    
+    /* Badge mejorado para IDA/VUELTA */
+    .badge-trayecto {
+        padding: 6px 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Hover en filas de viajes vinculados */
+    tr:has(.btn-toggle-viaje):hover {
+        background-color: #f0f4ff !important;
+        transition: background-color 0.2s ease;
+    }
+    
+    /* Icono de ida y vuelta mejorado */
+    .icon-ida-vuelta {
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.6;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="row mb-4">
@@ -28,6 +139,7 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th style="width: 5%;"></th>
                                     <th>Bus</th>
                                     <th>Modelo</th>
                                     <th>Origen → Destino</th>
@@ -39,38 +151,150 @@
                             </thead>
                             <tbody>
                                 {% for viaje in viajes %}
-                                <tr>
-                                    <td><strong>{{ viaje.bus.placa }}</strong></td>
-                                    <td>{{ viaje.bus.modelo }}</td>
-                                    <td>
-                                        {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}
-                                    </td>
-                                    <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
-                                    <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
-                                    <td>
-                                        {% if viaje.estado == 'completado' %}
-                                            <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
-                                        {% elif viaje.estado == 'en_curso' %}
-                                            <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
-                                        {% elif viaje.estado == 'programado' %}
-                                            <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
+                                    {% if viaje.tipo_trayecto != 'vuelta' %}
+                                    <!-- Fila principal (IDA o SIMPLE) -->
+                                    <tr>
+                                        <td class="text-center align-middle">
+                                            {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                                <button class="btn btn-toggle-viaje p-0" 
+                                                        type="button" 
+                                                        data-bs-toggle="collapse" 
+                                                        data-bs-target="#viaje-vuelta-{{ viaje.id }}" 
+                                                        aria-expanded="false" 
+                                                        aria-controls="viaje-vuelta-{{ viaje.id }}">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+                                            {% endif %}
+                                        </td>
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <strong>{{ viaje.bus.placa }}</strong>
+                                                {% if viaje.es_ida_vuelta %}
+                                                    <i class="fas fa-exchange-alt text-primary ms-2 icon-ida-vuelta" title="Viaje de ida y vuelta"></i>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">{{ viaje.bus.modelo }}</td>
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <span>{{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</span>
+                                                {% if viaje.tipo_trayecto == 'ida' %}
+                                                    <span class="badge bg-info badge-trayecto ms-2">
+                                                        <i class="fas fa-arrow-right me-1"></i>IDA
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if viaje.estado == 'completado' %}
+                                                <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
+                                            {% elif viaje.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
+                                            {% elif viaje.estado == 'programado' %}
+                                                <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Acciones unificadas con rowspan para IDA y VUELTA -->
+                                        <td rowspan="2" class="align-middle">
+                                            <div class="acciones-ida-vuelta">
+                                                <!-- Botón Registrar único -->
+                                                <a href="{% url 'costos:registrar_ida_vuelta' viaje_ida_id=viaje.id %}" 
+                                                   class="btn btn-primary w-100 mb-2" title="Registrar Costos de Ida y Vuelta">
+                                                    <i class="fas fa-plus me-1"></i>Registrar
+                                                </a>
+                                                
+                                                <!-- Botones PDF lado a lado -->
+                                                <div class="d-flex gap-1 mb-2">
+                                                    <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
+                                                       class="btn btn-danger btn-sm flex-fill" title="PDF Viaje de Ida" target="_blank">
+                                                        <i class="fas fa-file-pdf me-1"></i>PDF IDA
+                                                    </a>
+                                                    <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.viaje_relacionado.id %}" 
+                                                       class="btn btn-danger btn-sm flex-fill" title="PDF Viaje de Vuelta" target="_blank">
+                                                        <i class="fas fa-file-pdf me-1"></i>PDF VUELTA
+                                                    </a>
+                                                </div>
+                                                
+                                                <!-- Botón Email único -->
+                                                <a href="{% url 'costos:enviar_email_ida_vuelta' viaje_ida_id=viaje.id %}" 
+                                                   class="btn btn-success w-100" title="Enviar ambos formularios por email">
+                                                    <i class="fas fa-envelope me-1"></i>Email
+                                                </a>
+                                            </div>
+                                        </td>
                                         {% else %}
-                                            <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                        <!-- Acciones normales para viajes simples -->
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
+                                                   class="btn btn-primary" title="Registrar Costos">
+                                                    <i class="fas fa-plus me-1"></i>Registrar
+                                                </a>
+                                                <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
+                                                   class="btn btn-danger" title="Descargar formulario PDF para completar manualmente" target="_blank">
+                                                    <i class="fas fa-file-pdf me-1"></i>PDF
+                                                </a>
+                                                <a href="{% url 'costos:enviar_email' viaje_id=viaje.id %}" 
+                                                   class="btn btn-success" title="Enviar formulario por correo al conductor">
+                                                    <i class="fas fa-envelope me-1"></i>Email
+                                                </a>
+                                            </div>
+                                        </td>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
-                                               class="btn btn-primary" title="Registrar Costos">
-                                                <i class="fas fa-plus me-1"></i>Registrar
-                                            </a>
-                                            <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
-                                               class="btn btn-danger" title="Descargar formulario PDF para completar manualmente" target="_blank">
-                                                <i class="fas fa-file-pdf me-1"></i>PDF
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
+                                    </tr>
+                                    
+                                    <!-- Fila de VUELTA (siempre visible si existe) -->
+                                    {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                    <tr class="viaje-vuelta-row">
+                                        <!-- Bus ya está con rowspan="2" en fila IDA -->
+                                        <td class="text-center"></td>
+                                        
+                                        <!-- Bus (repetir para mantener alineación visual pero con opacidad reducida) -->
+                                        <td class="align-middle text-muted" style="opacity: 0.5;">
+                                            <strong>{{ viaje.viaje_relacionado.bus.placa }}</strong>
+                                        </td>
+                                        
+                                        <td class="align-middle text-muted" style="opacity: 0.5;">
+                                            {{ viaje.viaje_relacionado.bus.modelo }}
+                                        </td>
+                                        
+                                        <!-- Ruta con timeline para VUELTA -->
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <span class="timeline-icon timeline-icon-vuelta">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                </span>
+                                                <span class="timeline-route ms-2">
+                                                    {{ viaje.viaje_relacionado.get_origen_display }} → {{ viaje.viaje_relacionado.get_destino_display }}
+                                                    <span class="badge bg-secondary badge-trayecto ms-2">
+                                                        <i class="fas fa-arrow-left me-1"></i>VUELTA
+                                                    </span>
+                                                </span>
+                                            </div>
+                                        </td>
+                                        
+                                        <td>{{ viaje.viaje_relacionado.conductor.nombre }} {{ viaje.viaje_relacionado.conductor.apellido }}</td>
+                                        <td>{{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}</td>
+                                        <td>
+                                            {% if viaje.viaje_relacionado.estado == 'completado' %}
+                                                <span class="badge bg-success">{{ viaje.viaje_relacionado.get_estado_display }}</span>
+                                            {% elif viaje.viaje_relacionado.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
+                                            {% elif viaje.viaje_relacionado.estado == 'programado' %}
+                                                <span class="badge bg-info text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ viaje.viaje_relacionado.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <!-- Columna de acciones con rowspan="2" ya está en la fila IDA -->
+                                    </tr>
+                                    {% endif %}
+                                    {% endif %}
                                 {% endfor %}
                             </tbody>
                         </table>

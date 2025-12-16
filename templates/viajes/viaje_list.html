@@ -64,6 +64,15 @@
     .table tbody tr:hover {
         background-color: #f3f4f6;
     }
+
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.6;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -93,7 +102,16 @@
             <tbody>
                 {% for viaje in viajes %}
                 <tr>
-                    <td><strong>{{ viaje.bus.placa }}</strong></td>
+                    <td>
+                        <div class="d-flex flex-column">
+                            <strong>{{ viaje.bus.placa }}</strong>
+                            {% if viaje.es_ida_vuelta %}
+                                <small class="text-primary mt-1">
+                                    <i class="fas fa-exchange-alt" title="Viaje de ida y vuelta" style="animation: pulse 2s ease-in-out infinite;"></i>
+                                </small>
+                            {% endif %}
+                        </div>
+                    </td>
                     <td>{{ viaje.conductor.apellido }}, {{ viaje.conductor.nombre }}</td>
                     <td>{{ viaje.get_origen_display|truncatechars:25 }}</td>
                     <td>{{ viaje.get_destino_display|truncatechars:25 }}</td>

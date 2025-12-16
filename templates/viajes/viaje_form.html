@@ -406,6 +406,22 @@
                         </div>
                     </div>
                     
+                    <!-- Checkbox Ida y Vuelta -->
+                    <div class="mb-3">
+                        <div class="form-check">
+                            {{ form.es_ida_vuelta }}
+                            <label class="form-check-label" for="id_es_ida_vuelta">
+                                <i class="fas fa-exchange-alt me-2"></i>
+                                <strong>Viaje de Ida y Vuelta</strong>
+                            </label>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Al activar esta opción, se creará automáticamente el viaje de vuelta con origen y destino invertidos. 
+                                Cada trayecto tendrá su propio registro de costos.
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="{{ form.observaciones.id_for_label }}" class="form-label">
                             Observaciones

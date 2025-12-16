@@ -1,0 +1,989 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Registrar Costos - Viaje de Ida y Vuelta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 0;
+        margin-bottom: 24px;
+    }
+    
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+        padding: 0 24px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6b7280;
+        font-weight: 600;
+        padding: 16px 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #1e40af;
+        border-color: #1e40af;
+        background: transparent;
+    }
+    
+    .tab-content {
+        padding: 24px;
+    }
+    
+    .form-section {
+        margin-bottom: 24px;
+    }
+    
+    .form-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .item-container {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 16px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    
+    .btn-add-item {
+        background-color: #28a745;
+        color: #fff;
+        border: 2px solid #28a745;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .btn-add-item:hover {
+        background-color: #218838;
+        border-color: #218838;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-exchange-alt me-2"></i>
+                        Registrar Costos - Viaje de Ida y Vuelta
+                    </h2>
+                    <p class="text-muted">Complete la información para ambos trayectos del viaje</p>
+                </div>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        <i class="fas fa-info-circle me-2"></i>
+        <strong>Instrucciones:</strong> Complete los datos de AMBOS viajes (IDA y VUELTA) antes de guardar. Los campos marcados con <span class="text-danger">*</span> son obligatorios.
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <!-- Información General de los Viajes -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Información de los Viajes</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <!-- IDA -->
+                <div class="col-md-6 mb-3">
+                    <div class="border-end pe-3">
+                        <h6 class="text-primary fw-bold mb-3"><i class="fas fa-arrow-right me-2"></i>VIAJE DE IDA</h6>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Bus</small>
+                            <strong>{{ viaje_ida.bus.placa }}</strong> - {{ viaje_ida.bus.modelo }}
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Conductor</small>
+                            <strong>{{ viaje_ida.conductor.nombre }} {{ viaje_ida.conductor.apellido }}</strong>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Ruta</small>
+                            <strong>{{ viaje_ida.get_origen_display }}</strong>
+                            <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                            <strong>{{ viaje_ida.get_destino_display }}</strong>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Fecha Salida</small>
+                            <strong>{{ viaje_ida.fecha_salida|date:"d/m/Y H:i" }}</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- VUELTA -->
+                <div class="col-md-6 mb-3">
+                    <div class="ps-3">
+                        <h6 class="text-secondary fw-bold mb-3"><i class="fas fa-arrow-left me-2"></i>VIAJE DE VUELTA</h6>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Bus</small>
+                            <strong>{{ viaje_vuelta.bus.placa }}</strong> - {{ viaje_vuelta.bus.modelo }}
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Conductor</small>
+                            <strong>{{ viaje_vuelta.conductor.nombre }} {{ viaje_vuelta.conductor.apellido }}</strong>
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Ruta</small>
+                            <strong>{{ viaje_vuelta.get_origen_display }}</strong>
+                            <i class="fas fa-arrow-right mx-2 text-muted"></i>
+                            <strong>{{ viaje_vuelta.get_destino_display }}</strong>
+                        </div>
+                        <div>
+                            <small class="text-muted d-block">Fecha Salida</small>
+                            <strong>{{ viaje_vuelta.fecha_salida|date:"d/m/Y H:i" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="post" id="costosIdaVueltaForm" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="form-container">
+            <!-- Tabs para IDA y VUELTA -->
+            <ul class="nav nav-tabs" id="viajesTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="ida-tab" data-bs-toggle="tab" data-bs-target="#ida-panel" type="button" role="tab">
+                        <i class="fas fa-arrow-right me-2"></i>VIAJE DE IDA
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vuelta-tab" data-bs-toggle="tab" data-bs-target="#vuelta-panel" type="button" role="tab">
+                        <i class="fas fa-arrow-left me-2"></i>VIAJE DE VUELTA
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="viajesTabsContent">
+                <!-- ======================== PANEL IDA ======================== -->
+                <div class="tab-pane fade show active" id="ida-panel" role="tabpanel">
+                    <h5 class="text-primary fw-bold mb-4">
+                        <i class="fas fa-arrow-right me-2"></i>Costos del Viaje de IDA
+                    </h5>
+                    
+                    <!-- 1. Kilometrajes IDA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-tachometer-alt text-primary"></i>
+                            <span>1. Kilometrajes del Viaje</span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Kilometraje Inicial <span class="text-danger">*</span></label>
+                                <input type="number" name="ida_km_inicial" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al inicio del viaje</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Kilometraje Final <span class="text-danger">*</span></label>
+                                <input type="number" name="ida_km_final" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al finalizar el viaje</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Mantenimientos IDA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-wrench text-info"></i>
+                            <span>2. Mantenimientos (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-mant-ida">
+                                <i class="fas fa-plus me-1"></i>Agregar Mantenimiento
+                            </button>
+                        </div>
+                        <div id="mantenimientos-ida-container">
+                            <p class="text-muted text-center py-3" id="no-mant-ida-msg">
+                                <i class="fas fa-tools fa-2x mb-2 d-block"></i>
+                                No hay mantenimientos agregados. Haz clic en "Agregar Mantenimiento" para crear uno.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Peajes IDA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-road text-warning"></i>
+                            <span>3. Peajes (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-peaje-ida">
+                                <i class="fas fa-plus me-1"></i>Agregar Peaje
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;">Orden</th>
+                                        <th style="width: 30%;">Lugar</th>
+                                        <th style="width: 20%;">Monto</th>
+                                        <th style="width: 20%;">Fecha Pago</th>
+                                        <th style="width: 15%;">Voucher</th>
+                                        <th style="width: 5%;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="peajes-ida-container">
+                                    <tr id="no-peajes-ida-msg">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="fas fa-road fa-2x mb-2 d-block"></i>
+                                            No hay peajes agregados
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 4. Puntos de Recarga IDA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-gas-pump text-success"></i>
+                            <span>4. Puntos de Recarga de Combustible (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-recarga-ida">
+                                <i class="fas fa-plus me-1"></i>AGREGAR
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 60px;">ORDEN</th>
+                                        <th style="width: 150px;">LUGAR</th>
+                                        <th style="width: 120px;">SUCURSAL</th>
+                                        <th style="width: 120px;">KM CAMIÓN</th>
+                                        <th style="width: 120px;">FECHA PAGO</th>
+                                        <th style="width: 100px;">LITROS</th>
+                                        <th style="width: 120px;">PRECIO COMB</th>
+                                        <th style="width: 100px;">VOUCHER</th>
+                                        <th style="width: 80px;">ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recargas-ida-container">
+                                    <tr id="no-recargas-ida-msg">
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="fas fa-gas-pump fa-2x mb-2 d-block"></i>
+                                            No hay puntos de recarga agregados
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 5. Otros Costos IDA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-clipboard text-secondary"></i>
+                            <span>5. Otros Costos y Observaciones</span>
+                        </div>
+                        
+                        <!-- Formulario para agregar otros costos -->
+                        <div class="row mb-4 p-3 item-container">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Tipo de Costo</label>
+                                <select id="ida-tipo-otro-costo" class="form-select">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="comida">Comida</option>
+                                    <option value="hospedaje">Hospedaje</option>
+                                    <option value="estacionamiento">Estacionamiento</option>
+                                    <option value="otros">Otros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Monto (CLP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" id="ida-monto-otro-costo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Comprobante</label>
+                                <input type="file" id="ida-voucher-otro-costo" class="form-control" accept="image/*,.pdf">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">&nbsp;</label>
+                                <button type="button" class="btn btn-success w-100" id="agregar-otro-costo-ida">
+                                    <i class="fas fa-plus me-1"></i>Agregar
+                                </button>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Descripción</label>
+                                <textarea id="ida-descripcion-otro-costo" class="form-control" rows="2" placeholder="Descripción del gasto..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Lista de otros costos agregados -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Costos Agregados</h6>
+                            <div id="otros-costos-ida-container">
+                                <p class="text-muted text-center py-3" id="no-otros-costos-ida-msg">
+                                    <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                                    No hay otros costos agregados
+                                </p>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Total Otros Costos: $<span id="total-otros-costos-ida">0.00</span></strong>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones generales IDA -->
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Observaciones Generales</label>
+                                <textarea name="ida_observaciones" class="form-control" rows="3" placeholder="Observaciones adicionales del viaje..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ======================== PANEL VUELTA ======================== -->
+                <div class="tab-pane fade" id="vuelta-panel" role="tabpanel">
+                    <h5 class="text-secondary fw-bold mb-4">
+                        <i class="fas fa-arrow-left me-2"></i>Costos del Viaje de VUELTA
+                    </h5>
+                    
+                    <!-- 1. Kilometrajes VUELTA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-tachometer-alt text-primary"></i>
+                            <span>1. Kilometrajes del Viaje</span>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Kilometraje Inicial <span class="text-danger">*</span></label>
+                                <input type="number" name="vuelta_km_inicial" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al inicio del viaje</small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Kilometraje Final <span class="text-danger">*</span></label>
+                                <input type="number" name="vuelta_km_final" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al finalizar el viaje</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Mantenimientos VUELTA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-wrench text-info"></i>
+                            <span>2. Mantenimientos (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-mant-vuelta">
+                                <i class="fas fa-plus me-1"></i>Agregar Mantenimiento
+                            </button>
+                        </div>
+                        <div id="mantenimientos-vuelta-container">
+                            <p class="text-muted text-center py-3" id="no-mant-vuelta-msg">
+                                <i class="fas fa-tools fa-2x mb-2 d-block"></i>
+                                No hay mantenimientos agregados. Haz clic en "Agregar Mantenimiento" para crear uno.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 3. Peajes VUELTA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-road text-warning"></i>
+                            <span>3. Peajes (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-peaje-vuelta">
+                                <i class="fas fa-plus me-1"></i>Agregar Peaje
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 10%;">Orden</th>
+                                        <th style="width: 30%;">Lugar</th>
+                                        <th style="width: 20%;">Monto</th>
+                                        <th style="width: 20%;">Fecha Pago</th>
+                                        <th style="width: 15%;">Voucher</th>
+                                        <th style="width: 5%;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="peajes-vuelta-container">
+                                    <tr id="no-peajes-vuelta-msg">
+                                        <td colspan="6" class="text-center text-muted py-4">
+                                            <i class="fas fa-road fa-2x mb-2 d-block"></i>
+                                            No hay peajes agregados
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 4. Puntos de Recarga VUELTA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-gas-pump text-success"></i>
+                            <span>4. Puntos de Recarga de Combustible (Opcional)</span>
+                            <button type="button" class="btn btn-sm btn-add-item ms-auto" id="agregar-recarga-vuelta">
+                                <i class="fas fa-plus me-1"></i>AGREGAR
+                            </button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 60px;">ORDEN</th>
+                                        <th style="width: 150px;">LUGAR</th>
+                                        <th style="width: 120px;">SUCURSAL</th>
+                                        <th style="width: 120px;">KM CAMIÓN</th>
+                                        <th style="width: 120px;">FECHA PAGO</th>
+                                        <th style="width: 100px;">LITROS</th>
+                                        <th style="width: 120px;">PRECIO COMB</th>
+                                        <th style="width: 100px;">VOUCHER</th>
+                                        <th style="width: 80px;">ACCIONES</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recargas-vuelta-container">
+                                    <tr id="no-recargas-vuelta-msg">
+                                        <td colspan="9" class="text-center text-muted py-4">
+                                            <i class="fas fa-gas-pump fa-2x mb-2 d-block"></i>
+                                            No hay puntos de recarga agregados
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- 5. Otros Costos VUELTA -->
+                    <div class="form-section">
+                        <div class="form-section-title">
+                            <i class="fas fa-clipboard text-secondary"></i>
+                            <span>5. Otros Costos y Observaciones</span>
+                        </div>
+                        
+                        <!-- Formulario para agregar otros costos -->
+                        <div class="row mb-4 p-3 item-container">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Tipo de Costo</label>
+                                <select id="vuelta-tipo-otro-costo" class="form-select">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="comida">Comida</option>
+                                    <option value="hospedaje">Hospedaje</option>
+                                    <option value="estacionamiento">Estacionamiento</option>
+                                    <option value="otros">Otros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Monto (CLP)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" id="vuelta-monto-otro-costo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">Comprobante</label>
+                                <input type="file" id="vuelta-voucher-otro-costo" class="form-control" accept="image/*,.pdf">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label fw-bold">&nbsp;</label>
+                                <button type="button" class="btn btn-success w-100" id="agregar-otro-costo-vuelta">
+                                    <i class="fas fa-plus me-1"></i>Agregar
+                                </button>
+                            </div>
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Descripción</label>
+                                <textarea id="vuelta-descripcion-otro-costo" class="form-control" rows="2" placeholder="Descripción del gasto..."></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Lista de otros costos agregados -->
+                        <div class="mb-4">
+                            <h6 class="fw-bold mb-3"><i class="fas fa-list me-2"></i>Costos Agregados</h6>
+                            <div id="otros-costos-vuelta-container">
+                                <p class="text-muted text-center py-3" id="no-otros-costos-vuelta-msg">
+                                    <i class="fas fa-info-circle fa-2x mb-2 d-block"></i>
+                                    No hay otros costos agregados
+                                </p>
+                            </div>
+                            <div class="mt-3">
+                                <strong>Total Otros Costos: $<span id="total-otros-costos-vuelta">0.00</span></strong>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones generales VUELTA -->
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label class="form-label fw-bold">Observaciones Generales</label>
+                                <textarea name="vuelta_observaciones" class="form-control" rows="3" placeholder="Observaciones adicionales del viaje..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="card shadow-sm">
+            <div class="card-body text-center">
+                <button type="submit" class="btn btn-primary btn-lg px-5">
+                    <i class="fas fa-save me-2"></i>Guardar Ambos Viajes
+                </button>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-secondary btn-lg px-5 ms-3">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Contadores de índices por tipo y viaje
+    let mantIdaIndex = 0;
+    let mantVueltaIndex = 0;
+    let peajeIdaIndex = 0;
+    let peajeVueltaIndex = 0;
+    let recargaIdaIndex = 0;
+    let recargaVueltaIndex = 0;
+    let otroCostoIdaIndex = 0;
+    let otroCostoVueltaIndex = 0;
+    
+    // Arrays para almacenar datos de otros costos
+    let otrosCostosIdaData = [];
+    let otrosCostosVueltaData = [];
+
+    // ==================== FUNCIONES AUXILIARES ====================
+    
+    function ocultarMensajeVacio(msgId) {
+        const msg = document.getElementById(msgId);
+        if (msg) msg.style.display = 'none';
+    }
+
+    function mostrarMensajeVacio(msgId) {
+        const msg = document.getElementById(msgId);
+        if (msg) msg.style.display = 'table-row';
+    }
+
+    function actualizarTotalOtrosCostos(tipo) {
+        const data = tipo === 'ida' ? otrosCostosIdaData : otrosCostosVueltaData;
+        const total = data.reduce((sum, item) => sum + (parseFloat(item.monto) || 0), 0);
+        document.getElementById(`total-otros-costos-${tipo}`).textContent = total.toFixed(2);
+    }
+
+    // ==================== MANTENIMIENTOS ====================
+    
+    function agregarMantenimiento(tipo) {
+        const index = tipo === 'ida' ? ++mantIdaIndex : ++mantVueltaIndex;
+        const container = document.getElementById(`mantenimientos-${tipo}-container`);
+        const noMsg = document.getElementById(`no-mant-${tipo}-msg`);
+        if (noMsg) noMsg.style.display = 'none';
+        
+        const newMant = document.createElement('div');
+        newMant.className = 'item-container';
+        newMant.setAttribute('data-index', index);
+        newMant.innerHTML = `
+            <div class="item-header">
+                <h6 class="mb-0"><i class="fas fa-wrench me-2 text-info"></i>Mantenimiento #${index}</h6>
+                <button type="button" class="btn btn-danger btn-sm remove-mant-${tipo}">
+                    <i class="fas fa-times me-1"></i>Eliminar
+                </button>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Fecha de Mantenimiento</label>
+                    <input type="date" name="${tipo}_mant_fecha_${index}" class="form-control">
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Tipo</label>
+                    <select name="${tipo}_mant_tipo_${index}" class="form-select">
+                        <option value="">Seleccione...</option>
+                        <option value="preventivo">Preventivo</option>
+                        <option value="correctivo">Correctivo</option>
+                        <option value="predictivo">Predictivo</option>
+                        <option value="mecanico">Mecánico</option>
+                        <option value="electrico">Eléctrico</option>
+                        <option value="otro">Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="${tipo}_mant_descripcion_${index}" class="form-control" rows="2" placeholder="Descripción del trabajo realizado..."></textarea>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Observaciones</label>
+                    <textarea name="${tipo}_mant_observaciones_${index}" class="form-control" rows="2" placeholder="Observaciones adicionales..."></textarea>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Costo</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" name="${tipo}_mant_costo_${index}" class="form-control" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Proveedor</label>
+                    <input type="text" name="${tipo}_mant_proveedor_${index}" class="form-control">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Kilometraje</label>
+                    <input type="number" name="${tipo}_mant_kilometraje_${index}" class="form-control" min="0">
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Taller</label>
+                    <input type="text" name="${tipo}_mant_taller_${index}" class="form-control">
+                </div>
+            </div>
+        `;
+        container.appendChild(newMant);
+    }
+
+    document.getElementById('agregar-mant-ida').addEventListener('click', () => agregarMantenimiento('ida'));
+    document.getElementById('agregar-mant-vuelta').addEventListener('click', () => agregarMantenimiento('vuelta'));
+
+    // Eliminar mantenimientos
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-mant-ida') || e.target.closest('.remove-mant-vuelta')) {
+            const tipo = e.target.closest('.remove-mant-ida') ? 'ida' : 'vuelta';
+            if (confirm('¿Está seguro de eliminar este mantenimiento?')) {
+                const item = e.target.closest('.item-container');
+                item.remove();
+                
+                const container = document.getElementById(`mantenimientos-${tipo}-container`);
+                if (container.children.length === 0 || !container.querySelector('.item-container')) {
+                    const noMsg = document.getElementById(`no-mant-${tipo}-msg`);
+                    if (noMsg) noMsg.style.display = 'block';
+                }
+            }
+        }
+    });
+
+    // ==================== PEAJES ====================
+    
+    function agregarPeaje(tipo) {
+        const index = tipo === 'ida' ? ++peajeIdaIndex : ++peajeVueltaIndex;
+        const container = document.getElementById(`peajes-${tipo}-container`);
+        ocultarMensajeVacio(`no-peajes-${tipo}-msg`);
+        
+        const newRow = document.createElement('tr');
+        newRow.className = 'peaje-item';
+        newRow.setAttribute('data-index', index);
+        newRow.innerHTML = `
+            <td>
+                <input type="number" name="${tipo}_peaje_orden_${index}" class="form-control form-control-sm" value="${index}" readonly>
+            </td>
+            <td>
+                <input type="text" name="${tipo}_peaje_lugar_${index}" class="form-control form-control-sm" placeholder="Nombre del peaje">
+            </td>
+            <td>
+                <input type="number" name="${tipo}_peaje_monto_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="date" name="${tipo}_peaje_fecha_${index}" class="form-control form-control-sm">
+            </td>
+            <td>
+                <input type="file" name="${tipo}_peaje_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-peaje-${tipo}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        container.appendChild(newRow);
+    }
+
+    document.getElementById('agregar-peaje-ida').addEventListener('click', () => agregarPeaje('ida'));
+    document.getElementById('agregar-peaje-vuelta').addEventListener('click', () => agregarPeaje('vuelta'));
+
+    // Eliminar peajes
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-peaje-ida') || e.target.closest('.remove-peaje-vuelta')) {
+            const tipo = e.target.closest('.remove-peaje-ida') ? 'ida' : 'vuelta';
+            if (confirm('¿Está seguro de eliminar este peaje?')) {
+                const row = e.target.closest('.peaje-item');
+                row.remove();
+                
+                // Reordenar
+                const peajes = document.querySelectorAll(`#peajes-${tipo}-container .peaje-item`);
+                peajes.forEach((peaje, idx) => {
+                    const ordenInput = peaje.querySelector(`input[name^="${tipo}_peaje_orden_"]`);
+                    if (ordenInput) ordenInput.value = idx + 1;
+                });
+                
+                if (peajes.length === 0) {
+                    mostrarMensajeVacio(`no-peajes-${tipo}-msg`);
+                }
+            }
+        }
+    });
+
+    // ==================== PUNTOS DE RECARGA ====================
+    
+    function agregarRecarga(tipo) {
+        const index = tipo === 'ida' ? ++recargaIdaIndex : ++recargaVueltaIndex;
+        const container = document.getElementById(`recargas-${tipo}-container`);
+        ocultarMensajeVacio(`no-recargas-${tipo}-msg`);
+        
+        const newRow = document.createElement('tr');
+        newRow.className = 'recarga-item';
+        newRow.setAttribute('data-index', index);
+        newRow.innerHTML = `
+            <td>
+                <input type="number" name="${tipo}_recarga_orden_${index}" class="form-control form-control-sm text-center" value="${index}" readonly>
+            </td>
+            <td>
+                <input type="text" name="${tipo}_recarga_lugar_${index}" class="form-control form-control-sm" placeholder="Lugar">
+            </td>
+            <td>
+                <select name="${tipo}_recarga_sucursal_${index}" class="form-select form-select-sm">
+                    <option value="">-- Seleccione --</option>
+                    <option value="COPEC">COPEC</option>
+                    <option value="Shell">Shell</option>
+                    <option value="Petrobras">Petrobras</option>
+                    <option value="ENEX">ENEX</option>
+                    <option value="Terpel">Terpel</option>
+                    <option value="Otro">Otro</option>
+                </select>
+            </td>
+            <td>
+                <input type="number" name="${tipo}_recarga_kilometraje_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="date" name="${tipo}_recarga_fecha_${index}" class="form-control form-control-sm">
+            </td>
+            <td>
+                <input type="number" name="${tipo}_recarga_litros_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="number" name="${tipo}_recarga_precio_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+            </td>
+            <td>
+                <input type="file" name="${tipo}_recarga_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf">
+            </td>
+            <td class="text-center">
+                <button type="button" class="btn btn-danger btn-sm remove-recarga-${tipo}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        container.appendChild(newRow);
+    }
+
+    document.getElementById('agregar-recarga-ida').addEventListener('click', () => agregarRecarga('ida'));
+    document.getElementById('agregar-recarga-vuelta').addEventListener('click', () => agregarRecarga('vuelta'));
+
+    // Eliminar recargas
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-recarga-ida') || e.target.closest('.remove-recarga-vuelta')) {
+            const tipo = e.target.closest('.remove-recarga-ida') ? 'ida' : 'vuelta';
+            if (confirm('¿Está seguro de eliminar este punto de recarga?')) {
+                const row = e.target.closest('.recarga-item');
+                row.remove();
+                
+                const recargas = document.querySelectorAll(`#recargas-${tipo}-container .recarga-item`);
+                recargas.forEach((recarga, idx) => {
+                    const ordenInput = recarga.querySelector(`input[name^="${tipo}_recarga_orden_"]`);
+                    if (ordenInput) ordenInput.value = idx + 1;
+                });
+                
+                if (recargas.length === 0) {
+                    mostrarMensajeVacio(`no-recargas-${tipo}-msg`);
+                }
+            }
+        }
+    });
+
+    // ==================== OTROS COSTOS ====================
+    
+    function agregarOtroCosto(tipo) {
+        const tipoSelect = document.getElementById(`${tipo}-tipo-otro-costo`);
+        const montoInput = document.getElementById(`${tipo}-monto-otro-costo`);
+        const descripcionInput = document.getElementById(`${tipo}-descripcion-otro-costo`);
+        const voucherInput = document.getElementById(`${tipo}-voucher-otro-costo`);
+        
+        const tipoValue = tipoSelect.value;
+        const monto = parseFloat(montoInput.value) || 0;
+        const descripcion = descripcionInput.value.trim();
+        const voucher = voucherInput.files[0];
+
+        if (!tipoValue) {
+            alert('Por favor seleccione un tipo de costo');
+            return;
+        }
+        if (monto <= 0) {
+            alert('Por favor ingrese un monto válido');
+            return;
+        }
+        if (!descripcion) {
+            alert('Por favor ingrese una descripción');
+            return;
+        }
+
+        const index = tipo === 'ida' ? ++otroCostoIdaIndex : ++otroCostoVueltaIndex;
+        const data = tipo === 'ida' ? otrosCostosIdaData : otrosCostosVueltaData;
+        
+        const costoData = {
+            index: index,
+            tipo: tipoValue,
+            monto: monto,
+            descripcion: descripcion,
+            voucher: voucher ? voucher.name : 'Sin comprobante'
+        };
+        data.push(costoData);
+
+        const container = document.getElementById(`otros-costos-${tipo}-container`);
+        const noMsg = document.getElementById(`no-otros-costos-${tipo}-msg`);
+        if (noMsg) noMsg.style.display = 'none';
+
+        const newItem = document.createElement('div');
+        newItem.className = 'card mb-3';
+        newItem.setAttribute('data-index', index);
+        newItem.innerHTML = `
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <strong>${tipoValue.toUpperCase()}</strong>
+                    </div>
+                    <div class="col-md-5">
+                        <small class="text-muted">${descripcion}</small>
+                    </div>
+                    <div class="col-md-2">
+                        <strong class="text-success">$${monto.toFixed(2)}</strong>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button type="button" class="btn btn-sm btn-danger remove-otro-costo-${tipo}" data-index="${index}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+                <input type="hidden" name="${tipo}_otro_costo_tipo_${index}" value="${tipoValue}">
+                <input type="hidden" name="${tipo}_otro_costo_monto_${index}" value="${monto}">
+                <input type="hidden" name="${tipo}_otro_costo_descripcion_${index}" value="${descripcion}">
+            </div>
+        `;
+        container.appendChild(newItem);
+
+        // Limpiar formulario
+        tipoSelect.value = '';
+        montoInput.value = '';
+        descripcionInput.value = '';
+        voucherInput.value = '';
+
+        actualizarTotalOtrosCostos(tipo);
+    }
+
+    document.getElementById('agregar-otro-costo-ida').addEventListener('click', () => agregarOtroCosto('ida'));
+    document.getElementById('agregar-otro-costo-vuelta').addEventListener('click', () => agregarOtroCosto('vuelta'));
+
+    // Eliminar otros costos
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-otro-costo-ida') || e.target.closest('.remove-otro-costo-vuelta')) {
+            const tipo = e.target.closest('.remove-otro-costo-ida') ? 'ida' : 'vuelta';
+            if (confirm('¿Está seguro de eliminar este costo?')) {
+                const btn = e.target.closest(`[data-index]`);
+                const index = parseInt(btn.getAttribute('data-index'));
+                const item = btn.closest('.card');
+                item.remove();
+                
+                const data = tipo === 'ida' ? otrosCostosIdaData : otrosCostosVueltaData;
+                const idx = data.findIndex(c => c.index === index);
+                if (idx !== -1) data.splice(idx, 1);
+                
+                actualizarTotalOtrosCostos(tipo);
+                
+                const container = document.getElementById(`otros-costos-${tipo}-container`);
+                if (container.children.length === 0 || !container.querySelector('.card')) {
+                    const noMsg = document.getElementById(`no-otros-costos-${tipo}-msg`);
+                    if (noMsg) noMsg.style.display = 'block';
+                }
+            }
+        }
+    });
+
+    // ==================== VALIDACIÓN DEL FORMULARIO ====================
+    
+    document.getElementById('costosIdaVueltaForm').addEventListener('submit', function(e) {
+        // Validar que ambos viajes tengan datos mínimos
+        const idaKmInicial = document.querySelector('input[name="ida_km_inicial"]').value;
+        const idaKmFinal = document.querySelector('input[name="ida_km_final"]').value;
+        const vueltaKmInicial = document.querySelector('input[name="vuelta_km_inicial"]').value;
+        const vueltaKmFinal = document.querySelector('input[name="vuelta_km_final"]').value;
+
+        if (!idaKmInicial || !idaKmFinal) {
+            e.preventDefault();
+            alert('Por favor complete los kilometrajes del viaje de IDA');
+            document.getElementById('ida-tab').click();
+            return false;
+        }
+
+        if (!vueltaKmInicial || !vueltaKmFinal) {
+            e.preventDefault();
+            alert('Por favor complete los kilometrajes del viaje de VUELTA');
+            document.getElementById('vuelta-tab').click();
+            return false;
+        }
+
+        // Validar que km final > km inicial
+        if (parseFloat(idaKmFinal) <= parseFloat(idaKmInicial)) {
+            e.preventDefault();
+            alert('El kilometraje final debe ser mayor al inicial en el viaje de IDA');
+            document.getElementById('ida-tab').click();
+            return false;
+        }
+
+        if (parseFloat(vueltaKmFinal) <= parseFloat(vueltaKmInicial)) {
+            e.preventDefault();
+            alert('El kilometraje final debe ser mayor al inicial en el viaje de VUELTA');
+            document.getElementById('vuelta-tab').click();
+            return false;
+        }
+
+        return true;
+    });
+});
+</script>
+{% endblock %}

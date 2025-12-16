@@ -300,28 +300,83 @@ class Command(BaseCommand):
         
         # Crear Viajes
         self.stdout.write('\n🚍 Creando viajes...')
+        
+        # Viaje 1: IDA Y VUELTA Santiago-Valparaíso
+        viaje_ida_data = {
+            'bus': buses[0],
+            'conductor': conductores[0],
+            'origen_nombre': 'Terminal Central',
+            'origen_ciudad': 'Santiago',
+            'origen_provincia': 'Santiago',
+            'origen_pais': 'Chile',
+            'latitud_origen': -33.4489,
+            'longitud_origen': -70.6693,
+            'destino_nombre': 'Terminal Valparaíso',
+            'destino_ciudad': 'Valparaíso',
+            'destino_provincia': 'Valparaíso',
+            'destino_pais': 'Chile',
+            'latitud_destino': -33.0472,
+            'longitud_destino': -71.6127,
+            'fecha_salida': timezone.now() + timedelta(days=1, hours=8),
+            'fecha_llegada_estimada': timezone.now() + timedelta(days=1, hours=10),
+            'distancia_km': 120.5,
+            'estado': 'programado',
+            'es_ida_vuelta': True,
+            'tipo_trayecto': 'ida',
+            'observaciones': 'Viaje de ida y vuelta Santiago-Valparaíso'
+        }
+        
+        # Buscar viaje de ida existente
+        viaje_ida = Viaje.objects.filter(
+            bus=viaje_ida_data['bus'],
+            conductor=viaje_ida_data['conductor'],
+            origen_ciudad=viaje_ida_data['origen_ciudad'],
+            destino_ciudad=viaje_ida_data['destino_ciudad'],
+            estado='programado',
+            tipo_trayecto='ida'
+        ).first()
+        
+        if not viaje_ida:
+            viaje_ida = Viaje.objects.create(**viaje_ida_data)
+            
+            # Crear viaje de vuelta
+            viaje_vuelta = Viaje.objects.create(
+                bus=viaje_ida.bus,
+                conductor=viaje_ida.conductor,
+                origen_nombre=viaje_ida.destino_nombre,
+                origen_ciudad=viaje_ida.destino_ciudad,
+                origen_provincia=viaje_ida.destino_provincia,
+                origen_pais=viaje_ida.destino_pais,
+                latitud_origen=viaje_ida.latitud_destino,
+                longitud_origen=viaje_ida.longitud_destino,
+                destino_nombre=viaje_ida.origen_nombre,
+                destino_ciudad=viaje_ida.origen_ciudad,
+                destino_provincia=viaje_ida.origen_provincia,
+                destino_pais=viaje_ida.origen_pais,
+                latitud_destino=viaje_ida.latitud_origen,
+                longitud_destino=viaje_ida.longitud_origen,
+                fecha_salida=viaje_ida.fecha_llegada_estimada + timedelta(minutes=30),
+                fecha_llegada_estimada=viaje_ida.fecha_llegada_estimada + timedelta(hours=2, minutes=30),
+                distancia_km=viaje_ida.distancia_km,
+                estado='programado',
+                es_ida_vuelta=True,
+                tipo_trayecto='vuelta',
+                observaciones='Viaje de vuelta Valparaíso-Santiago'
+            )
+            
+            # Vincular ambos viajes
+            viaje_ida.viaje_relacionado = viaje_vuelta
+            viaje_ida.save(update_fields=['viaje_relacionado'])
+            viaje_vuelta.viaje_relacionado = viaje_ida
+            viaje_vuelta.save(update_fields=['viaje_relacionado'])
+            
+            self.stdout.write(f'  ✅ Viaje 1 IDA creado: {viaje_ida.origen_ciudad} → {viaje_ida.destino_ciudad}')
+            self.stdout.write(f'  ✅ Viaje 1 VUELTA creado: {viaje_vuelta.origen_ciudad} → {viaje_vuelta.destino_ciudad}')
+        else:
+            self.stdout.write(f'  ℹ️  Viaje 1 ya existe: {viaje_ida.origen_ciudad} → {viaje_ida.destino_ciudad}')
+        
+        # Resto de viajes simples
         viajes_data = [
-            {
-                'bus': buses[0],
-                'conductor': conductores[0],
-                'origen_nombre': 'Terminal Central',
-                'origen_ciudad': 'Santiago',
-                'origen_provincia': 'Santiago',
-                'origen_pais': 'Chile',
-                'latitud_origen': -33.4489,
-                'longitud_origen': -70.6693,
-                'destino_nombre': 'Terminal Valparaíso',
-                'destino_ciudad': 'Valparaíso',
-                'destino_provincia': 'Valparaíso',
-                'destino_pais': 'Chile',
-                'latitud_destino': -33.0472,
-                'longitud_destino': -71.6127,
-                'fecha_salida': timezone.now() + timedelta(days=1, hours=8),
-                'fecha_llegada_estimada': timezone.now() + timedelta(days=1, hours=10),
-                'distancia_km': 120.5,
-                'estado': 'programado',
-                'observaciones': 'Viaje regular Santiago-Valparaíso'
-            },
             {
                 'bus': buses[1],
                 'conductor': conductores[1],
@@ -408,7 +463,8 @@ class Command(BaseCommand):
             },
         ]
         
-        viajes_creados = []
+        viajes_creados = [viaje_ida] if viaje_ida else []
+        
         for i, data in enumerate(viajes_data):
             # Buscar viaje existente por origen-destino-bus-conductor
             viaje = Viaje.objects.filter(
@@ -425,12 +481,12 @@ class Command(BaseCommand):
                 viaje.fecha_llegada_estimada = data['fecha_llegada_estimada']
                 viaje.save()
                 viajes_creados.append(viaje)
-                self.stdout.write(f'  ℹ️  Viaje {i+1} ya existe (fechas actualizadas): {viaje.origen_ciudad} → {viaje.destino_ciudad}')
+                self.stdout.write(f'  ℹ️  Viaje {i+2} ya existe (fechas actualizadas): {viaje.origen_ciudad} → {viaje.destino_ciudad}')
             else:
                 # Crear nuevo viaje
                 viaje = Viaje.objects.create(**data)
                 viajes_creados.append(viaje)
-                self.stdout.write(f'  ✅ Viaje {i+1} creado: {viaje.origen_ciudad} → {viaje.destino_ciudad}')
+                self.stdout.write(f'  ✅ Viaje {i+2} creado: {viaje.origen_ciudad} → {viaje.destino_ciudad}')
         
         # Asignar pasajeros a viajes
         self.stdout.write('\n🎫 Asignando pasajeros a viajes...')

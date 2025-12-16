@@ -57,7 +57,8 @@ class ViajesSinCostosListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        return Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')
+        # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
+        return Viaje.objects.exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')
 
 
 class CostosViajeCreateView(LoginRequiredMixin, View):
@@ -285,7 +286,8 @@ class GestionCostosView(LoginRequiredMixin, View):
     def get(self, request):
         # Obtener viajes sin costos asignados
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
+        # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
+        viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')[:5]
         
         # Agregar un atributo temporal para mostrar "EN CURSO" en la tabla
         for viaje in viajes_sin_costos:
@@ -979,6 +981,326 @@ Sistema de Gestión de Flota - FlotaGest"""
     return redirect('costos:gestion')
 
 
+def enviar_formulario_email_ida_vuelta(request, viaje_ida_id):
+    """Envía ambos formularios PDF (IDA y VUELTA) por correo electrónico al conductor."""
+    viaje_ida = get_object_or_404(Viaje, pk=viaje_ida_id)
+    
+    # Verificar que sea un viaje de ida y vuelta
+    if not viaje_ida.es_ida_vuelta or not viaje_ida.viaje_relacionado:
+        messages.error(request, 'Este viaje no es de IDA Y VUELTA.')
+        return redirect('costos:gestion')
+    
+    viaje_vuelta = viaje_ida.viaje_relacionado
+    conductor = viaje_ida.conductor
+    
+    if not conductor.email:
+        messages.error(request, f'El conductor {conductor.nombre} {conductor.apellido} no tiene un correo electrónico registrado.')
+        return redirect('costos:gestion')
+    
+    try:
+        # Función auxiliar para generar PDF de un viaje
+        def generar_pdf_viaje(viaje, tipo_trayecto):
+            from reportlab.pdfgen import canvas as pdf_canvas
+            from reportlab.pdfbase import pdfform
+            from reportlab.lib.colors import HexColor
+            
+            buffer = io.BytesIO()
+            c = pdf_canvas.Canvas(buffer, pagesize=letter)
+            width, height = letter
+            
+            color_azul = HexColor('#1e40af')
+            color_gris = HexColor('#f3f4f6')
+            
+            costos_viaje = CostosViaje.objects.filter(viaje=viaje).first()
+            km_inicial = costos_viaje.km_inicial if costos_viaje and costos_viaje.km_inicial is not None else ''
+            
+            # PÁGINA 1
+            y = height - 50
+            c.setFillColor(color_azul)
+            c.setFont("Helvetica-Bold", 18)
+            c.drawCentredString(width/2, y, f"FORMULARIO DE COSTOS - {tipo_trayecto}")
+            
+            y -= 40
+            c.setFillColor(colors.black)
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(50, y, "INFORMACIÓN DEL VIAJE")
+            
+            y -= 25
+            c.setFont("Helvetica", 10)
+            c.drawString(50, y, f"Bus: {viaje.bus.placa}    Modelo: {viaje.bus.modelo}")
+            y -= 18
+            c.drawString(50, y, f"Origen: {viaje.get_origen_display()}    Destino: {viaje.get_destino_display()}")
+            y -= 18
+            c.drawString(50, y, f"Conductor: {viaje.conductor.nombre} {viaje.conductor.apellido}")
+            y -= 18
+            c.drawString(50, y, f"Fecha: {viaje.fecha_salida.strftime('%d/%m/%Y')}")
+            
+            y -= 25
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(50, y, "Kilometraje Inicial:")
+            c.drawString(300, y, "Kilometraje Final:")
+            
+            form = c.acroForm
+            y_campo = y - 18
+            
+            form.textfield(name='km_inicial', tooltip='Kilometraje Inicial', x=180, y=y_campo, width=100, height=18,
+                          borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white,
+                          textColor=colors.black, forceBorder=True, value=str(km_inicial) if km_inicial else '')
+            
+            form.textfield(name='km_final', tooltip='Kilometraje Final', x=430, y=y_campo, width=100, height=18,
+                          borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white,
+                          textColor=colors.black, forceBorder=True)
+            
+            # TABLA RECARGAS
+            y = y_campo - 30
+            c.setFont("Helvetica-Bold", 12)
+            c.setFillColor(color_azul)
+            c.drawString(50, y, "PUNTOS DE RECARGA DE COMBUSTIBLE")
+            
+            y -= 25
+            c.setFillColor(color_azul)
+            c.rect(50, y - 18, width - 100, 18, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 8)
+            headers = ['N°', 'Lugar', 'Sucursal', 'KM', 'Fecha', 'Litros', 'Precio']
+            x_pos = [55, 85, 175, 255, 310, 370, 430]
+            for i, header in enumerate(headers):
+                c.drawString(x_pos[i], y - 12, header)
+            
+            y -= 18
+            c.setFillColor(colors.black)
+            
+            for i in range(1, 10):
+                y -= 22
+                c.setFont("Helvetica", 8)
+                c.drawString(58, y + 5, str(i))
+                form.textfield(name=f'recarga_lugar_{i}', x=80, y=y, width=90, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'recarga_sucursal_{i}', x=172, y=y, width=80, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'recarga_km_{i}', x=254, y=y, width=50, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'recarga_fecha_{i}', x=306, y=y, width=60, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'recarga_litros_{i}', x=368, y=y, width=60, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'recarga_precio_{i}', x=430, y=y, width=60, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+            
+            y -= 25
+            c.setFont("Helvetica-Oblique", 7)
+            c.setFillColor(colors.grey)
+            c.drawString(50, y, "* Sucursal: COPEC, Shell, Petrobras, ENEX, Terpel, Otro")
+            
+            # TABLA MANTENIMIENTOS
+            y -= 25
+            c.setFont("Helvetica-Bold", 12)
+            c.setFillColor(color_azul)
+            c.drawString(50, y, "MANTENIMIENTOS")
+            
+            y -= 25
+            c.setFillColor(color_azul)
+            c.rect(50, y - 18, width - 100, 18, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 7)
+            headers_mant = ['N°', 'Fecha', 'Tipo', 'Descripción', 'Costo', 'Proveedor', 'KM', 'Taller']
+            x_pos_mant = [55, 80, 130, 180, 290, 340, 420, 455]
+            for i, header in enumerate(headers_mant):
+                c.drawString(x_pos_mant[i], y - 12, header)
+            
+            y -= 18
+            c.setFillColor(colors.black)
+            
+            for i in range(1, 6):
+                y -= 22
+                c.setFont("Helvetica", 7)
+                c.drawString(58, y + 5, str(i))
+                form.textfield(name=f'mant_fecha_{i}', x=75, y=y, width=50, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_tipo_{i}', x=127, y=y, width=50, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_desc_{i}', x=179, y=y, width=108, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_costo_{i}', x=289, y=y, width=48, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_prov_{i}', x=339, y=y, width=78, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_km_{i}', x=419, y=y, width=33, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'mant_taller_{i}', x=454, y=y, width=88, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+            
+            c.showPage()
+            
+            # PÁGINA 2
+            y = height - 50
+            c.setFont("Helvetica-Bold", 14)
+            c.setFillColor(color_azul)
+            c.drawString(50, y, "REGISTRO DE PEAJES")
+            
+            y -= 30
+            c.setFillColor(color_azul)
+            c.rect(50, y - 18, width - 100, 18, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(60, y - 12, "N°")
+            c.drawString(120, y - 12, "Lugar")
+            c.drawString(350, y - 12, "Monto (CLP)")
+            c.drawString(460, y - 12, "Fecha")
+            
+            y -= 18
+            c.setFillColor(colors.black)
+            
+            for i in range(1, 10):
+                y -= 22
+                c.setFont("Helvetica", 9)
+                c.drawString(63, y + 5, str(i))
+                form.textfield(name=f'peaje_lugar_{i}', x=90, y=y, width=255, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'peaje_monto_{i}', x=347, y=y, width=110, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'peaje_fecha_{i}', x=459, y=y, width=85, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+            
+            # OTROS COSTOS
+            y -= 35
+            c.setFont("Helvetica-Bold", 12)
+            c.setFillColor(color_azul)
+            c.drawString(50, y, "OTROS COSTOS")
+            
+            y -= 25
+            c.setFillColor(color_azul)
+            c.rect(50, y - 18, width - 100, 18, fill=True, stroke=False)
+            c.setFillColor(colors.white)
+            c.setFont("Helvetica-Bold", 9)
+            c.drawString(60, y - 12, "N°")
+            c.drawString(120, y - 12, "Tipo de Costo")
+            c.drawString(280, y - 12, "Descripción")
+            c.drawString(470, y - 12, "Monto")
+            
+            y -= 18
+            c.setFillColor(colors.black)
+            
+            for i in range(1, 6):
+                y -= 22
+                c.setFont("Helvetica", 9)
+                c.drawString(63, y + 5, str(i))
+                form.textfield(name=f'otro_tipo_{i}', x=90, y=y, width=185, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'otro_desc_{i}', x=277, y=y, width=185, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+                form.textfield(name=f'otro_monto_{i}', x=464, y=y, width=80, height=18,
+                              borderStyle='solid', borderWidth=1, borderColor=colors.grey, fillColor=colors.white, forceBorder=True)
+            
+            # OBSERVACIONES
+            y -= 35
+            c.setFont("Helvetica-Bold", 11)
+            c.setFillColor(color_azul)
+            c.drawString(50, y, "OBSERVACIONES GENERALES")
+            
+            y -= 15
+            form.textfield(name='observaciones', tooltip='Observaciones generales del viaje',
+                          x=50, y=y - 65, width=width - 100, height=70,
+                          borderStyle='solid', borderWidth=1, borderColor=colors.grey,
+                          fillColor=colors.white, textColor=colors.black, forceBorder=True)
+            
+            # FIRMA
+            y -= 95
+            c.setStrokeColor(colors.black)
+            c.setLineWidth(1)
+            c.line(80, y, 250, y)
+            c.line(350, y, 520, y)
+            
+            c.setFont("Helvetica", 9)
+            c.setFillColor(colors.black)
+            c.drawCentredString(165, y - 15, "Firma del Conductor")
+            c.drawCentredString(435, y - 15, "Fecha")
+            
+            # Footer
+            c.setFont("Helvetica-Bold", 9)
+            c.setFillColor(HexColor('#dc2626'))
+            c.drawCentredString(width/2, 40, "📱 IMPORTANTE: Para editar en celulares necesitas Adobe Acrobat Reader, Xodo PDF o Foxit PDF")
+            
+            c.setFont("Helvetica-Oblique", 8)
+            c.setFillColor(colors.grey)
+            c.drawCentredString(width/2, 27, f"Formulario generado el {datetime.now().strftime('%d/%m/%Y %H:%M')} - Sistema FlotaGest")
+            c.drawCentredString(width/2, 17, "Android: Descarga desde Play Store | iOS: Descarga desde App Store")
+            
+            c.save()
+            buffer.seek(0)
+            return buffer
+        
+        # Generar ambos PDFs
+        pdf_ida = generar_pdf_viaje(viaje_ida, "VIAJE DE IDA")
+        pdf_vuelta = generar_pdf_viaje(viaje_vuelta, "VIAJE DE VUELTA")
+        
+        # Crear el email
+        subject = f'Formularios de Costos IDA Y VUELTA - {viaje_ida.bus.placa} ({viaje_ida.fecha_salida.strftime("%d/%m/%Y")})'
+        body = f"""Estimado/a {conductor.nombre} {conductor.apellido},
+
+Por medio de la presente, adjunto encontrará DOS formularios para el registro de los costos correspondientes al viaje de IDA Y VUELTA asignado.
+
+DETALLES DEL VIAJE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚌 Bus: {viaje_ida.bus.placa} - {viaje_ida.bus.modelo}
+
+📍 VIAJE DE IDA:
+   • Ruta: {viaje_ida.get_origen_display()} → {viaje_ida.get_destino_display()}
+   • Fecha: {viaje_ida.fecha_salida.strftime('%d/%m/%Y %H:%M')}
+   • Estado: {viaje_ida.get_estado_display()}
+
+📍 VIAJE DE VUELTA:
+   • Ruta: {viaje_vuelta.get_origen_display()} → {viaje_vuelta.get_destino_display()}
+   • Fecha: {viaje_vuelta.fecha_salida.strftime('%d/%m/%Y %H:%M')}
+   • Estado: {viaje_vuelta.get_estado_display()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ IMPORTANTE: Debe completar AMBOS formularios (uno para la IDA y otro para la VUELTA) con los costos correspondientes a cada trayecto.
+
+INSTRUCCIONES PARA COMPLETAR LOS FORMULARIOS:
+
+Para editar los formularios PDF en dispositivos móviles (celulares o tablets), es necesario contar con una aplicación compatible. Las aplicaciones recomendadas son:
+
+• Adobe Acrobat Reader
+• Xodo PDF (recomendado para Android)
+• Foxit PDF
+
+Puede descargar estas aplicaciones desde:
+• Android: Google Play Store
+• iOS: Apple App Store
+
+Por favor, complete ambos formularios con todos los costos de cada trayecto y envíelos de vuelta a la brevedad posible.
+
+Quedamos atentos a cualquier consulta.
+
+Cordialmente,
+Sistema de Gestión de Flota - FlotaGest"""
+        
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[conductor.email],
+        )
+        
+        # Adjuntar ambos PDFs
+        filename_ida = f'formulario_costos_IDA_{viaje_ida.id}.pdf'
+        filename_vuelta = f'formulario_costos_VUELTA_{viaje_vuelta.id}.pdf'
+        
+        email.attach(filename_ida, pdf_ida.getvalue(), 'application/pdf')
+        email.attach(filename_vuelta, pdf_vuelta.getvalue(), 'application/pdf')
+        
+        # Enviar el email
+        email.send()
+        
+        messages.success(request, f'✅ Formularios de IDA Y VUELTA enviados exitosamente a {conductor.email}')
+        
+    except Exception as e:
+        messages.error(request, f'❌ Error al enviar el correo: {str(e)}')
+    
+    return redirect('costos:gestion')
+
+
 def registrar_peajes(request, costos_pk):
     costos_viaje = get_object_or_404(CostosViaje, pk=costos_pk)
     if request.method == 'POST':
@@ -1063,6 +1385,328 @@ def registrar_km_final(request, costos_pk):
     else:
         form = KmFinalForm(instance=costos_viaje)
     return render(request, 'costos/km_final_form.html', {'form': form, 'costos_pk': costos_pk})
+
+
+def registrar_ida_vuelta(request, viaje_ida_id):
+    """Vista para registrar costos de viajes de IDA Y VUELTA en una sola página con formularios completos."""
+    from decimal import Decimal
+    from datetime import datetime as dt
+    
+    viaje_ida = get_object_or_404(Viaje, pk=viaje_ida_id)
+    
+    # Verificar que sea un viaje de ida y vuelta
+    if not viaje_ida.es_ida_vuelta or not viaje_ida.viaje_relacionado:
+        messages.error(request, 'Este viaje no es de IDA Y VUELTA.')
+        return redirect('costos:gestion')
+    
+    viaje_vuelta = viaje_ida.viaje_relacionado
+    
+    # Verificar si ya tienen costos registrados (ambos)
+    costos_ida = CostosViaje.objects.filter(viaje=viaje_ida).first()
+    costos_vuelta = CostosViaje.objects.filter(viaje=viaje_vuelta).first()
+    
+    # Si AMBOS ya tienen costos, redirigir con mensaje
+    if costos_ida and costos_vuelta:
+        messages.info(request, '✅ Ambos trayectos ya tienen costos registrados. Puedes editarlos individualmente si necesitas modificarlos.')
+        return redirect('costos:gestion')
+    
+    if request.method == 'POST':
+        # Validar que ambos formularios tengan datos mínimos
+        tiene_datos_ida = request.POST.get('ida_km_inicial') and request.POST.get('ida_km_final')
+        tiene_datos_vuelta = request.POST.get('vuelta_km_inicial') and request.POST.get('vuelta_km_final')
+        
+        if not tiene_datos_ida or not tiene_datos_vuelta:
+            messages.error(request, '❌ Debes completar los kilometrajes de AMBOS trayectos (IDA y VUELTA) para poder guardar.')
+            context = {
+                'viaje_ida': viaje_ida,
+                'viaje_vuelta': viaje_vuelta,
+            }
+            return render(request, 'costos/registrar_ida_vuelta.html', context)
+        
+        try:
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # ========== PROCESAR VIAJE DE IDA ==========
+                if not costos_ida:
+                    costos_ida = CostosViaje.objects.create(
+                        viaje=viaje_ida,
+                        km_inicial=Decimal(request.POST.get('ida_km_inicial', 0)),
+                        km_final=Decimal(request.POST.get('ida_km_final', 0)),
+                        observaciones=request.POST.get('ida_observaciones', '')
+                    )
+                
+                # Procesar mantenimientos IDA
+                bus_ida = viaje_ida.bus
+                mantenimientos_ida = []
+                for key in request.POST:
+                    if key.startswith('ida_mant_fecha_'):
+                        idx = key.split('_')[-1]
+                        fecha = request.POST.get(f'ida_mant_fecha_{idx}', '').strip()
+                        tipo = request.POST.get(f'ida_mant_tipo_{idx}', '').strip()
+                        descripcion = request.POST.get(f'ida_mant_descripcion_{idx}', '').strip()
+                        observaciones = request.POST.get(f'ida_mant_observaciones_{idx}', '').strip()
+                        costo = request.POST.get(f'ida_mant_costo_{idx}', '').strip()
+                        proveedor = request.POST.get(f'ida_mant_proveedor_{idx}', '').strip()
+                        kilometraje = request.POST.get(f'ida_mant_kilometraje_{idx}', '').strip()
+                        taller = request.POST.get(f'ida_mant_taller_{idx}', '').strip()
+                        
+                        if fecha and tipo:
+                            costo_mant = Decimal(costo) if costo else Decimal('0')
+                            km_mant = int(kilometraje) if kilometraje else 0
+                            
+                            nuevo_mant = Mantenimiento.objects.create(
+                                bus=bus_ida,
+                                fecha_mantenimiento=fecha,
+                                tipo=tipo,
+                                costo=costo_mant,
+                                kilometraje=km_mant,
+                                proveedor=proveedor if proveedor else None,
+                                taller=taller,
+                                descripcion=descripcion,
+                                observaciones=observaciones
+                            )
+                            mantenimientos_ida.append(nuevo_mant)
+                
+                if mantenimientos_ida:
+                    costos_ida.mantenimientos.set(mantenimientos_ida)
+                    costos_ida.mantenimiento = sum(Decimal(str(m.costo)) for m in mantenimientos_ida)
+                
+                # Procesar peajes IDA
+                total_peajes_ida = Decimal('0')
+                for key in request.POST:
+                    if key.startswith('ida_peaje_lugar_'):
+                        idx = key.split('_')[-1]
+                        lugar = request.POST.get(f'ida_peaje_lugar_{idx}', '').strip()
+                        monto = request.POST.get(f'ida_peaje_monto_{idx}', '').strip()
+                        fecha_pago = request.POST.get(f'ida_peaje_fecha_{idx}', '').strip()
+                        voucher = request.FILES.get(f'ida_peaje_voucher_{idx}')
+                        
+                        if lugar and monto:
+                            monto_decimal = Decimal(monto)
+                            fecha = dt.strptime(fecha_pago, '%Y-%m-%d').date() if fecha_pago else datetime.now().date()
+                            
+                            Peaje.objects.create(
+                                viaje=viaje_ida,
+                                costos_viaje=costos_ida,
+                                lugar=lugar,
+                                monto=monto_decimal,
+                                fecha_pago=fecha,
+                                comprobante=voucher if voucher else ""
+                            )
+                            total_peajes_ida += monto_decimal
+                
+                costos_ida.peajes = total_peajes_ida
+                
+                # Procesar puntos de recarga IDA
+                for key in request.POST:
+                    if key.startswith('ida_recarga_lugar_'):
+                        idx = key.split('_')[-1]
+                        orden = request.POST.get(f'ida_recarga_orden_{idx}', '').strip()
+                        lugar = request.POST.get(f'ida_recarga_lugar_{idx}', '').strip()
+                        sucursal = request.POST.get(f'ida_recarga_sucursal_{idx}', '').strip()
+                        kilometraje = request.POST.get(f'ida_recarga_kilometraje_{idx}', '').strip()
+                        litros = request.POST.get(f'ida_recarga_litros_{idx}', '').strip()
+                        precio = request.POST.get(f'ida_recarga_precio_{idx}', '').strip()
+                        fecha_pago = request.POST.get(f'ida_recarga_fecha_{idx}', '').strip()
+                        voucher = request.FILES.get(f'ida_recarga_voucher_{idx}')
+                        
+                        if lugar and kilometraje and litros and precio:
+                            ubicacion_completa = lugar
+                            if sucursal:
+                                ubicacion_completa += f" - {sucursal}"
+                            
+                            observaciones = ""
+                            if fecha_pago:
+                                observaciones = f"Fecha de pago: {fecha_pago}"
+                            
+                            PuntoRecarga.objects.create(
+                                costos_viaje=costos_ida,
+                                orden=int(orden) if orden else int(idx),
+                                kilometraje=Decimal(kilometraje),
+                                precio_combustible=Decimal(precio),
+                                litros_cargados=Decimal(litros),
+                                ubicacion=ubicacion_completa,
+                                observaciones=observaciones,
+                                comprobante=voucher if voucher else ""
+                            )
+                
+                costos_ida.calcular_costo_combustible()
+                
+                # Procesar otros costos IDA
+                total_otros_costos_ida = Decimal('0')
+                observaciones_otros_costos_ida = []
+                
+                for key in request.POST:
+                    if key.startswith('ida_otro_costo_tipo_'):
+                        idx = key.split('_')[-1]
+                        tipo = request.POST.get(f'ida_otro_costo_tipo_{idx}', '').strip()
+                        monto = request.POST.get(f'ida_otro_costo_monto_{idx}', '').strip()
+                        descripcion = request.POST.get(f'ida_otro_costo_descripcion_{idx}', '').strip()
+                        
+                        if tipo and monto and descripcion:
+                            monto_decimal = Decimal(monto)
+                            total_otros_costos_ida += monto_decimal
+                            obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
+                            observaciones_otros_costos_ida.append(obs)
+                
+                costos_ida.otros_costos = total_otros_costos_ida
+                if observaciones_otros_costos_ida:
+                    obs_actuales = costos_ida.observaciones or ''
+                    if obs_actuales:
+                        obs_actuales += '\n\n'
+                    obs_actuales += 'OTROS COSTOS IDA:\n' + '\n'.join(observaciones_otros_costos_ida)
+                    costos_ida.observaciones = obs_actuales
+                
+                costos_ida.save()
+                
+                # ========== PROCESAR VIAJE DE VUELTA ==========
+                if not costos_vuelta:
+                    costos_vuelta = CostosViaje.objects.create(
+                        viaje=viaje_vuelta,
+                        km_inicial=Decimal(request.POST.get('vuelta_km_inicial', 0)),
+                        km_final=Decimal(request.POST.get('vuelta_km_final', 0)),
+                        observaciones=request.POST.get('vuelta_observaciones', '')
+                    )
+                
+                # Procesar mantenimientos VUELTA
+                bus_vuelta = viaje_vuelta.bus
+                mantenimientos_vuelta = []
+                for key in request.POST:
+                    if key.startswith('vuelta_mant_fecha_'):
+                        idx = key.split('_')[-1]
+                        fecha = request.POST.get(f'vuelta_mant_fecha_{idx}', '').strip()
+                        tipo = request.POST.get(f'vuelta_mant_tipo_{idx}', '').strip()
+                        descripcion = request.POST.get(f'vuelta_mant_descripcion_{idx}', '').strip()
+                        observaciones = request.POST.get(f'vuelta_mant_observaciones_{idx}', '').strip()
+                        costo = request.POST.get(f'vuelta_mant_costo_{idx}', '').strip()
+                        proveedor = request.POST.get(f'vuelta_mant_proveedor_{idx}', '').strip()
+                        kilometraje = request.POST.get(f'vuelta_mant_kilometraje_{idx}', '').strip()
+                        taller = request.POST.get(f'vuelta_mant_taller_{idx}', '').strip()
+                        
+                        if fecha and tipo:
+                            costo_mant = Decimal(costo) if costo else Decimal('0')
+                            km_mant = int(kilometraje) if kilometraje else 0
+                            
+                            nuevo_mant = Mantenimiento.objects.create(
+                                bus=bus_vuelta,
+                                fecha_mantenimiento=fecha,
+                                tipo=tipo,
+                                costo=costo_mant,
+                                kilometraje=km_mant,
+                                proveedor=proveedor if proveedor else None,
+                                taller=taller,
+                                descripcion=descripcion,
+                                observaciones=observaciones
+                            )
+                            mantenimientos_vuelta.append(nuevo_mant)
+                
+                if mantenimientos_vuelta:
+                    costos_vuelta.mantenimientos.set(mantenimientos_vuelta)
+                    costos_vuelta.mantenimiento = sum(Decimal(str(m.costo)) for m in mantenimientos_vuelta)
+                
+                # Procesar peajes VUELTA
+                total_peajes_vuelta = Decimal('0')
+                for key in request.POST:
+                    if key.startswith('vuelta_peaje_lugar_'):
+                        idx = key.split('_')[-1]
+                        lugar = request.POST.get(f'vuelta_peaje_lugar_{idx}', '').strip()
+                        monto = request.POST.get(f'vuelta_peaje_monto_{idx}', '').strip()
+                        fecha_pago = request.POST.get(f'vuelta_peaje_fecha_{idx}', '').strip()
+                        voucher = request.FILES.get(f'vuelta_peaje_voucher_{idx}')
+                        
+                        if lugar and monto:
+                            monto_decimal = Decimal(monto)
+                            fecha = dt.strptime(fecha_pago, '%Y-%m-%d').date() if fecha_pago else datetime.now().date()
+                            
+                            Peaje.objects.create(
+                                viaje=viaje_vuelta,
+                                costos_viaje=costos_vuelta,
+                                lugar=lugar,
+                                monto=monto_decimal,
+                                fecha_pago=fecha,
+                                comprobante=voucher if voucher else ""
+                            )
+                            total_peajes_vuelta += monto_decimal
+                
+                costos_vuelta.peajes = total_peajes_vuelta
+                
+                # Procesar puntos de recarga VUELTA
+                for key in request.POST:
+                    if key.startswith('vuelta_recarga_lugar_'):
+                        idx = key.split('_')[-1]
+                        orden = request.POST.get(f'vuelta_recarga_orden_{idx}', '').strip()
+                        lugar = request.POST.get(f'vuelta_recarga_lugar_{idx}', '').strip()
+                        sucursal = request.POST.get(f'vuelta_recarga_sucursal_{idx}', '').strip()
+                        kilometraje = request.POST.get(f'vuelta_recarga_kilometraje_{idx}', '').strip()
+                        litros = request.POST.get(f'vuelta_recarga_litros_{idx}', '').strip()
+                        precio = request.POST.get(f'vuelta_recarga_precio_{idx}', '').strip()
+                        fecha_pago = request.POST.get(f'vuelta_recarga_fecha_{idx}', '').strip()
+                        voucher = request.FILES.get(f'vuelta_recarga_voucher_{idx}')
+                        
+                        if lugar and kilometraje and litros and precio:
+                            ubicacion_completa = lugar
+                            if sucursal:
+                                ubicacion_completa += f" - {sucursal}"
+                            
+                            observaciones = ""
+                            if fecha_pago:
+                                observaciones = f"Fecha de pago: {fecha_pago}"
+                            
+                            PuntoRecarga.objects.create(
+                                costos_viaje=costos_vuelta,
+                                orden=int(orden) if orden else int(idx),
+                                kilometraje=Decimal(kilometraje),
+                                precio_combustible=Decimal(precio),
+                                litros_cargados=Decimal(litros),
+                                ubicacion=ubicacion_completa,
+                                observaciones=observaciones,
+                                comprobante=voucher if voucher else ""
+                            )
+                
+                costos_vuelta.calcular_costo_combustible()
+                
+                # Procesar otros costos VUELTA
+                total_otros_costos_vuelta = Decimal('0')
+                observaciones_otros_costos_vuelta = []
+                
+                for key in request.POST:
+                    if key.startswith('vuelta_otro_costo_tipo_'):
+                        idx = key.split('_')[-1]
+                        tipo = request.POST.get(f'vuelta_otro_costo_tipo_{idx}', '').strip()
+                        monto = request.POST.get(f'vuelta_otro_costo_monto_{idx}', '').strip()
+                        descripcion = request.POST.get(f'vuelta_otro_costo_descripcion_{idx}', '').strip()
+                        
+                        if tipo and monto and descripcion:
+                            monto_decimal = Decimal(monto)
+                            total_otros_costos_vuelta += monto_decimal
+                            obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
+                            observaciones_otros_costos_vuelta.append(obs)
+                
+                costos_vuelta.otros_costos = total_otros_costos_vuelta
+                if observaciones_otros_costos_vuelta:
+                    obs_actuales = costos_vuelta.observaciones or ''
+                    if obs_actuales:
+                        obs_actuales += '\n\n'
+                    obs_actuales += 'OTROS COSTOS VUELTA:\n' + '\n'.join(observaciones_otros_costos_vuelta)
+                    costos_vuelta.observaciones = obs_actuales
+                
+                costos_vuelta.save()
+                
+                messages.success(request, '✅ Costos de IDA y VUELTA registrados exitosamente con todos los detalles.')
+                return redirect('costos:gestion')
+                
+        except Exception as e:
+            messages.error(request, f'❌ Error al guardar los costos: {str(e)}')
+            import traceback
+            print(traceback.format_exc())
+    
+    context = {
+        'viaje_ida': viaje_ida,
+        'viaje_vuelta': viaje_vuelta,
+    }
+    
+    return render(request, 'costos/registrar_ida_vuelta.html', context)
 
 
 def registrar_costos_completo(request, viaje_id):

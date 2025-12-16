@@ -13,9 +13,11 @@ urlpatterns = [
     
     # Registrar costos completo (debe estar antes de <int:pk>)
     path('viaje/<int:viaje_id>/registrar-completo/', views.registrar_costos_completo, name='registrar_completo'),
+    path('viaje-ida-vuelta/<int:viaje_ida_id>/registrar/', views.registrar_ida_vuelta, name='registrar_ida_vuelta'),
     
     # Enviar formulario por email
     path('viaje/<int:viaje_id>/enviar-email/', views.enviar_formulario_email, name='enviar_email'),
+    path('viaje-ida-vuelta/<int:viaje_ida_id>/enviar-email/', views.enviar_formulario_email_ida_vuelta, name='enviar_email_ida_vuelta'),
     
     # Mantenimientos y otros costos
     path('mantenimiento/<int:costos_pk>/', views.mantenimiento_costos, name='mantenimiento_costos'),

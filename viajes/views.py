@@ -34,6 +34,7 @@ class ViajeForm(ModelForm):
             'destino_nombre', 'destino_ciudad', 'destino_provincia', 'destino_pais',
             'latitud_destino', 'longitud_destino',
             'fecha_salida', 'fecha_llegada_estimada', 'fecha_llegada_real',
+            'es_ida_vuelta',
             'observaciones'
         ]
         widgets = {
@@ -103,6 +104,10 @@ class ViajeForm(ModelForm):
                 'type': 'datetime-local',
                 'placeholder': 'Fecha y hora real de llegada (opcional)'
             }),
+            'es_ida_vuelta': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'id': 'id_es_ida_vuelta'
+            }),
             'observaciones': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
@@ -154,7 +159,8 @@ class ViajeListView(ListView):
     paginate_by = 20
 
     def get_queryset(self):
-        return Viaje.objects.all().order_by('-fecha_salida')
+        # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
+        return Viaje.objects.exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado').order_by('-fecha_salida')
 
 
 @method_decorator(usuario_or_admin_required, name='dispatch')
@@ -172,13 +178,63 @@ class ViajeCreateView(CreateView):
     success_url = reverse_lazy('viajes:viaje_list')
 
     def form_valid(self, form):
+        from django.db import transaction
+        
         # Establecer automáticamente el estado como PROGRAMADO
         form.instance.estado = 'programado'
-        messages.success(
-            self.request,
-            f'Viaje {form.instance.bus.placa} creado exitosamente.'
-        )
-        return super().form_valid(form)
+        
+        # Si es ida y vuelta, marcar como IDA y crear viaje de VUELTA
+        if form.instance.es_ida_vuelta:
+            with transaction.atomic():
+                # Guardar el viaje de IDA
+                form.instance.tipo_trayecto = 'ida'
+                response = super().form_valid(form)
+                viaje_ida = form.instance
+                
+                # Crear el viaje de VUELTA
+                viaje_vuelta = Viaje.objects.create(
+                    bus=viaje_ida.bus,
+                    conductor=viaje_ida.conductor,
+                    # Invertir origen y destino
+                    origen_nombre=viaje_ida.destino_nombre,
+                    origen_ciudad=viaje_ida.destino_ciudad,
+                    origen_provincia=viaje_ida.destino_provincia,
+                    origen_pais=viaje_ida.destino_pais,
+                    latitud_origen=viaje_ida.latitud_destino,
+                    longitud_origen=viaje_ida.longitud_destino,
+                    destino_nombre=viaje_ida.origen_nombre,
+                    destino_ciudad=viaje_ida.origen_ciudad,
+                    destino_provincia=viaje_ida.origen_provincia,
+                    destino_pais=viaje_ida.origen_pais,
+                    latitud_destino=viaje_ida.latitud_origen,
+                    longitud_destino=viaje_ida.longitud_origen,
+                    # Fechas: el viaje de vuelta sale después de la llegada estimada del viaje de ida
+                    fecha_salida=viaje_ida.fecha_llegada_estimada,
+                    fecha_llegada_estimada=viaje_ida.fecha_llegada_estimada + (viaje_ida.fecha_llegada_estimada - viaje_ida.fecha_salida),
+                    distancia_km=viaje_ida.distancia_km,
+                    estado='programado',
+                    es_ida_vuelta=True,
+                    tipo_trayecto='vuelta',
+                    viaje_relacionado=viaje_ida,
+                    observaciones=f'Viaje de vuelta de: {viaje_ida.origen_ciudad} → {viaje_ida.destino_ciudad}'
+                )
+                
+                # Vincular el viaje de ida con el de vuelta
+                viaje_ida.viaje_relacionado = viaje_vuelta
+                viaje_ida.save(update_fields=['viaje_relacionado'])
+                
+                messages.success(
+                    self.request,
+                    f'Viaje de ida y vuelta creado exitosamente: {viaje_ida.origen_ciudad} ↔ {viaje_ida.destino_ciudad}'
+                )
+                return response
+        else:
+            form.instance.tipo_trayecto = 'simple'
+            messages.success(
+                self.request,
+                f'Viaje {form.instance.bus.placa} creado exitosamente.'
+            )
+            return super().form_valid(form)
 
 
 @method_decorator(admin_required, name='dispatch')

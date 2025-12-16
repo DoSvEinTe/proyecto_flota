@@ -43,6 +43,12 @@ class Viaje(models.Model):
     pasajeros_confirmados = models.IntegerField(default=0)
     distancia_km = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Distancia calculada en kilómetros')
     observaciones = models.TextField(blank=True)
+    
+    # Campos para viajes de ida y vuelta
+    es_ida_vuelta = models.BooleanField(default=False, help_text='Si es verdadero, se creará automáticamente el viaje de vuelta')
+    viaje_relacionado = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='viaje_vinculado', help_text='Viaje de vuelta o ida relacionado')
+    tipo_trayecto = models.CharField(max_length=10, choices=[('ida', 'Ida'), ('vuelta', 'Vuelta'), ('simple', 'Simple')], default='simple')
+    
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 
