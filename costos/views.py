@@ -285,11 +285,11 @@ class GestionCostosView(LoginRequiredMixin, View):
     def get(self, request):
         # Obtener viajes sin costos asignados
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
         
-        # Actualizar estado a EN CURSO para viajes pendientes de registro
-        viajes_sin_costos.filter(estado='programado').update(estado='en_curso')
-        # Re-consultar para obtener el estado actualizado
+        # Actualizar estado a EN CURSO para viajes pendientes de registro (ANTES del slice)
+        Viaje.objects.exclude(id__in=viajes_con_costos).filter(estado='programado').update(estado='en_curso')
+        
+        # Obtener los primeros 5 viajes sin costos
         viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).select_related('bus', 'conductor')[:5]
 
         # Obtener todos los costos registrados para el CRUD
