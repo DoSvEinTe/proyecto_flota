@@ -542,3 +542,254 @@ def informe_costos_pdf(request, costos_pk):
     # Construir el PDF
     doc.build(elements)
     return response
+
+
+def informe_ida_vuelta_pdf(request, costos_ida_pk):
+    """
+    Genera un PDF combinado con los costos de los viajes de ida y vuelta
+    """
+    costos_ida = get_object_or_404(CostosViaje, pk=costos_ida_pk)
+    viaje_ida = costos_ida.viaje
+    
+    # Obtener costos de vuelta
+    costos_vuelta = None
+    viaje_vuelta = None
+    if viaje_ida.es_ida_vuelta and viaje_ida.viaje_relacionado:
+        try:
+            costos_vuelta = CostosViaje.objects.get(viaje=viaje_ida.viaje_relacionado)
+            viaje_vuelta = costos_vuelta.viaje
+        except CostosViaje.DoesNotExist:
+            pass
+    
+    bus = viaje_ida.bus
+    conductor = viaje_ida.conductor
+    
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="informe_ida_vuelta_{viaje_ida.id}_{datetime.now().strftime("%Y%m%d")}.pdf"'
+    
+    doc = SimpleDocTemplate(
+        response,
+        pagesize=letter,
+        rightMargin=40,
+        leftMargin=40,
+        topMargin=40,
+        bottomMargin=30
+    )
+    
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Estilos personalizados
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontSize=22,
+        textColor=colors.HexColor('#1e40af'),
+        alignment=TA_CENTER,
+        spaceAfter=30,
+        fontName='Helvetica-Bold',
+        leading=26
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'CustomSubtitle',
+        parent=styles['Heading2'],
+        fontSize=14,
+        textColor=colors.HexColor('#0d47a1'),
+        spaceAfter=12,
+        spaceBefore=20,
+        fontName='Helvetica-Bold',
+        backColor=colors.HexColor('#e3f2fd')
+    )
+    
+    info_style = ParagraphStyle(
+        'CustomInfo',
+        parent=styles['Normal'],
+        fontSize=10,
+        spaceAfter=8,
+        leading=14
+    )
+    
+    # ============ PORTADA ============
+    elements.append(Spacer(1, 0.5 * inch))
+    elements.append(Paragraph("INFORME DE COSTOS - VIAJE IDA Y VUELTA", title_style))
+    elements.append(Paragraph(f"Sistema de Gestión de Flota", ParagraphStyle('subtitle', parent=styles['Normal'], fontSize=12, alignment=TA_CENTER, textColor=colors.grey)))
+    elements.append(Spacer(1, 0.3 * inch))
+    
+    # Información del Bus y Conductor
+    info_principal = [
+        ["INFORMACIÓN GENERAL", ""],
+        ["Bus:", f"{bus.placa} - {bus.modelo}"],
+        ["Conductor:", f"{conductor.nombre} {conductor.apellido}"],
+        ["Fecha de Informe:", datetime.now().strftime('%d/%m/%Y %H:%M')],
+    ]
+    
+    info_table = Table(info_principal, colWidths=[2*inch, 4*inch])
+    info_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1e40af')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 12),
+        ('SPAN', (0, 0), (-1, 0)),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('ALIGN', (0, 1), (0, -1), 'RIGHT'),
+        ('FONTNAME', (0, 1), (0, -1), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f5f5f5')),
+    ]))
+    elements.append(info_table)
+    elements.append(Spacer(1, 0.3 * inch))
+    
+    # ============ RESUMEN GENERAL ============
+    if costos_vuelta:
+        elements.append(Paragraph("RESUMEN GENERAL DEL VIAJE COMPLETO", subtitle_style))
+        
+        total_combustible = costos_ida.combustible + costos_vuelta.combustible
+        total_peajes = costos_ida.peajes + costos_vuelta.peajes
+        total_mantenimiento = costos_ida.mantenimiento + costos_vuelta.mantenimiento
+        total_otros = costos_ida.otros_costos + costos_vuelta.otros_costos
+        total_general = costos_ida.costo_total + costos_vuelta.costo_total
+        
+        resumen_data = [
+            ["CONCEPTO", "MONTO"],
+            ["Combustible Total", f"${total_combustible:,.0f}"],
+            ["Peajes Total", f"${total_peajes:,.0f}"],
+            ["Mantenimiento Total", f"${total_mantenimiento:,.0f}"],
+            ["Otros Costos", f"${total_otros:,.0f}"],
+            ["COSTO TOTAL", f"${total_general:,.0f}"],
+        ]
+        
+        resumen_table = Table(resumen_data, colWidths=[3*inch, 3*inch])
+        resumen_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0d47a1')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 11),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#4caf50')),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 12),
+        ]))
+        elements.append(resumen_table)
+        elements.append(Spacer(1, 0.3 * inch))
+    
+    # ============ VIAJE DE IDA ============
+    elements.append(PageBreak())
+    elements.append(Paragraph("🡢 VIAJE DE IDA", subtitle_style))
+    
+    viaje_ida_data = [
+        ["Ruta:", f"{viaje_ida.get_origen_display()} → {viaje_ida.get_destino_display()}"],
+        ["Fecha Salida:", viaje_ida.fecha_salida.strftime('%d/%m/%Y %H:%M')],
+        ["Estado:", viaje_ida.get_estado_display()],
+        ["Pasajeros:", str(viaje_ida.pasajeros.count())],
+    ]
+    
+    if costos_ida.km_inicial and costos_ida.km_final:
+        viaje_ida_data.extend([
+            ["Km Inicial:", f"{costos_ida.km_inicial:,.0f} km"],
+            ["Km Final:", f"{costos_ida.km_final:,.0f} km"],
+            ["Km Recorridos:", f"{costos_ida.km_final - costos_ida.km_inicial:,.0f} km"],
+        ])
+    
+    ida_table = Table(viaje_ida_data, colWidths=[2*inch, 4*inch])
+    ida_table.setStyle(TableStyle([
+        ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#e3f2fd')),
+    ]))
+    elements.append(ida_table)
+    elements.append(Spacer(1, 0.2 * inch))
+    
+    # Costos del viaje de ida
+    costos_ida_data = [
+        ["CONCEPTO", "MONTO"],
+        ["Combustible", f"${costos_ida.combustible:,.0f}"],
+        ["Peajes", f"${costos_ida.peajes:,.0f}"],
+        ["Mantenimiento", f"${costos_ida.mantenimiento:,.0f}"],
+        ["Otros Costos", f"${costos_ida.otros_costos:,.0f}"],
+        ["TOTAL VIAJE IDA", f"${costos_ida.costo_total:,.0f}"],
+    ]
+    
+    costos_ida_table = Table(costos_ida_data, colWidths=[3*inch, 3*inch])
+    costos_ida_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2196F3')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#1976D2')),
+        ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, -1), (-1, -1), 12),
+    ]))
+    elements.append(costos_ida_table)
+    
+    # ============ VIAJE DE VUELTA ============
+    if costos_vuelta and viaje_vuelta:
+        elements.append(PageBreak())
+        elements.append(Paragraph("🡠 VIAJE DE VUELTA", subtitle_style))
+        
+        viaje_vuelta_data = [
+            ["Ruta:", f"{viaje_vuelta.get_origen_display()} → {viaje_vuelta.get_destino_display()}"],
+            ["Fecha Salida:", viaje_vuelta.fecha_salida.strftime('%d/%m/%Y %H:%M')],
+            ["Estado:", viaje_vuelta.get_estado_display()],
+            ["Pasajeros:", str(viaje_vuelta.pasajeros.count())],
+        ]
+        
+        if costos_vuelta.km_inicial and costos_vuelta.km_final:
+            viaje_vuelta_data.extend([
+                ["Km Inicial:", f"{costos_vuelta.km_inicial:,.0f} km"],
+                ["Km Final:", f"{costos_vuelta.km_final:,.0f} km"],
+                ["Km Recorridos:", f"{costos_vuelta.km_final - costos_vuelta.km_inicial:,.0f} km"],
+            ])
+        
+        vuelta_table = Table(viaje_vuelta_data, colWidths=[2*inch, 4*inch])
+        vuelta_table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (0, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fff3e0')),
+        ]))
+        elements.append(vuelta_table)
+        elements.append(Spacer(1, 0.2 * inch))
+        
+        # Costos del viaje de vuelta
+        costos_vuelta_data = [
+            ["CONCEPTO", "MONTO"],
+            ["Combustible", f"${costos_vuelta.combustible:,.0f}"],
+            ["Peajes", f"${costos_vuelta.peajes:,.0f}"],
+            ["Mantenimiento", f"${costos_vuelta.mantenimiento:,.0f}"],
+            ["Otros Costos", f"${costos_vuelta.otros_costos:,.0f}"],
+            ["TOTAL VIAJE VUELTA", f"${costos_vuelta.costo_total:,.0f}"],
+        ]
+        
+        costos_vuelta_table = Table(costos_vuelta_data, colWidths=[3*inch, 3*inch])
+        costos_vuelta_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#FF9800')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#F57C00')),
+            ('TEXTCOLOR', (0, -1), (-1, -1), colors.white),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 12),
+        ]))
+        elements.append(costos_vuelta_table)
+    
+    # ============ PIE DE PÁGINA ============
+    elements.append(Spacer(1, 0.5 * inch))
+    elements.append(Paragraph("_" * 80, info_style))
+    elements.append(Paragraph(
+        f"<i>Informe generado automáticamente el {datetime.now().strftime('%d de %B de %Y a las %H:%M')}</i><br/>"
+        f"<i>Sistema de Gestión de Flota - FlotaGest © {datetime.now().year}</i>",
+        ParagraphStyle('footer', parent=styles['Normal'], fontSize=8, textColor=colors.grey, alignment=TA_CENTER)
+    ))
+    
+    # Construir el PDF
+    doc.build(elements)
+    return response

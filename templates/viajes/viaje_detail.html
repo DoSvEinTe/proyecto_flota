@@ -412,8 +412,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- Ruta Visual -->
 <div class="detail-card">
-    <div class="card-header">
-        <i class="fas fa-map-marked-alt me-2"></i>Mapa de Ruta del Viaje
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-map-marked-alt me-2"></i>Mapa de Ruta del Viaje</span>
+        {% if viaje.es_ida_vuelta %}
+            <span class="badge bg-primary">
+                <i class="fas fa-exchange-alt me-1"></i>Ida y Vuelta
+            </span>
+        {% else %}
+            <span class="badge bg-success">
+                <i class="fas fa-arrow-right me-1"></i>Solo Ida
+            </span>
+        {% endif %}
     </div>
     <div class="card-body">
         <div class="route-indicator">
@@ -434,7 +443,11 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             
             <div class="route-arrow">
-                <i class="fas fa-arrow-right fa-2x"></i>
+                {% if viaje.es_ida_vuelta %}
+                    <i class="fas fa-exchange-alt fa-2x text-primary" title="Viaje de Ida y Vuelta"></i>
+                {% else %}
+                    <i class="fas fa-arrow-right fa-2x text-success" title="Viaje de Solo Ida"></i>
+                {% endif %}
             </div>
             
             <div class="route-point justify-content-end">

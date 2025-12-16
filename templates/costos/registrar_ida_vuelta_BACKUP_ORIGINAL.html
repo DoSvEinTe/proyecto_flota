@@ -1,0 +1,680 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Costos - Viaje de Ida y Vuelta{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 0;
+        margin-bottom: 24px;
+    }
+    
+    .nav-tabs {
+        border-bottom: 2px solid #e9ecef;
+        padding: 0 24px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        color: #6b7280;
+        font-weight: 600;
+        padding: 16px 24px;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: #3b82f6;
+        color: #3b82f6;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #1e40af;
+        border-color: #1e40af;
+        background: transparent;
+    }
+    
+    .tab-content {
+        padding: 24px;
+    }
+    
+    .form-section {
+        margin-bottom: 24px;
+    }
+    
+    .form-section-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #e9ecef;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .viaje-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .viaje-tipo {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1e40af;
+    }
+    
+    .viaje-tipo.vuelta {
+        color: #6b7280;
+    }
+    
+    .viaje-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .info-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 4px;
+    }
+    
+    .info-value {
+        font-size: 15px;
+        font-weight: 500;
+        color: #1f2937;
+    }
+    
+    .estado-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    
+    .btn-action {
+        padding: 12px 24px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .alert-costos {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        border: 2px solid #f59e0b;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 16px;
+    }
+    
+    .success-costos {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        border: 2px solid #10b981;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 16px;
+    }
+    
+    .page-header {
+        background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+        color: white;
+        padding: 32px;
+        border-radius: 12px;
+        margin-bottom: 32px;
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+    }
+    
+    .connector-line {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 24px 0;
+    }
+    
+    .connector-line::before,
+    .connector-line::after {
+        content: '';
+        flex: 1;
+        height: 2px;
+        background: linear-gradient(to right, #3b82f6, #6b7280);
+    }
+    
+    .connector-icon {
+        margin: 0 16px;
+        font-size: 24px;
+        color: #6b7280;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h1 class="mb-2">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    Registro de Costos - Viaje de Ida y Vuelta
+                </h1>
+                <p class="mb-0 opacity-75">Bus {{ viaje_ida.bus.placa }} - {{ viaje_ida.bus.modelo }}</p>
+                <small class="opacity-75">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Debes completar AMBOS formularios para poder guardar
+                </small>
+            </div>
+            <a href="{% url 'costos:gestion' %}" class="btn btn-light">
+                <i class="fas fa-arrow-left me-2"></i>Volver
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Formulario con pestañas -->
+            <form method="POST" id="formIdaVuelta">
+                {% csrf_token %}
+                
+                <div class="form-container">
+                    <!-- Pestañas -->
+                    <ul class="nav nav-tabs" id="viajesTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="ida-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#ida-panel" type="button" role="tab">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                VIAJE DE IDA
+                                <span class="badge bg-info ms-2">1</span>
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="vuelta-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#vuelta-panel" type="button" role="tab">
+                                <i class="fas fa-arrow-left me-2"></i>
+                                VIAJE DE VUELTA
+                                <span class="badge bg-secondary ms-2">2</span>
+                            </button>
+                        </li>
+                    </ul>
+
+                    <!-- Contenido de las pestañas -->
+                    <div class="tab-content" id="viajesTabContent">
+                        <!-- Panel IDA -->
+                        <div class="tab-pane fade show active" id="ida-panel" role="tabpanel">
+                            <div class="alert alert-info">
+                                <strong>Ruta:</strong> {{ viaje_ida.get_origen_display }} → {{ viaje_ida.get_destino_display }}<br>
+                                <strong>Fecha:</strong> {{ viaje_ida.fecha_salida|date:"d/m/Y H:i" }}<br>
+                                <strong>Conductor:</strong> {{ viaje_ida.conductor.nombre }} {{ viaje_ida.conductor.apellido }}
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-tachometer-alt"></i>Kilometraje
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kilometraje Inicial <span class="text-danger">*</span></label>
+                                        <input type="number" name="ida_km_inicial" class="form-control" 
+                                               value="{{ costos_ida.km_inicial|default:'' }}" 
+                                               {% if costos_ida %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kilometraje Final <span class="text-danger">*</span></label>
+                                        <input type="number" name="ida_km_final" class="form-control" 
+                                               value="{{ costos_ida.km_final|default:'' }}" 
+                                               {% if costos_ida %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-gas-pump"></i>Costos
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Combustible (CLP) <span class="text-danger">*</span></label>
+                                        <input type="number" name="ida_combustible" class="form-control" 
+                                               value="{{ costos_ida.combustible|default:'' }}" 
+                                               {% if costos_ida %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Peajes (CLP)</label>
+                                        <input type="number" name="ida_peajes" class="form-control" 
+                                               value="{{ costos_ida.peajes|default:'0' }}" 
+                                               {% if costos_ida %}readonly{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Mantenimiento (CLP)</label>
+                                        <input type="number" name="ida_mantenimiento" class="form-control" 
+                                               value="{{ costos_ida.mantenimiento|default:'0' }}" 
+                                               {% if costos_ida %}readonly{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Otros Costos (CLP)</label>
+                                        <input type="number" name="ida_otros_costos" class="form-control" 
+                                               value="{{ costos_ida.otros_costos|default:'0' }}" 
+                                               {% if costos_ida %}readonly{% endif %}>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-comment"></i>Observaciones
+                                </div>
+                                <textarea name="ida_observaciones" class="form-control" rows="3" 
+                                          {% if costos_ida %}readonly{% endif %}>{{ costos_ida.observaciones|default:'' }}</textarea>
+                            </div>
+
+                            {% if costos_ida %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Completado:</strong> Los costos del viaje de IDA ya fueron registrados.
+                            </div>
+                            {% else %}
+                            <div class="d-flex justify-content-end">
+                                <button type="button" class="btn btn-primary" onclick="irAVuelta()">
+                                    Continuar a VUELTA <i class="fas fa-arrow-right ms-2"></i>
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Panel VUELTA -->
+                        <div class="tab-pane fade" id="vuelta-panel" role="tabpanel">
+                            <div class="alert alert-secondary">
+                                <strong>Ruta:</strong> {{ viaje_vuelta.get_origen_display }} → {{ viaje_vuelta.get_destino_display }}<br>
+                                <strong>Fecha:</strong> {{ viaje_vuelta.fecha_salida|date:"d/m/Y H:i" }}<br>
+                                <strong>Conductor:</strong> {{ viaje_vuelta.conductor.nombre }} {{ viaje_vuelta.conductor.apellido }}
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-tachometer-alt"></i>Kilometraje
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kilometraje Inicial <span class="text-danger">*</span></label>
+                                        <input type="number" name="vuelta_km_inicial" class="form-control" 
+                                               value="{{ costos_vuelta.km_inicial|default:'' }}" 
+                                               {% if costos_vuelta %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Kilometraje Final <span class="text-danger">*</span></label>
+                                        <input type="number" name="vuelta_km_final" class="form-control" 
+                                               value="{{ costos_vuelta.km_final|default:'' }}" 
+                                               {% if costos_vuelta %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-gas-pump"></i>Costos
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Combustible (CLP) <span class="text-danger">*</span></label>
+                                        <input type="number" name="vuelta_combustible" class="form-control" 
+                                               value="{{ costos_vuelta.combustible|default:'' }}" 
+                                               {% if costos_vuelta %}readonly{% else %}required{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Peajes (CLP)</label>
+                                        <input type="number" name="vuelta_peajes" class="form-control" 
+                                               value="{{ costos_vuelta.peajes|default:'0' }}" 
+                                               {% if costos_vuelta %}readonly{% endif %}>
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Mantenimiento (CLP)</label>
+                                        <input type="number" name="vuelta_mantenimiento" class="form-control" 
+                                               value="{{ costos_vuelta.mantenimiento|default:'0' }}" 
+                                               {% if costos_vuelta %}readonly{% endif %}>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Otros Costos (CLP)</label>
+                                        <input type="number" name="vuelta_otros_costos" class="form-control" 
+                                               value="{{ costos_vuelta.otros_costos|default:'0' }}" 
+                                               {% if costos_vuelta %}readonly{% endif %}>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <div class="form-section-title">
+                                    <i class="fas fa-comment"></i>Observaciones
+                                </div>
+                                <textarea name="vuelta_observaciones" class="form-control" rows="3" 
+                                          {% if costos_vuelta %}readonly{% endif %}>{{ costos_vuelta.observaciones|default:'' }}</textarea>
+                            </div>
+
+                            {% if costos_vuelta %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Completado:</strong> Los costos del viaje de VUELTA ya fueron registrados.
+                            </div>
+                            {% else %}
+                            <div class="d-flex justify-content-between">
+                                <button type="button" class="btn btn-secondary" onclick="irAIda()">
+                                    <i class="fas fa-arrow-left me-2"></i> Volver a IDA
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de guardar (solo si ninguno tiene costos o solo uno tiene) -->
+                {% if not costos_ida or not costos_vuelta %}
+                <div class="text-center mt-4">
+                    <button type="submit" class="btn btn-success btn-lg" id="btnGuardar">
+                        <i class="fas fa-save me-2"></i>
+                        Guardar Costos de IDA y VUELTA
+                    </button>
+                    <p class="text-muted mt-2 small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Ambos formularios deben estar completos para poder guardar
+                    </p>
+                </div>
+                {% endif %}
+            </form>
+
+            <!-- Mensaje si ambos ya están completos -->
+            {% if costos_ida and costos_vuelta %}
+            <div class="alert alert-success text-center" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-check-circle me-2"></i>¡Viaje Completo!
+                </h5>
+                <p class="mb-3">Ambos trayectos (IDA y VUELTA) ya tienen sus costos registrados.</p>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Gestión de Costos
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- VIAJE DE IDA (OCULTO - Ya no se usa)-->
+            <div class="viaje-card" style="display:none;">
+                <div class="viaje-card-header">
+                    <div class="viaje-tipo">
+                        <i class="fas fa-arrow-right"></i>
+                        VIAJE DE IDA
+                        <span class="badge bg-info">IDA</span>
+                    </div>
+                    {% if tiene_costos_ida %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Costos Registrados
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-exclamation-circle me-1"></i>Sin Costos
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="viaje-info">
+                    <div class="info-item">
+                        <span class="info-label">Origen</span>
+                        <span class="info-value">{{ viaje_ida.get_origen_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Destino</span>
+                        <span class="info-value">{{ viaje_ida.get_destino_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Conductor</span>
+                        <span class="info-value">{{ viaje_ida.conductor.nombre }} {{ viaje_ida.conductor.apellido }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fecha de Salida</span>
+                        <span class="info-value">{{ viaje_ida.fecha_salida|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estado</span>
+                        <span class="info-value">
+                            {% if viaje_ida.estado == 'completado' %}
+                                <span class="estado-badge bg-success text-white">{{ viaje_ida.get_estado_display }}</span>
+                            {% elif viaje_ida.estado == 'en_curso' %}
+                                <span class="estado-badge bg-warning text-dark">{{ viaje_ida.get_estado_display }}</span>
+                            {% else %}
+                                <span class="estado-badge bg-info text-white">{{ viaje_ida.get_estado_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'costos:registrar_completo' viaje_id=viaje_ida.id %}" 
+                       class="btn btn-primary btn-action flex-fill">
+                        <i class="fas fa-{% if tiene_costos_ida %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if tiene_costos_ida %}Editar Costos{% else %}Registrar Costos{% endif %}
+                    </a>
+                    {% if tiene_costos_ida %}
+                    <a href="{% url 'costos:detalle' pk=costos_ida.id %}" 
+                       class="btn btn-info btn-action">
+                        <i class="fas fa-eye me-2"></i>Ver Detalles
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if not tiene_costos_ida %}
+                <div class="alert-costos">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Pendiente:</strong> Debe registrar los costos del viaje de IDA para completar este trayecto.
+                </div>
+                {% else %}
+                <div class="success-costos">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Completado:</strong> Los costos del viaje de IDA ya han sido registrados.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Conector visual -->
+            <div class="connector-line">
+                <i class="fas fa-exchange-alt connector-icon"></i>
+            </div>
+
+            <!-- VIAJE DE VUELTA -->
+            <div class="viaje-card">
+                <div class="viaje-card-header">
+                    <div class="viaje-tipo vuelta">
+                        <i class="fas fa-arrow-left"></i>
+                        VIAJE DE VUELTA
+                        <span class="badge bg-secondary">VUELTA</span>
+                    </div>
+                    {% if tiene_costos_vuelta %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1"></i>Costos Registrados
+                        </span>
+                    {% else %}
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-exclamation-circle me-1"></i>Sin Costos
+                        </span>
+                    {% endif %}
+                </div>
+
+                <div class="viaje-info">
+                    <div class="info-item">
+                        <span class="info-label">Origen</span>
+                        <span class="info-value">{{ viaje_vuelta.get_origen_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Destino</span>
+                        <span class="info-value">{{ viaje_vuelta.get_destino_display }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Conductor</span>
+                        <span class="info-value">{{ viaje_vuelta.conductor.nombre }} {{ viaje_vuelta.conductor.apellido }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Fecha de Salida</span>
+                        <span class="info-value">{{ viaje_vuelta.fecha_salida|date:"d/m/Y H:i" }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Estado</span>
+                        <span class="info-value">
+                            {% if viaje_vuelta.estado == 'completado' %}
+                                <span class="estado-badge bg-success text-white">{{ viaje_vuelta.get_estado_display }}</span>
+                            {% elif viaje_vuelta.estado == 'en_curso' %}
+                                <span class="estado-badge bg-warning text-dark">{{ viaje_vuelta.get_estado_display }}</span>
+                            {% else %}
+                                <span class="estado-badge bg-info text-white">{{ viaje_vuelta.get_estado_display }}</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <a href="{% url 'costos:registrar_completo' viaje_id=viaje_vuelta.id %}" 
+                       class="btn btn-primary btn-action flex-fill">
+                        <i class="fas fa-{% if tiene_costos_vuelta %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if tiene_costos_vuelta %}Editar Costos{% else %}Registrar Costos{% endif %}
+                    </a>
+                    {% if tiene_costos_vuelta %}
+                    <a href="{% url 'costos:detalle' pk=costos_vuelta.id %}" 
+                       class="btn btn-info btn-action">
+                        <i class="fas fa-eye me-2"></i>Ver Detalles
+                    </a>
+                    {% endif %}
+                </div>
+
+                {% if not tiene_costos_vuelta %}
+                <div class="alert-costos">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Pendiente:</strong> Debe registrar los costos del viaje de VUELTA para completar este trayecto.
+                </div>
+                {% else %}
+                <div class="success-costos">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <strong>Completado:</strong> Los costos del viaje de VUELTA ya han sido registrados.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Resumen y acciones finales -->
+            {% if tiene_costos_ida and tiene_costos_vuelta %}
+            <div class="alert alert-success" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-check-circle me-2"></i>¡Viaje Completo!
+                </h5>
+                <p class="mb-0">Ambos trayectos (IDA y VUELTA) tienen sus costos registrados correctamente.</p>
+            </div>
+            {% elif tiene_costos_ida or tiene_costos_vuelta %}
+            <div class="alert alert-warning" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Registro Incompleto
+                </h5>
+                <p class="mb-0">
+                    Solo has registrado los costos de 
+                    {% if tiene_costos_ida %}IDA{% else %}VUELTA{% endif %}. 
+                    Recuerda registrar también el trayecto de 
+                    {% if tiene_costos_ida %}VUELTA{% else %}IDA{% endif %} 
+                    para completar el viaje.
+                </p>
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                <h5 class="alert-heading">
+                    <i class="fas fa-info-circle me-2"></i>Comenzar Registro
+                </h5>
+                <p class="mb-0">Registra los costos de ambos trayectos para completar este viaje de IDA Y VUELTA.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function irAVuelta() {
+        // Activar la pestaña de VUELTA
+        const vueltaTab = new bootstrap.Tab(document.getElementById('vuelta-tab'));
+        vueltaTab.show();
+        // Scroll al top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function irAIda() {
+        // Activar la pestaña de IDA
+        const idaTab = new bootstrap.Tab(document.getElementById('ida-tab'));
+        idaTab.show();
+        // Scroll al top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Validar formulario antes de enviar
+    document.getElementById('formIdaVuelta')?.addEventListener('submit', function(e) {
+        const idaKmInicial = document.querySelector('[name="ida_km_inicial"]')?.value;
+        const idaKmFinal = document.querySelector('[name="ida_km_final"]')?.value;
+        const idaCombustible = document.querySelector('[name="ida_combustible"]')?.value;
+        
+        const vueltaKmInicial = document.querySelector('[name="vuelta_km_inicial"]')?.value;
+        const vueltaKmFinal = document.querySelector('[name="vuelta_km_final"]')?.value;
+        const vueltaCombustible = document.querySelector('[name="vuelta_combustible"]')?.value;
+        
+        // Verificar que ambos tengan datos mínimos
+        const idaCompleto = idaKmInicial && idaKmFinal && idaCombustible;
+        const vueltaCompleto = vueltaKmInicial && vueltaKmFinal && vueltaCombustible;
+        
+        if (!idaCompleto || !vueltaCompleto) {
+            e.preventDefault();
+            
+            let mensaje = '❌ Debes completar los campos obligatorios de ';
+            if (!idaCompleto && !vueltaCompleto) {
+                mensaje += 'IDA y VUELTA';
+            } else if (!idaCompleto) {
+                mensaje += 'IDA';
+            } else {
+                mensaje += 'VUELTA';
+            }
+            
+            alert(mensaje + '.\n\nCampos obligatorios:\n• Kilometraje Inicial\n• Kilometraje Final\n• Combustible');
+            
+            // Ir a la pestaña que falta completar
+            if (!idaCompleto) {
+                irAIda();
+            } else {
+                irAVuelta();
+            }
+            
+            return false;
+        }
+        
+        // Confirmar antes de guardar
+        return confirm('¿Confirmas que deseas guardar los costos de IDA y VUELTA?\n\nEsta acción registrará ambos trayectos.');
+    });
+</script>
+{% endblock %}

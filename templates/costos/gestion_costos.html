@@ -284,26 +284,6 @@
     {% if viajes_sin_costos %}
     <div class="row mb-4">
         <div class="col-12">
-            <!-- Tarjeta informativa sobre PDF móvil -->
-            <div class="alert alert-primary border-0 shadow-sm mb-3 d-flex align-items-center" role="alert">
-                <div class="flex-shrink-0 me-3">
-                    <i class="fas fa-mobile-alt fa-2x text-primary"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="alert-heading fw-bold mb-1">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Importante para Dispositivos Móviles
-                    </h6>
-                    <p class="mb-2 small">
-                        Para editar los formularios PDF en celulares, necesitas: <strong>Adobe Acrobat Reader</strong>, <strong>Xodo PDF</strong> o <strong>Foxit PDF</strong>
-                    </p>
-                    <small class="text-muted">
-                        <i class="fab fa-android me-1"></i>Android: Play Store | 
-                        <i class="fab fa-apple me-1"></i>iOS: App Store
-                    </small>
-                </div>
-            </div>
-            
             <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-0 py-3">
                     <h5 class="mb-0">
@@ -493,78 +473,203 @@
                         <table class="table table-striped table-bordered align-middle text-center">
                             <thead class="table-primary">
                                 <tr>
-                                    <th style="width: 8%;">Placa</th>
-                                    <th style="width: 10%;">Modelo</th>
-                                    <th style="width: 18%;">Viaje</th>
+                                    <th style="width: 10%;">Bus</th>
+                                    <th style="width: 22%;">Ruta (Timeline)</th>
                                     <th style="width: 8%;">Fecha</th>
-                                    <th style="width: 10%;">Estado</th>
-                                    <th style="width: 7%;">Puntos Recarga</th>
+                                    <th style="width: 8%;">Estado</th>
+                                    <th style="width: 6%;">Puntos</th>
                                     <th style="width: 6%;">Peajes</th>
                                     <th style="width: 10%;">Combustible</th>
-                                    <th style="width: 10%;">Otros Costos</th>
-                                    <th style="width: 10%;">Costo Total</th>
-                                    <th style="width: 13%;">Acciones</th>
+                                    <th style="width: 10%;">Otros</th>
+                                    <th style="width: 10%;">Total</th>
+                                    <th style="width: 10%;">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for costos in costos_list %}
-                                <tr>
-                                    <td>
-                                        <strong>{{ costos.viaje.bus.placa }}</strong>
-                                        {% if costos.viaje.es_ida_vuelta %}
-                                            <br><i class="fas fa-link text-primary" title="Viaje vinculado"></i>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ costos.viaje.bus.modelo }}</td>
-                                    <td class="text-start">
-                                        <small>{{ costos.viaje.get_origen_display|truncatewords:2 }} → 
-                                        {{ costos.viaje.get_destino_display|truncatewords:2 }}</small>
-                                        {% if costos.viaje.tipo_trayecto == 'ida' %}
-                                            <br><span class="badge bg-info">
-                                                <i class="fas fa-arrow-right me-1"></i>IDA
-                                            </span>
-                                        {% elif costos.viaje.tipo_trayecto == 'vuelta' %}
-                                            <br><span class="badge bg-secondary">
-                                                <i class="fas fa-arrow-left me-1"></i>VUELTA
-                                            </span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
-                                    <td>
-                                        {% if costos.viaje.estado == 'completado' %}
-                                            <span class="badge bg-success w-100">COMPLETADO</span>
-                                        {% elif costos.viaje.estado == 'en_curso' %}
-                                            <span class="badge bg-warning text-dark w-100">EN CURSO</span>
+                                    {% if costos.viaje.tipo_trayecto != 'vuelta' %}
+                                    <!-- Fila de IDA (o SIMPLE) -->
+                                    <tr>
+                                        {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+                                        <!-- Bus con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle text-center">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <strong class="mb-1">{{ costos.viaje.bus.placa }}</strong>
+                                                <small class="text-muted">{{ costos.viaje.bus.modelo }}</small>
+                                                <i class="fas fa-exchange-alt text-primary mt-1" style="animation: pulse 2s infinite;" title="Viaje de ida y vuelta"></i>
+                                            </div>
+                                        </td>
                                         {% else %}
-                                            <span class="badge bg-info text-dark w-100">{{ costos.viaje.get_estado_display }}</span>
+                                        <!-- Bus normal para viajes simples -->
+                                        <td class="align-middle text-center">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <strong>{{ costos.viaje.bus.placa }}</strong>
+                                                <small class="text-muted">{{ costos.viaje.bus.modelo }}</small>
+                                            </div>
+                                        </td>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-warning text-dark">{{ costos.viaje.peajes.count }}</span>
-                                    </td>
-                                    <td><strong>${{ costos.combustible|floatformat:0 }}</strong></td>
-                                    <td><strong>${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</strong></td>
-                                    <td><strong class="text-success">${{ costos.costo_total|floatformat:0 }}</strong></td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm" role="group">
-                                            <a href="{% url 'costos:detalle' costos.pk %}" class="btn btn-info" title="Ver Detalles">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{% url 'costos:registrar_completo' costos.viaje.id %}" class="btn btn-warning" title="Editar">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <a href="{% url 'costos:informe_costos_pdf' costos.pk %}" class="btn btn-primary" title="Descargar PDF" target="_blank">
-                                                <i class="fas fa-file-pdf"></i>
-                                            </a>
-                                            <a href="{% url 'costos:eliminar' costos.pk %}" class="btn btn-danger" title="Eliminar">
-                                                <i class="fas fa-trash"></i>
-                                            </a>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        
+                                        <!-- Ruta con timeline para IDA -->
+                                        <td class="align-middle">
+                                            <div class="d-flex align-items-center">
+                                                <span class="timeline-icon">
+                                                    <i class="fas fa-circle"></i>
+                                                </span>
+                                                <span class="timeline-route ms-2">
+                                                    {{ costos.viaje.get_origen_display }} → {{ costos.viaje.get_destino_display }}
+                                                    {% if costos.viaje.tipo_trayecto == 'ida' %}
+                                                        <span class="badge bg-info badge-trayecto ms-2">
+                                                            <i class="fas fa-arrow-right me-1"></i>IDA
+                                                        </span>
+                                                    {% endif %}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
+                                        <td class="text-center">
+                                            {% if costos.viaje.estado == 'completado' %}
+                                                <span class="badge bg-success">COMPLETADO</span>
+                                            {% elif costos.viaje.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">EN CURSO</span>
+                                            {% else %}
+                                                <span class="badge bg-info text-dark">{{ costos.viaje.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-warning text-dark">{{ costos.viaje.peajes.count }}</span>
+                                        </td>
+                                        <td class="text-center"><strong>${{ costos.combustible|floatformat:0 }}</strong></td>
+                                        <td class="text-center"><strong>${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</strong></td>
+                                        <td class="text-center"><strong class="text-success">${{ costos.costo_total|floatformat:0 }}</strong></td>
+                                        
+                                        {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+                                        <!-- Acciones con rowspan para viajes vinculados -->
+                                        <td rowspan="2" class="align-middle text-center px-2" style="min-width: 120px;">
+                                            <div class="d-grid gap-2">
+                                                <!-- Ver Viaje Completo -->
+                                                <a href="{% url 'costos:detalle_ida_vuelta' costos.pk %}" 
+                                                   class="btn btn-success btn-sm d-flex align-items-center justify-content-center" 
+                                                   title="Ver Detalles del Viaje Completo">
+                                                    <i class="fas fa-arrows-alt-h me-2"></i>
+                                                    <span>Viaje Completo</span>
+                                                </a>
+                                                
+                                                <!-- Editar -->
+                                                <button type="button" 
+                                                        class="btn btn-warning btn-sm d-flex align-items-center justify-content-center" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editarModal{{ costos.pk }}" 
+                                                        onclick="event.stopPropagation();"
+                                                        title="Editar Viajes">
+                                                    <i class="fas fa-edit me-2"></i>
+                                                    <span>Editar</span>
+                                                </button>
+                                                
+                                                <!-- PDF -->
+                                                <button type="button" 
+                                                        class="btn btn-primary btn-sm d-flex align-items-center justify-content-center" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#pdfModal{{ costos.pk }}" 
+                                                        onclick="event.stopPropagation();"
+                                                        title="Generar PDF">
+                                                    <i class="fas fa-file-pdf me-2"></i>
+                                                    <span>PDF</span>
+                                                </button>
+                                                
+                                                <!-- Eliminar -->
+                                                <button type="button" 
+                                                        class="btn btn-danger btn-sm d-flex align-items-center justify-content-center" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#eliminarModal{{ costos.pk }}" 
+                                                        onclick="event.stopPropagation();"
+                                                        title="Eliminar Viajes">
+                                                    <i class="fas fa-trash me-2"></i>
+                                                    <span>Eliminar</span>
+                                                </button>
+                                            </div>
+                                        </td>
+                                        {% else %}
+                                        <!-- Acciones normales para viajes simples -->
+                                        <td class="align-middle text-center px-2">
+                                            <div class="d-flex flex-wrap gap-1 justify-content-center">
+                                                <a href="{% url 'costos:detalle' costos.pk %}" class="btn btn-info btn-sm" title="Ver Detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'costos:registrar_completo' costos.viaje.id %}" class="btn btn-warning btn-sm" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                <a href="{% url 'costos:informe_costos_pdf' costos.pk %}" class="btn btn-primary btn-sm" title="Descargar PDF" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
+                                                <a href="{% url 'costos:eliminar' costos.pk %}" class="btn btn-danger btn-sm" title="Eliminar">
+                                                    <i class="fas fa-trash"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        {% endif %}
+                                    </tr>
+                                    
+                                    <!-- Fila de VUELTA (siempre visible si existe el viaje vinculado) -->
+                                    {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+                                        <tr class="viaje-vuelta-row">
+                                            <!-- Bus ya está con rowspan="2" -->
+                                            
+                                            <!-- Ruta con timeline para VUELTA -->
+                                            <td class="align-middle">
+                                                <div class="d-flex align-items-center">
+                                                    <span class="timeline-connector"></span>
+                                                    <span class="timeline-icon timeline-icon-vuelta">
+                                                        <i class="fas fa-map-marker-alt"></i>
+                                                    </span>
+                                                    <span class="timeline-route ms-2">
+                                                        {{ costos.viaje.viaje_relacionado.get_origen_display }} → {{ costos.viaje.viaje_relacionado.get_destino_display }}
+                                                        <span class="badge bg-secondary badge-trayecto ms-2">
+                                                            <i class="fas fa-arrow-left me-1"></i>VUELTA
+                                                        </span>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">{{ costos.viaje.viaje_relacionado.fecha_salida|date:"d/m/Y" }}</td>
+                                            <td class="text-center">
+                                                {% if costos.viaje.viaje_relacionado.estado == 'completado' %}
+                                                    <span class="badge bg-success">COMPLETADO</span>
+                                                {% elif costos.viaje.viaje_relacionado.estado == 'en_curso' %}
+                                                    <span class="badge bg-warning text-dark">EN CURSO</span>
+                                                {% else %}
+                                                    <span class="badge bg-info text-dark">{{ costos.viaje.viaje_relacionado.get_estado_display }}</span>
+                                                {% endif %}
+                                            </td>
+                                            {% if costos.costos_vuelta %}
+                                            <td class="text-center">
+                                                <span class="badge bg-info">{{ costos.costos_vuelta.puntos_recarga.count }}</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-warning text-dark">{{ costos.viaje.viaje_relacionado.peajes.count }}</span>
+                                            </td>
+                                            <td class="text-center"><strong>${{ costos.costos_vuelta.combustible|floatformat:0 }}</strong></td>
+                                            <td class="text-center"><strong>${{ costos.costos_vuelta.mantenimiento|add:costos.costos_vuelta.peajes|add:costos.costos_vuelta.otros_costos|floatformat:0 }}</strong></td>
+                                            <td class="text-center"><strong class="text-success">${{ costos.costos_vuelta.costo_total|floatformat:0 }}</strong></td>
+                                            {% else %}
+                                            <td class="text-center"><span class="badge bg-secondary">0</span></td>
+                                            <td class="text-center"><span class="badge bg-secondary">0</span></td>
+                                            <td class="text-center"><span class="text-muted">$0</span></td>
+                                            <td class="text-center"><span class="text-muted">$0</span></td>
+                                            <td class="text-center"><span class="text-muted">$0</span></td>
+                                            {% endif %}
+                                            <!-- Acciones ya están con rowspan="2" -->
+                                        </tr>
+                                    {% endif %}
+                                    {% endif %}
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="10" class="text-center text-muted py-4">
+                                            <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                            <p>No hay costos registrados</p>
+                                        </td>
+                                    </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -573,5 +678,152 @@
             </div>
         </div>
     </div>
+    
+    <!-- Modals fuera de la tabla -->
+    {% for costos in costos_list %}
+        {% if costos.viaje.tipo_trayecto != 'vuelta' and costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+            <!-- Modal Editar -->
+            <div class="modal fade" id="editarModal{{ costos.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-warning text-dark">
+                            <h5 class="modal-title">
+                                <i class="fas fa-edit me-2"></i>¿Cuál viaje deseas editar?
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <p class="text-center mb-4 text-muted">Selecciona el trayecto que deseas modificar:</p>
+                            <div class="d-grid gap-3">
+                                <a href="{% url 'costos:registrar_completo' costos.viaje.id %}" 
+                                   class="btn btn-primary btn-lg py-3">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-right me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">VIAJE DE IDA</strong>
+                                            <small>{{ costos.viaje.get_origen_display }} → {{ costos.viaje.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% if costos.costos_vuelta %}
+                                <a href="{% url 'costos:registrar_completo' costos.viaje.viaje_relacionado.id %}" 
+                                   class="btn btn-secondary btn-lg py-3">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-left me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">VIAJE DE VUELTA</strong>
+                                            <small>{{ costos.viaje.viaje_relacionado.get_origen_display }} → {{ costos.viaje.viaje_relacionado.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal PDF -->
+            <div class="modal fade" id="pdfModal{{ costos.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-file-pdf me-2"></i>¿Qué PDF deseas generar?
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <p class="text-center mb-4 text-muted">Selecciona el tipo de informe que deseas descargar:</p>
+                            <div class="d-grid gap-3">
+                                <a href="{% url 'costos:informe_costos_pdf' costos.pk %}" 
+                                   class="btn btn-primary btn-lg py-3" target="_blank">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-right me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">PDF VIAJE DE IDA</strong>
+                                            <small>{{ costos.viaje.get_origen_display }} → {{ costos.viaje.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% if costos.costos_vuelta %}
+                                <a href="{% url 'costos:informe_costos_pdf' costos.costos_vuelta.pk %}" 
+                                   class="btn btn-secondary btn-lg py-3" target="_blank">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-left me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">PDF VIAJE DE VUELTA</strong>
+                                            <small>{{ costos.viaje.viaje_relacionado.get_origen_display }} → {{ costos.viaje.viaje_relacionado.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                <a href="{% url 'costos:informe_ida_vuelta_pdf' costos.pk %}" 
+                                   class="btn btn-success btn-lg py-3" target="_blank">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrows-alt-h me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">PDF VIAJE IDA Y VUELTA</strong>
+                                            <small>Informe completo del viaje</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal Eliminar -->
+            <div class="modal fade" id="eliminarModal{{ costos.pk }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-trash me-2"></i>¿Cuál viaje deseas eliminar?
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="alert alert-warning mb-4">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Advertencia:</strong> Esta acción no se puede deshacer.
+                            </div>
+                            <p class="text-center mb-4 text-muted">Selecciona el trayecto que deseas eliminar:</p>
+                            <div class="d-grid gap-3">
+                                <a href="{% url 'costos:eliminar' costos.pk %}" 
+                                   class="btn btn-danger btn-lg py-3">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-right me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">ELIMINAR IDA</strong>
+                                            <small>{{ costos.viaje.get_origen_display }} → {{ costos.viaje.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% if costos.costos_vuelta %}
+                                <a href="{% url 'costos:eliminar' costos.costos_vuelta.pk %}" 
+                                   class="btn btn-danger btn-lg py-3">
+                                    <div class="d-flex align-items-center justify-content-center">
+                                        <i class="fas fa-arrow-left me-3 fa-2x"></i>
+                                        <div class="text-start">
+                                            <strong class="d-block">ELIMINAR VUELTA</strong>
+                                            <small>{{ costos.viaje.viaje_relacionado.get_origen_display }} → {{ costos.viaje.viaje_relacionado.get_destino_display }}</small>
+                                        </div>
+                                    </div>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endfor %}
 </div>
 {% endblock %}

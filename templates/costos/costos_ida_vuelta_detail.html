@@ -1,0 +1,564 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load l10n %}
+
+{% block title %}Detalles Viaje Ida y Vuelta - Sistema de Gestión de Flota{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        border-left: 4px solid #2196F3;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    .accordion-button {
+        font-size: 1.1rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: 10px !important;
+        transition: all 0.3s ease;
+    }
+    .accordion-button:not(.collapsed) {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    .accordion-button:focus {
+        box-shadow: 0 0 0 0.25rem rgba(33, 150, 243, 0.25);
+        border-color: transparent;
+    }
+    .accordion-button::after {
+        background-size: 1.5rem;
+        width: 1.5rem;
+        height: 1.5rem;
+        filter: brightness(0) invert(1);
+    }
+    .accordion-item {
+        border-radius: 10px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    .accordion-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15) !important;
+    }
+    .accordion-body {
+        padding: 1.5rem;
+    }
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    }
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #FFC107 0%, #FFA000 100%);
+    }
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #00BCD4 0%, #0097A7 100%);
+    }
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+    }
+    .section-title {
+        color: #2196F3;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    .info-box {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    .route-indicator {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .route-point {
+        display: flex;
+        align-items: center;
+        flex: 1;
+    }
+    .route-arrow {
+        padding: 0 1.5rem;
+        color: #2196F3;
+    }
+    .table-borderless td {
+        padding: 0.75rem 0.5rem;
+    }
+    .badge {
+        padding: 0.5em 1em;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-0">
+                    <i class="fas fa-arrows-alt-h text-primary me-2"></i>
+                    Detalles de Viaje Completo (Ida y Vuelta)
+                </h1>
+                <a href="{% url 'costos:gestion' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información del Bus -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="fas fa-bus fa-2x text-primary"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1"><strong>{{ costos_ida.viaje.bus.placa }}</strong></h5>
+                            <p class="text-muted mb-0">{{ costos_ida.viaje.bus }} - {{ costos_ida.viaje.bus.modelo }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tarjetas de Resumen General -->
+    {% if costos_vuelta %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm stat-card h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-dollar-sign fa-2x text-primary"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Costo Total</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_general|floatformat:0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-danger bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-gas-pump fa-2x text-danger"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Combustible</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_combustible|floatformat:0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-road fa-2x text-warning"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Peajes</h6>
+                        <h3 class="mb-0 fw-bold">${{ total_peajes|floatformat:0 }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-route fa-2x text-success"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Distancia</h6>
+                        <h3 class="mb-0 fw-bold">{{ total_km|floatformat:0 }}<small class="fs-6"> km</small></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-info bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-fill-drip fa-2x text-info"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Litros</h6>
+                        <h3 class="mb-0 fw-bold">{{ total_litros|floatformat:1 }}<small class="fs-6"> L</small></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body p-3">
+                    <div class="text-center">
+                        <div class="bg-secondary bg-opacity-10 rounded-3 p-3 mb-2 d-inline-flex">
+                            <i class="fas fa-tachometer-alt fa-2x text-secondary"></i>
+                        </div>
+                        <h6 class="text-muted mb-2 text-uppercase" style="font-size: 0.75rem;">Consumo</h6>
+                        <h3 class="mb-0 fw-bold">{{ consumo_promedio_general|floatformat:1 }}<small class="fs-6"> km/L</small></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Acordeón de Viajes -->
+    <div class="accordion" id="accordionViajes">
+        
+        <!-- VIAJE DE IDA -->
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingIda">
+                <button class="accordion-button bg-gradient-primary text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseIda" aria-expanded="true" aria-controls="collapseIda">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-arrow-right fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">VIAJE DE IDA</div>
+                            <small class="opacity-75">{{ costos_ida.viaje.get_origen_display }} → {{ costos_ida.viaje.get_destino_display }}</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-primary">${{ costos_ida.costo_total|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseIda" class="accordion-collapse collapse show" aria-labelledby="headingIda">
+                <div class="accordion-body bg-light">
+                    <!-- Indicador de Ruta -->
+                    <div class="route-indicator mb-3">
+                        <div class="route-point">
+                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">Origen</small>
+                                <strong class="d-block">{{ costos_ida.viaje.get_origen_display }}</strong>
+                            </div>
+                        </div>
+                        <div class="route-arrow">
+                            <i class="fas fa-arrow-right fa-2x"></i>
+                        </div>
+                        <div class="route-point justify-content-end">
+                            <div class="text-end me-3">
+                                <small class="text-muted d-block mb-1">Destino</small>
+                                <strong class="d-block">{{ costos_ida.viaje.get_destino_display }}</strong>
+                            </div>
+                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; min-width: 40px;">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Información General -->
+                        <div class="col-md-6">
+                            <h6 class="section-title">
+                                <i class="fas fa-info-circle me-2"></i>Información del Viaje
+                            </h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;">Fecha Salida:</td>
+                                    <td><strong>{{ costos_ida.viaje.fecha_salida|date:"d/m/Y H:i" }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Conductor:</td>
+                                    <td><strong>{{ costos_ida.viaje.conductor }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Pasajeros:</td>
+                                    <td><strong>{{ costos_ida.viaje.pasajeros.count }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Estado:</td>
+                                    <td>
+                                        {% if costos_ida.viaje.estado == 'completado' %}
+                                            <span class="badge bg-success">COMPLETADO</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ costos_ida.viaje.get_estado_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Km Inicial:</td>
+                                    <td><strong>{{ costos_ida.km_inicial|floatformat:0 }} km</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Km Final:</td>
+                                    <td><strong>{{ costos_ida.km_final|floatformat:0 }} km</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Costos -->
+                        <div class="col-md-6">
+                            <h6 class="section-title">
+                                <i class="fas fa-calculator me-2"></i>Desglose de Costos
+                            </h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td class="text-muted" style="width: 50%;"><i class="fas fa-gas-pump me-2"></i>Combustible:</td>
+                                    <td class="text-end"><strong>${{ costos_ida.combustible|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-road me-2"></i>Peajes ({{ costos_ida.viaje.peajes.count }}):</td>
+                                    <td class="text-end"><strong>${{ costos_ida.peajes|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-tools me-2"></i>Mantenimiento:</td>
+                                    <td class="text-end"><strong>${{ costos_ida.mantenimiento|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-ellipsis-h me-2"></i>Otros Costos:</td>
+                                    <td class="text-end"><strong>${{ costos_ida.otros_costos|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong><i class="fas fa-dollar-sign me-2"></i>Total:</strong></td>
+                                    <td class="text-end"><strong class="text-success fs-5">${{ costos_ida.costo_total|floatformat:0 }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas del Viaje -->
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body bg-white">
+                            <h6 class="section-title">
+                                <i class="fas fa-chart-bar me-2"></i>Estadísticas del Viaje
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Km Recorridos</small>
+                                        <h5 class="mb-0 text-primary">{{ km_recorridos_real_ida|floatformat:0 }} km</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Total Litros</small>
+                                        <h5 class="mb-0 text-primary">{{ total_litros_ida|floatformat:1 }} L</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Rendimiento</small>
+                                        <h5 class="mb-0 text-success">{{ consumo_promedio_ida|floatformat:2 }} km/L</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Recargas</small>
+                                        <h5 class="mb-0 text-info">{{ puntos_recarga_ida.count }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Ver Detalle Completo -->
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'costos:detalle' costos_ida.pk %}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-eye me-2"></i>Ver Detalle Completo del Viaje de Ida
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIAJE DE VUELTA -->
+        {% if costos_vuelta %}
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header" id="headingVuelta">
+                <button class="accordion-button collapsed bg-gradient-warning text-white shadow-sm" type="button" data-bs-toggle="collapse" data-bs-target="#collapseVuelta" aria-expanded="false" aria-controls="collapseVuelta">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-arrow-left fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">VIAJE DE VUELTA</div>
+                            <small class="opacity-75">{{ costos_vuelta.viaje.get_origen_display }} → {{ costos_vuelta.viaje.get_destino_display }}</small>
+                        </div>
+                        <div class="text-end me-3">
+                            <div class="badge bg-white text-warning">${{ costos_vuelta.costo_total|floatformat:0 }}</div>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="collapseVuelta" class="accordion-collapse collapse" aria-labelledby="headingVuelta">
+                <div class="accordion-body bg-light">
+                    <!-- Indicador de Ruta -->
+                    <div class="route-indicator mb-3">
+                        <div class="route-point">
+                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px; min-width: 40px;">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                            <div>
+                                <small class="text-muted d-block mb-1">Origen</small>
+                                <strong class="d-block">{{ costos_vuelta.viaje.get_origen_display }}</strong>
+                            </div>
+                        </div>
+                        <div class="route-arrow">
+                            <i class="fas fa-arrow-left fa-2x"></i>
+                        </div>
+                        <div class="route-point justify-content-end">
+                            <div class="text-end me-3">
+                                <small class="text-muted d-block mb-1">Destino</small>
+                                <strong class="d-block">{{ costos_vuelta.viaje.get_destino_display }}</strong>
+                            </div>
+                            <div class="bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; min-width: 40px;">
+                                <i class="fas fa-map-marker-alt text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Información General -->
+                        <div class="col-md-6">
+                            <h6 class="section-title">
+                                <i class="fas fa-info-circle me-2"></i>Información del Viaje
+                            </h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td class="text-muted" style="width: 40%;">Fecha Salida:</td>
+                                    <td><strong>{{ costos_vuelta.viaje.fecha_salida|date:"d/m/Y H:i" }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Conductor:</td>
+                                    <td><strong>{{ costos_vuelta.viaje.conductor }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Pasajeros:</td>
+                                    <td><strong>{{ costos_vuelta.viaje.pasajeros.count }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Estado:</td>
+                                    <td>
+                                        {% if costos_vuelta.viaje.estado == 'completado' %}
+                                            <span class="badge bg-success">COMPLETADO</span>
+                                        {% else %}
+                                            <span class="badge bg-info">{{ costos_vuelta.viaje.get_estado_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Km Inicial:</td>
+                                    <td><strong>{{ costos_vuelta.km_inicial|floatformat:0 }} km</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Km Final:</td>
+                                    <td><strong>{{ costos_vuelta.km_final|floatformat:0 }} km</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <!-- Costos -->
+                        <div class="col-md-6">
+                            <h6 class="section-title">
+                                <i class="fas fa-calculator me-2"></i>Desglose de Costos
+                            </h6>
+                            <table class="table table-borderless table-sm">
+                                <tr>
+                                    <td class="text-muted" style="width: 50%;"><i class="fas fa-gas-pump me-2"></i>Combustible:</td>
+                                    <td class="text-end"><strong>${{ costos_vuelta.combustible|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-road me-2"></i>Peajes ({{ costos_vuelta.viaje.peajes.count }}):</td>
+                                    <td class="text-end"><strong>${{ costos_vuelta.peajes|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-tools me-2"></i>Mantenimiento:</td>
+                                    <td class="text-end"><strong>${{ costos_vuelta.mantenimiento|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted"><i class="fas fa-ellipsis-h me-2"></i>Otros Costos:</td>
+                                    <td class="text-end"><strong>${{ costos_vuelta.otros_costos|floatformat:0 }}</strong></td>
+                                </tr>
+                                <tr class="border-top">
+                                    <td><strong><i class="fas fa-dollar-sign me-2"></i>Total:</strong></td>
+                                    <td class="text-end"><strong class="text-success fs-5">${{ costos_vuelta.costo_total|floatformat:0 }}</strong></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Estadísticas del Viaje -->
+                    <div class="card border-0 shadow-sm mt-3">
+                        <div class="card-body bg-white">
+                            <h6 class="section-title">
+                                <i class="fas fa-chart-bar me-2"></i>Estadísticas del Viaje
+                            </h6>
+                            <div class="row text-center">
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Km Recorridos</small>
+                                        <h5 class="mb-0 text-warning">{{ km_recorridos_real_vuelta|floatformat:0 }} km</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Total Litros</small>
+                                        <h5 class="mb-0 text-warning">{{ total_litros_vuelta|floatformat:1 }} L</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Rendimiento</small>
+                                        <h5 class="mb-0 text-success">{{ consumo_promedio_vuelta|floatformat:2 }} km/L</h5>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="info-box">
+                                        <small class="text-muted d-block">Recargas</small>
+                                        <h5 class="mb-0 text-info">{{ puntos_recarga_vuelta.count }}</h5>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón Ver Detalle Completo -->
+                    <div class="d-grid mt-3">
+                        <a href="{% url 'costos:detalle' costos_vuelta.pk %}" class="btn btn-warning btn-lg">
+                            <i class="fas fa-eye me-2"></i>Ver Detalle Completo del Viaje de Vuelta
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="accordion-item border-0 shadow-sm mb-3">
+            <h2 class="accordion-header">
+                <button class="accordion-button disabled bg-gradient-secondary text-white shadow-sm" type="button" disabled>
+                    <div class="d-flex align-items-center w-100">
+                        <div class="me-3">
+                            <i class="fas fa-arrow-left fa-lg"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold">VIAJE DE VUELTA</div>
+                            <small class="opacity-75">No hay costos registrados</small>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

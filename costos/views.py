@@ -45,7 +45,7 @@ from reportlab.lib.enums import TA_CENTER, TA_LEFT
 from datetime import datetime
 import io
 from flota.models import Mantenimiento
-from .informe_costos import informe_costos_pdf
+from .informe_costos import informe_costos_pdf, informe_ida_vuelta_pdf
 
 
 class ViajesSinCostosListView(LoginRequiredMixin, ListView):
@@ -155,6 +155,76 @@ class CostosViajeDetailView(LoginRequiredMixin, DetailView):
         else:
             context['consumo_promedio'] = 0
             
+        return context
+
+
+class CostosViajeIdaVueltaDetailView(LoginRequiredMixin, DetailView):
+    """Vista para ver detalles combinados de costos de viaje ida y vuelta."""
+    model = CostosViaje
+    template_name = 'costos/costos_ida_vuelta_detail.html'
+    context_object_name = 'costos_ida'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Obtener costos de ida
+        costos_ida = self.object
+        
+        # Obtener costos de vuelta si existe
+        costos_vuelta = None
+        if costos_ida.viaje.es_ida_vuelta and costos_ida.viaje.viaje_relacionado:
+            try:
+                costos_vuelta = CostosViaje.objects.get(viaje=costos_ida.viaje.viaje_relacionado)
+            except CostosViaje.DoesNotExist:
+                pass
+        
+        context['costos_vuelta'] = costos_vuelta
+        
+        # Datos de ida
+        context['puntos_recarga_ida'] = costos_ida.puntos_recarga.all()
+        context['total_kilometros_ida'] = sum(p.kilometros_recorridos for p in context['puntos_recarga_ida'])
+        context['total_litros_ida'] = sum(p.litros_cargados for p in context['puntos_recarga_ida'])
+        
+        if costos_ida.km_final is not None and costos_ida.km_inicial is not None:
+            context['km_recorridos_real_ida'] = costos_ida.km_final - costos_ida.km_inicial
+        else:
+            context['km_recorridos_real_ida'] = context['total_kilometros_ida']
+        
+        if context['total_litros_ida'] > 0 and context['km_recorridos_real_ida'] > 0:
+            context['consumo_promedio_ida'] = context['km_recorridos_real_ida'] / context['total_litros_ida']
+        else:
+            context['consumo_promedio_ida'] = 0
+        
+        # Datos de vuelta
+        if costos_vuelta:
+            context['puntos_recarga_vuelta'] = costos_vuelta.puntos_recarga.all()
+            context['total_kilometros_vuelta'] = sum(p.kilometros_recorridos for p in context['puntos_recarga_vuelta'])
+            context['total_litros_vuelta'] = sum(p.litros_cargados for p in context['puntos_recarga_vuelta'])
+            
+            if costos_vuelta.km_final is not None and costos_vuelta.km_inicial is not None:
+                context['km_recorridos_real_vuelta'] = costos_vuelta.km_final - costos_vuelta.km_inicial
+            else:
+                context['km_recorridos_real_vuelta'] = context['total_kilometros_vuelta']
+            
+            if context['total_litros_vuelta'] > 0 and context['km_recorridos_real_vuelta'] > 0:
+                context['consumo_promedio_vuelta'] = context['km_recorridos_real_vuelta'] / context['total_litros_vuelta']
+            else:
+                context['consumo_promedio_vuelta'] = 0
+            
+            # Totales combinados
+            context['total_combustible'] = costos_ida.combustible + costos_vuelta.combustible
+            context['total_peajes'] = costos_ida.peajes + costos_vuelta.peajes
+            context['total_mantenimiento'] = costos_ida.mantenimiento + costos_vuelta.mantenimiento
+            context['total_otros'] = costos_ida.otros_costos + costos_vuelta.otros_costos
+            context['total_general'] = costos_ida.costo_total + costos_vuelta.costo_total
+            context['total_km'] = context['km_recorridos_real_ida'] + context['km_recorridos_real_vuelta']
+            context['total_litros'] = context['total_litros_ida'] + context['total_litros_vuelta']
+            
+            if context['total_litros'] > 0 and context['total_km'] > 0:
+                context['consumo_promedio_general'] = context['total_km'] / context['total_litros']
+            else:
+                context['consumo_promedio_general'] = 0
+        
         return context
 
 
@@ -293,8 +363,25 @@ class GestionCostosView(LoginRequiredMixin, View):
         for viaje in viajes_sin_costos:
             viaje.estado_display = 'en_curso'
 
-        # Obtener todos los costos registrados para el CRUD
-        costos_list = CostosViaje.objects.select_related('viaje', 'viaje__bus').prefetch_related('puntos_recarga').all()
+        # Obtener todos los costos registrados para el CRUD (excluyendo viajes de vuelta para evitar duplicados)
+        costos_list = CostosViaje.objects.select_related(
+            'viaje', 
+            'viaje__bus', 
+            'viaje__conductor',
+            'viaje__viaje_relacionado',
+            'viaje__viaje_relacionado__conductor'
+        ).prefetch_related(
+            'puntos_recarga',
+            'viaje__peajes'
+        ).exclude(viaje__tipo_trayecto='vuelta').order_by('-id')
+        
+        # Agregar los costos de vuelta a cada costo de ida
+        for costo in costos_list:
+            if costo.viaje.es_ida_vuelta and costo.viaje.viaje_relacionado:
+                try:
+                    costo.costos_vuelta = CostosViaje.objects.select_related('viaje').prefetch_related('puntos_recarga').get(viaje=costo.viaje.viaje_relacionado)
+                except CostosViaje.DoesNotExist:
+                    costo.costos_vuelta = None
 
         # Estadísticas
         total_viajes_con_costos = CostosViaje.objects.count()
@@ -1405,10 +1492,8 @@ def registrar_ida_vuelta(request, viaje_ida_id):
     costos_ida = CostosViaje.objects.filter(viaje=viaje_ida).first()
     costos_vuelta = CostosViaje.objects.filter(viaje=viaje_vuelta).first()
     
-    # Si AMBOS ya tienen costos, redirigir con mensaje
-    if costos_ida and costos_vuelta:
-        messages.info(request, '✅ Ambos trayectos ya tienen costos registrados. Puedes editarlos individualmente si necesitas modificarlos.')
-        return redirect('costos:gestion')
+    # Determinar si estamos editando
+    es_edicion = costos_ida and costos_vuelta
     
     if request.method == 'POST':
         # Validar que ambos formularios tengan datos mínimos

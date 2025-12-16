@@ -28,6 +28,7 @@ urlpatterns = [
     
     # CRUD de CostosViaje (deben estar después de las rutas específicas)
     path('<int:pk>/', views.CostosViajeDetailView.as_view(), name='detalle'),
+    path('<int:pk>/ida-vuelta/', views.CostosViajeIdaVueltaDetailView.as_view(), name='detalle_ida_vuelta'),
     path('<int:pk>/editar/', views.CostosViajeUpdateView.as_view(), name='editar'),
     path('<int:pk>/eliminar/', views.CostosViajeDeleteView.as_view(), name='eliminar'),
     
@@ -42,6 +43,7 @@ urlpatterns = [
     # Generar PDF
     path('viaje/<int:viaje_id>/formulario-pdf/', views.generar_formulario_costos_pdf, name='formulario_pdf'),
     path('informe-costos/<int:costos_pk>/', views.informe_costos_pdf, name='informe_costos_pdf'),
+    path('informe-ida-vuelta/<int:costos_ida_pk>/', views.informe_ida_vuelta_pdf, name='informe_ida_vuelta_pdf'),
 
     # Registrar peajes y puntos de recarga
     path('registrar-peajes/<int:costos_pk>/', views.registrar_peajes, name='registrar_peajes'),
