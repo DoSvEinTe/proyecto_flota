@@ -110,7 +110,7 @@ class Mantenimiento(models.Model):
     descripcion = models.TextField()
     fecha_mantenimiento = models.DateField()
     kilometraje = models.IntegerField()
-    costo = models.DecimalField(max_digits=10, decimal_places=2)
+    costo = models.IntegerField(help_text='Costo del mantenimiento en pesos')
     proveedor = models.CharField(max_length=150, blank=True, null=True)  # Nuevo campo
     taller = models.CharField(max_length=150, blank=True)
     observaciones = models.TextField(blank=True)

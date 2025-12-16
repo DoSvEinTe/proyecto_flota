@@ -189,16 +189,16 @@ class PeajeFormularioForm(forms.Form):
     """Formulario simple para agregar peajes dinámicamente."""
     nombre = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del peaje'}))
     ubicacion = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}))
-    monto = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Monto'}))
+    monto = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Monto en pesos'}))
 
 
 class PuntoRecargaFormularioForm(forms.Form):
     """Formulario simple para agregar puntos de recarga dinámicamente."""
     orden = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '1'}))
     ubicacion = forms.CharField(max_length=200, required=False, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ubicación'}))
-    kilometraje = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje'}))
-    litros = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Litros'}))
-    precio = forms.DecimalField(max_digits=10, decimal_places=2, required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Precio/litro'}))
+    kilometraje = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Kilometraje'}))
+    litros = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Litros'}))
+    precio = forms.IntegerField(required=False, widget=forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Precio/litro en pesos'}))
 
 
 class CostosViajeFormCompleto(forms.ModelForm):
@@ -208,9 +208,9 @@ class CostosViajeFormCompleto(forms.ModelForm):
         model = CostosViaje
         fields = ['km_inicial', 'km_final', 'otros_costos', 'observaciones']
         widgets = {
-            'km_inicial': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje inicial del viaje'}),
-            'km_final': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': 'Kilometraje final del viaje'}),
-            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0', 'placeholder': '0.00'}),
+            'km_inicial': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Kilometraje inicial del viaje'}),
+            'km_final': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': 'Kilometraje final del viaje'}),
+            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'placeholder': '0'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Observaciones adicionales...'}),
         }
         labels = {

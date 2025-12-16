@@ -20,8 +20,8 @@
                     <div class="alert alert-info">
                         <p class="mb-2"><strong>Orden:</strong> {{ object.orden }}</p>
                         <p class="mb-2"><strong>Ubicación:</strong> {{ object.ubicacion|default:"No especificada" }}</p>
-                        <p class="mb-2"><strong>Kilometraje:</strong> {{ object.kilometraje|floatformat:2 }} km</p>
-                        <p class="mb-2"><strong>Litros Cargados:</strong> {{ object.litros_cargados|floatformat:2 }} L</p>
+                        <p class="mb-2"><strong>Kilometraje:</strong> {{ object.kilometraje|floatformat:0 }} km</p>
+                        <p class="mb-2"><strong>Litros Cargados:</strong> {{ object.litros_cargados|floatformat:0 }} L</p>
                         <p class="mb-0"><strong>Costo:</strong> CLP ${{ object.costo_total|floatformat:0 }}</p>
                     </div>
 

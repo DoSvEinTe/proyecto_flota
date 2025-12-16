@@ -28,9 +28,9 @@
                                     <tr>
                                         <td>{{ punto.orden }}</td>
                                         <td>{{ punto.ubicacion }}</td>
-                                        <td>{{ punto.kilometraje|floatformat:2 }}</td>
-                                        <td>{{ punto.litros_cargados|floatformat:2 }}</td>
-                                        <td>{{ punto.precio_combustible|floatformat:2 }}</td>
+                                        <td>{{ punto.kilometraje|floatformat:0 }}</td>
+                                        <td>{{ punto.litros_cargados|floatformat:0 }}</td>
+                                        <td>{{ punto.precio_combustible|floatformat:0 }}</td>
                                         <td>
                                             <a href="{% url 'costos:eliminar_punto' punto.pk %}" class="btn btn-danger btn-sm"><i class="fas fa-trash"></i></a>
                                         </td>

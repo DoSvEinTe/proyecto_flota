@@ -488,25 +488,25 @@
                 <div class="col-md-6 mb-3">
                     <div class="info-card" style="border-left-color: #ef4444;">
                         <h6><i class="fas fa-gas-pump"></i> Combustible</h6>
-                        <h3 class="text-danger mb-0">${{ total_costos.total_combustible|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="text-danger mb-0">${{ total_costos.total_combustible|floatformat:0|default:"0" }}</h3>
                     </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="info-card" style="border-left-color: #f59e0b;">
                         <h6><i class="fas fa-tools"></i> Mantenimiento</h6>
-                        <h3 class="text-warning mb-0">${{ total_costos.total_mantenimiento|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="text-warning mb-0">${{ total_costos.total_mantenimiento|floatformat:0|default:"0" }}</h3>
                     </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="info-card" style="border-left-color: #06b6d4;">
                         <h6><i class="fas fa-road"></i> Peajes</h6>
-                        <h3 class="text-info mb-0">${{ total_costos.total_peajes|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="text-info mb-0">${{ total_costos.total_peajes|floatformat:0|default:"0" }}</h3>
                     </div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <div class="info-card" style="border-left-color: #8b5cf6;">
                         <h6><i class="fas fa-plus-circle"></i> Otros Costos</h6>
-                        <h3 class="text-purple mb-0">${{ total_costos.total_otros|floatformat:2|default:"0.00" }}</h3>
+                        <h3 class="text-purple mb-0">${{ total_costos.total_otros|floatformat:0|default:"0" }}</h3>
                     </div>
                 </div>
             </div>
@@ -516,21 +516,21 @@
                     <h5 class="mb-1" style="color: white;"><i class="fas fa-calculator me-2"></i>Costo Total General</h5>
                     <p class="mb-0" style="opacity: 0.9;">Total acumulado de todos los viajes</p>
                 </div>
-                <h2 class="mb-0" style="color: white; font-weight: 700;">${{ total_costos.total_general|floatformat:2|default:"0.00" }}</h2>
+                <h2 class="mb-0" style="color: white; font-weight: 700;">${{ total_costos.total_general|floatformat:0|default:"0" }}</h2>
             </div>
 
             <div class="row mt-4">
                 <div class="col-md-6">
                     <div class="info-card" style="border-left-color: #10b981;">
                         <h6><i class="fas fa-chart-line"></i> Promedio por Viaje</h6>
-                        <h4 class="text-success mb-1">${{ promedio_costos.promedio_total|floatformat:2|default:"0.00" }}</h4>
+                        <h4 class="text-success mb-1">${{ promedio_costos.promedio_total|floatformat:0|default:"0" }}</h4>
                         <small class="text-muted">Basado en {{ total_costos_registrados }} viajes registrados</small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="info-card" style="border-left-color: #3b82f6;">
                         <h6><i class="fas fa-calendar-alt"></i> Costos Último Mes</h6>
-                        <h4 class="text-primary mb-1">${{ costos_mes.total_mes|floatformat:2|default:"0.00" }}</h4>
+                        <h4 class="text-primary mb-1">${{ costos_mes.total_mes|floatformat:0|default:"0" }}</h4>
                         <small class="text-muted">{{ costos_mes.viajes_mes|default:"0" }} viajes en los últimos 30 días</small>
                     </div>
                 </div>
@@ -562,7 +562,7 @@
                                     </small>
                                 </div>
                                 <div class="text-end">
-                                    <h5 class="mb-0 text-danger fw-bold">${{ costo.costo_total|floatformat:2 }}</h5>
+                                    <h5 class="mb-0 text-danger fw-bold">${{ costo.costo_total|floatformat:0 }}</h5>
                                 </div>
                             </div>
                         </div>

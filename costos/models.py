@@ -7,15 +7,15 @@ class CostosViaje(models.Model):
     Modelo para registrar y calcular costos de cada viaje.
     """
     viaje = models.OneToOneField(Viaje, on_delete=models.CASCADE, related_name='costos')
-    km_inicial = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Kilometraje inicial real del viaje')
-    km_final = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, help_text='Kilometraje final real del viaje')
-    combustible = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    km_inicial = models.IntegerField(null=True, blank=True, help_text='Kilometraje inicial real del viaje')
+    km_final = models.IntegerField(null=True, blank=True, help_text='Kilometraje final real del viaje')
+    combustible = models.IntegerField(default=0, help_text='Costo en pesos')
     mantenimientos = models.ManyToManyField('flota.Mantenimiento', blank=True, related_name='costos_viaje')
-    mantenimiento = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text='Costo total de mantenimientos seleccionados')
-    peajes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    otros_costos = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    costo_total = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0)
-    ganancia_neta = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    mantenimiento = models.IntegerField(default=0, help_text='Costo total de mantenimientos seleccionados en pesos')
+    peajes = models.IntegerField(default=0, help_text='Costo en pesos')
+    otros_costos = models.IntegerField(default=0, help_text='Costo en pesos')
+    costo_total = models.IntegerField(editable=False, default=0, help_text='Costo total en pesos')
+    ganancia_neta = models.IntegerField(null=True, blank=True, help_text='Ganancia neta en pesos')
     observaciones = models.TextField(blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
@@ -31,16 +31,11 @@ class CostosViaje(models.Model):
         return total
 
     def save(self, *args, **kwargs):
-        from decimal import Decimal
         # Calcular el costo total de los mantenimientos seleccionados
         if self.pk:
-            self.mantenimiento = sum(Decimal(m.costo) for m in self.mantenimientos.all())
-        # Convertir todos los valores a Decimal antes de sumar
-        combustible = Decimal(self.combustible)
-        mantenimiento = Decimal(self.mantenimiento)
-        peajes = Decimal(self.peajes)
-        otros_costos = Decimal(self.otros_costos)
-        self.costo_total = combustible + mantenimiento + peajes + otros_costos
+            self.mantenimiento = sum(int(m.costo) for m in self.mantenimientos.all())
+        # Sumar todos los valores (ya son enteros)
+        self.costo_total = int(self.combustible) + int(self.mantenimiento) + int(self.peajes) + int(self.otros_costos)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -53,11 +48,11 @@ class PuntoRecarga(models.Model):
     """
     costos_viaje = models.ForeignKey(CostosViaje, on_delete=models.CASCADE, related_name='puntos_recarga')
     orden = models.IntegerField(help_text='Orden del punto de recarga en el viaje')
-    kilometraje = models.DecimalField(max_digits=10, decimal_places=2, help_text='Kilometraje al llegar a este punto')
-    precio_combustible = models.DecimalField(max_digits=10, decimal_places=2, help_text='Precio por litro/galón de combustible')
-    litros_cargados = models.DecimalField(max_digits=10, decimal_places=2, help_text='Litros de combustible cargados')
-    kilometros_recorridos = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0, help_text='Kilómetros desde el punto anterior')
-    costo_total = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0, help_text='Costo total de esta recarga')
+    kilometraje = models.IntegerField(help_text='Kilometraje al llegar a este punto')
+    precio_combustible = models.IntegerField(help_text='Precio por litro/galón de combustible en pesos')
+    litros_cargados = models.IntegerField(help_text='Litros de combustible cargados')
+    kilometros_recorridos = models.IntegerField(editable=False, default=0, help_text='Kilómetros desde el punto anterior')
+    costo_total = models.IntegerField(editable=False, default=0, help_text='Costo total de esta recarga en pesos')
     ubicacion = models.CharField(max_length=200, blank=True, help_text='Nombre o ubicación del punto de recarga')
     comprobante = models.FileField(upload_to='combustible/comprobantes/', blank=True, null=True, help_text='Comprobante de recarga')
     observaciones = models.TextField(blank=True)
@@ -104,7 +99,7 @@ class Peaje(models.Model):
     viaje = models.ForeignKey(Viaje, on_delete=models.CASCADE, related_name='peajes')
     costos_viaje = models.ForeignKey('CostosViaje', on_delete=models.CASCADE, related_name='peajes_costos', null=True, blank=True)
     lugar = models.CharField(max_length=150)
-    monto = models.DecimalField(max_digits=10, decimal_places=2)
+    monto = models.IntegerField(help_text='Monto del peaje en pesos')
     fecha_pago = models.DateTimeField()
     comprobante = models.FileField(upload_to='peajes/vouchers/', blank=True, null=True)
     creado_en = models.DateTimeField(auto_now_add=True)
