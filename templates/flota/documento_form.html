@@ -37,18 +37,39 @@
                                 <label for="{{ form.fecha_emision.id_for_label }}" class="form-label">
                                     Fecha de Emisión
                                 </label>
-                                {{ form.fecha_emision }}
+                                <input type="date" 
+                                       id="id_fecha_emision"
+                                       name="fecha_emision" 
+                                       value="{% if form.instance.fecha_emision %}{{ form.instance.fecha_emision|date:'Y-m-d' }}{% endif %}"
+                                       max="{% now 'Y-m-d' %}"
+                                       required
+                                       class="form-control">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.fecha_vencimiento.id_for_label }}" class="form-label">
                                     Fecha de Vencimiento
                                 </label>
-                                {{ form.fecha_vencimiento }}
+                                <input type="date" 
+                                       id="id_fecha_vencimiento"
+                                       name="fecha_vencimiento" 
+                                       value="{% if form.instance.fecha_vencimiento %}{{ form.instance.fecha_vencimiento|date:'Y-m-d' }}{% endif %}"
+                                       required
+                                       class="form-control">
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="{{ form.archivo.id_for_label }}" class="form-label">Archivo</label>
+                            <label for="{{ form.archivo.id_for_label }}" class="form-label">Archivo {% if not editing %}*{% endif %}</label>
+                            {% if editing and form.instance.archivo %}
+                                <div class="mb-2">
+                                    <div class="alert alert-info small"><i class="fas fa-check-circle me-2"></i>Documento actual:
+                                        <a href="{{ form.instance.archivo.url }}" target="_blank" class="text-decoration-none">
+                                            <i class="fas fa-download me-1"></i>Descargar archivo
+                                        </a>
+                                    </div>
+                                </div>
+                                <label class="form-label"><small>Cargar nuevo (opcional):</small></label>
+                            {% endif %}
                             {{ form.archivo }}
                             <div class="form-text">Sube el documento en formato PDF, JPG o PNG.</div>
                         </div>
@@ -73,4 +94,25 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaEmisionInput = document.getElementById('id_fecha_emision');
+    const fechaVencimientoInput = document.getElementById('id_fecha_vencimiento');
+    
+    // Función para actualizar el min de fecha_vencimiento
+    function actualizarMinFechaVencimiento() {
+        if (fechaEmisionInput.value) {
+            fechaVencimientoInput.min = fechaEmisionInput.value;
+        }
+    }
+    
+    // Actualizar al cargar la página
+    actualizarMinFechaVencimiento();
+    
+    // Actualizar cuando cambia la fecha de emisión
+    fechaEmisionInput.addEventListener('change', actualizarMinFechaVencimiento);
+});
+</script>
+
 {% endblock %}

@@ -1,4 +1,5 @@
 from django.db import models
+from datetime import date
 
 
 class Conductor(models.Model):
@@ -8,13 +9,13 @@ class Conductor(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     cedula = models.CharField(max_length=20, unique=True)
-    cedula_frontal = models.ImageField(upload_to='cedulas/', null=True, blank=True, help_text='Foto frontal de la cédula de identidad')
-    cedula_trasera = models.ImageField(upload_to='cedulas/', null=True, blank=True, help_text='Foto trasera de la cédula de identidad')
+    cedula_frontal = models.ImageField(upload_to='cedulas/', blank=False, null=False, default='', help_text='Foto frontal de la cédula de identidad')
+    cedula_trasera = models.ImageField(upload_to='cedulas/', blank=False, null=False, default='', help_text='Foto trasera de la cédula de identidad')
     email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=15)
     fecha_contratacion = models.DateField()
-    licencia_conducir_frontal = models.ImageField(upload_to='licencias/', null=True, blank=True, help_text='Foto frontal de la licencia de conducir')
-    licencia_conducir_trasera = models.ImageField(upload_to='licencias/', null=True, blank=True, help_text='Foto trasera de la licencia de conducir')
+    licencia_conducir_frontal = models.ImageField(upload_to='licencias/', blank=False, null=False, default='', help_text='Foto frontal de la licencia de conducir')
+    licencia_conducir_trasera = models.ImageField(upload_to='licencias/', blank=False, null=False, default='', help_text='Foto trasera de la licencia de conducir')
     licencias = models.CharField(
         max_length=50,
         help_text='Tipos de licencias (A, B, C, etc.)',
@@ -32,6 +33,12 @@ class Conductor(models.Model):
 
     def __str__(self):
         return f"{self.apellido}, {self.nombre}"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Validar que la fecha de contratación no sea superior al día actual
+        if self.fecha_contratacion > date.today():
+            raise ValidationError({'fecha_contratacion': 'La fecha de contratación no puede ser superior al día actual.'})
 
 
 class Lugar(models.Model):

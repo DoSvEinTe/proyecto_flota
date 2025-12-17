@@ -419,9 +419,17 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Conductor con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        {% else %}
+                                        <!-- Conductor normal para viajes simples -->
+                                        <td class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        {% endif %}
                                         <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
-                                        <td>
+                                        {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Estado con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">
                                             {% if viaje.estado == 'en_curso' %}
                                                 <span class="badge bg-warning text-dark">EN CURSO</span>
                                             {% elif viaje.estado == 'completado' %}
@@ -432,6 +440,20 @@
                                                 <span class="badge bg-danger">CANCELADO</span>
                                             {% endif %}
                                         </td>
+                                        {% else %}
+                                        <!-- Estado normal para viajes simples -->
+                                        <td class="align-middle">
+                                            {% if viaje.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">EN CURSO</span>
+                                            {% elif viaje.estado == 'completado' %}
+                                                <span class="badge bg-success">COMPLETADO</span>
+                                            {% elif viaje.estado == 'programado' %}
+                                                <span class="badge bg-info text-dark">PROGRAMADO</span>
+                                            {% elif viaje.estado == 'cancelado' %}
+                                                <span class="badge bg-danger">CANCELADO</span>
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
                                         <!-- Acciones unificadas con rowspan para IDA y VUELTA -->
                                         <td rowspan="2" class="align-middle">
@@ -524,19 +546,9 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>{{ viaje.viaje_relacionado.conductor.nombre }} {{ viaje.viaje_relacionado.conductor.apellido }}</td>
+                                        <!-- Conductor ya está con rowspan="2" en la fila IDA -->
                                         <td>{{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}</td>
-                                        <td>
-                                            {% if viaje.viaje_relacionado.estado == 'completado' %}
-                                                <span class="badge bg-success">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% elif viaje.viaje_relacionado.estado == 'en_curso' %}
-                                                <span class="badge bg-warning text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% elif viaje.viaje_relacionado.estado == 'programado' %}
-                                                <span class="badge bg-info text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% endif %}
-                                        </td>
+                                        <!-- Estado ya está con rowspan="2" en la fila IDA -->
                                         <!-- Columna de acciones con rowspan="2" ya está en la fila IDA -->
                                     </tr>
                                                     </tbody>
@@ -690,6 +702,19 @@
                                             </div>
                                         </td>
                                         <td class="text-center">{{ costos.viaje.fecha_salida|date:"d/m/Y" }}</td>
+                                        {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+                                        <!-- Estado con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="text-center">
+                                            {% if costos.viaje.estado == 'completado' %}
+                                                <span class="badge bg-success">COMPLETADO</span>
+                                            {% elif costos.viaje.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">EN CURSO</span>
+                                            {% else %}
+                                                <span class="badge bg-info text-dark">{{ costos.viaje.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        {% else %}
+                                        <!-- Estado normal para viajes simples -->
                                         <td class="text-center">
                                             {% if costos.viaje.estado == 'completado' %}
                                                 <span class="badge bg-success">COMPLETADO</span>
@@ -699,6 +724,7 @@
                                                 <span class="badge bg-info text-dark">{{ costos.viaje.get_estado_display }}</span>
                                             {% endif %}
                                         </td>
+                                        {% endif %}
                                         <td class="text-center">
                                             <span class="badge bg-info">{{ costos.puntos_recarga.count }}</span>
                                         </td>
@@ -795,15 +821,7 @@
                                                 </div>
                                             </td>
                                             <td class="text-center">{{ costos.viaje.viaje_relacionado.fecha_salida|date:"d/m/Y" }}</td>
-                                            <td class="text-center">
-                                                {% if costos.viaje.viaje_relacionado.estado == 'completado' %}
-                                                    <span class="badge bg-success">COMPLETADO</span>
-                                                {% elif costos.viaje.viaje_relacionado.estado == 'en_curso' %}
-                                                    <span class="badge bg-warning text-dark">EN CURSO</span>
-                                                {% else %}
-                                                    <span class="badge bg-info text-dark">{{ costos.viaje.viaje_relacionado.get_estado_display }}</span>
-                                                {% endif %}
-                                            </td>
+                                            <!-- Estado ya está con rowspan="2" en la fila IDA -->
                                             {% if costos.costos_vuelta %}
                                             <td class="text-center">
                                                 <span class="badge bg-info">{{ costos.costos_vuelta.puntos_recarga.count }}</span>

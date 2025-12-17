@@ -187,6 +187,12 @@ class MantenimientoCreateView(CreateView):
     form_class = MantenimientoForm
     template_name = 'flota/mantenimiento_form.html'
     
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        bus = get_object_or_404(Bus, pk=self.kwargs['bus_id'])
+        kwargs['bus'] = bus
+        return kwargs
+    
     def form_valid(self, form):
         bus = get_object_or_404(Bus, pk=self.kwargs['bus_id'])
         form.instance.bus = bus
@@ -207,6 +213,11 @@ class MantenimientoUpdateView(UpdateView):
     model = Mantenimiento
     form_class = MantenimientoForm
     template_name = 'flota/mantenimiento_form.html'
+    
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['bus'] = self.object.bus
+        return kwargs
     
     def get_success_url(self):
         messages.success(self.request, 'Mantenimiento actualizado correctamente.')

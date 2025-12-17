@@ -22,7 +22,13 @@
                                 <label for="{{ form.fecha_mantenimiento.id_for_label }}" class="form-label">
                                     Fecha de Mantenimiento
                                 </label>
-                                {{ form.fecha_mantenimiento }}
+                                <input type="date" 
+                                       id="id_fecha_mantenimiento"
+                                       name="fecha_mantenimiento" 
+                                       value="{% if form.instance.fecha_mantenimiento %}{{ form.instance.fecha_mantenimiento|date:'Y-m-d' }}{% endif %}"
+                                       max="{% now 'Y-m-d' %}"
+                                       required
+                                       class="form-control">
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="{{ form.tipo.id_for_label }}" class="form-label">Tipo</label>

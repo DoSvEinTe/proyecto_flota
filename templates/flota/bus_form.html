@@ -38,7 +38,7 @@
                             </label>
                             {{ form.placa }}
                             {% if form.placa.errors %}
-                                <div class="text-danger small">
+                                <div class="text-danger small mt-2">
                                     {{ form.placa.errors }}
                                 </div>
                             {% endif %}
@@ -112,7 +112,7 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.numero_chasis.id_for_label }}" class="form-label">
-                                <strong>Número de Chasis *</strong>
+                                <strong>Número de Chasis</strong>
                             </label>
                             {{ form.numero_chasis }}
                             {% if form.numero_chasis.errors %}
@@ -124,7 +124,7 @@
                         
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.numero_motor.id_for_label }}" class="form-label">
-                                <strong>Número de Motor *</strong>
+                                <strong>Número de Motor</strong>
                             </label>
                             {{ form.numero_motor }}
                             {% if form.numero_motor.errors %}
@@ -152,7 +152,13 @@
                             <label for="{{ form.fecha_adquisicion.id_for_label }}" class="form-label">
                                 <strong>Fecha de Adquisición *</strong>
                             </label>
-                            {{ form.fecha_adquisicion }}
+                            <input type="date" 
+                                   name="fecha_adquisicion" 
+                                   id="{{ form.fecha_adquisicion.id_for_label }}" 
+                                   class="form-control"
+                                   value="{% if form.instance.fecha_adquisicion %}{{ form.instance.fecha_adquisicion|date:'Y-m-d' }}{% endif %}"
+                                   max="{% now 'Y-m-d' %}"
+                                   required>
                             {% if form.fecha_adquisicion.errors %}
                                 <div class="text-danger small">
                                     {{ form.fecha_adquisicion.errors }}
@@ -202,6 +208,33 @@
                         <li><strong>Mantenimiento:</strong> Bus en reparación</li>
                         <li><strong>Inactivo:</strong> Bus fuera de servicio</li>
                     </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    Formato de Patente (Chile)
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-0">
+                    <p class="mb-2"><strong>Selecciona uno de los siguientes formatos:</strong></p>
+                    <div class="mb-3">
+                        <h6 class="mb-2"><i class="fas fa-arrow-right me-2"></i>Formato Antiguo</h6>
+                        <p class="mb-0 small"><code style="background-color: #f0f0f0; padding: 5px; border-radius: 3px;">AB-1234-CD</code></p>
+                        <p class="small text-muted mb-0">2 letras • 4 números • 2 letras</p>
+                    </div>
+                    <div class="mb-2">
+                        <h6 class="mb-2"><i class="fas fa-arrow-right me-2"></i>Formato Moderno</h6>
+                        <p class="mb-0 small"><code style="background-color: #f0f0f0; padding: 5px; border-radius: 3px;">ABCD-12-EF</code></p>
+                        <p class="small text-muted mb-0">4 caracteres • 2 números • 2 caracteres</p>
+                    </div>
+                    <div class="border-top pt-2 mt-2">
+                        <p class="mb-0 small"><i class="fas fa-exclamation-circle me-2 text-warning"></i><strong>Importante:</strong> Los guiones (-) son obligatorios en las posiciones correctas.</p>
+                    </div>
                 </div>
             </div>
         </div>

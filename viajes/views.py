@@ -34,7 +34,7 @@ class ViajeForm(ModelForm):
             'latitud_origen', 'longitud_origen',
             'destino_nombre', 'destino_ciudad', 'destino_provincia', 'destino_pais',
             'latitud_destino', 'longitud_destino',
-            'fecha_salida', 'fecha_llegada_estimada', 'fecha_llegada_real',
+            'fecha_salida', 'fecha_llegada_estimada',
             'es_ida_vuelta',
             'observaciones'
         ]
@@ -94,17 +94,12 @@ class ViajeForm(ModelForm):
                 'class': 'form-control',
                 'type': 'datetime-local',
                 'placeholder': 'Fecha y hora de salida'
-            }),
+            }, format='%Y-%m-%dT%H:%M'),
             'fecha_llegada_estimada': forms.DateTimeInput(attrs={
                 'class': 'form-control',
                 'type': 'datetime-local',
                 'placeholder': 'Fecha y hora estimada de llegada'
-            }),
-            'fecha_llegada_real': forms.DateTimeInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-                'placeholder': 'Fecha y hora real de llegada (opcional)'
-            }),
+            }, format='%Y-%m-%dT%H:%M'),
             'es_ida_vuelta': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
                 'id': 'id_es_ida_vuelta'
@@ -116,8 +111,63 @@ class ViajeForm(ModelForm):
             }),
         }
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Obtener la fecha y hora actual mínima
+        ahora = timezone.now()
+        ahora_iso = ahora.strftime('%Y-%m-%dT%H:%M')
+        
+        # Filtrar solo buses activos
+        from core.models import Conductor
+        from flota.models import Bus
+        self.fields['bus'].queryset = Bus.objects.filter(estado='activo')
+        self.fields['bus'].label = 'Bus (Solo activos)'
+        self.fields['bus'].help_text = 'Solo se muestran los buses en estado activo'
+        
+        # Filtrar solo conductores activos
+        self.fields['conductor'].queryset = Conductor.objects.filter(activo=True)
+        self.fields['conductor'].label = 'Conductor (Solo activos)'
+        self.fields['conductor'].help_text = 'Solo se muestran los conductores en estado activo'
+        
+        # Establecer fecha mínima para fecha de salida (no puede ser en el pasado)
+        self.fields['fecha_salida'].widget.attrs['min'] = ahora_iso
+        
+        # Si estamos editando un viaje existente, establecer min de fecha_llegada basado en fecha_salida
+        if self.instance.pk and self.instance.fecha_salida:
+            fecha_salida = self.instance.fecha_salida
+            # La fecha de llegada mínima es la de salida + 1 minuto
+            fecha_llegada_min = (fecha_salida + timedelta(minutes=1)).strftime('%Y-%m-%dT%H:%M')
+            self.fields['fecha_llegada_estimada'].widget.attrs['min'] = fecha_llegada_min
+        else:
+            # En CREATE, la fecha de llegada mínima es ahora + 1 minuto
+            fecha_llegada_min = (ahora + timedelta(minutes=1)).strftime('%Y-%m-%dT%H:%M')
+            self.fields['fecha_llegada_estimada'].widget.attrs['min'] = fecha_llegada_min
+    
     def clean(self):
         cleaned_data = super().clean()
+        from django.utils import timezone
+        
+        # Validar fechas de salida y llegada
+        fecha_salida = cleaned_data.get('fecha_salida')
+        fecha_llegada_estimada = cleaned_data.get('fecha_llegada_estimada')
+        
+        # Validar que la fecha de salida no sea en el pasado
+        if fecha_salida:
+            ahora = timezone.now()
+            if fecha_salida < ahora:
+                raise forms.ValidationError({
+                    'fecha_salida': 'La fecha y hora de salida no puede ser anterior al día y hora actual.'
+                })
+        
+        # Validar que la fecha de llegada sea posterior a la de salida
+        if fecha_salida and fecha_llegada_estimada:
+            if fecha_llegada_estimada <= fecha_salida:
+                raise forms.ValidationError({
+                    'fecha_llegada_estimada': 'La fecha y hora de llegada debe ser posterior a la fecha y hora de salida.'
+                })
         
         # Validar que se hayan proporcionado coordenadas de origen
         if not cleaned_data.get('latitud_origen') or not cleaned_data.get('longitud_origen'):
@@ -544,11 +594,18 @@ def crear_pasajero_desde_viaje(request, pk):
         pasaporte = request.POST.get('pasaporte', '').strip() or None
         
         # Verificar si el documento ya existe en este viaje
-        documento_existente = ViajePasajero.objects.filter(
-            viaje=viaje
-        ).filter(
-            Q(pasajero__rut=rut) | Q(pasajero__pasaporte=pasaporte)
-        ).exists()
+        # Solo buscar si tiene un valor válido
+        documento_existente = False
+        if rut:
+            documento_existente = ViajePasajero.objects.filter(
+                viaje=viaje,
+                pasajero__rut=rut
+            ).exists()
+        elif pasaporte:
+            documento_existente = ViajePasajero.objects.filter(
+                viaje=viaje,
+                pasajero__pasaporte=pasaporte
+            ).exists()
         
         if documento_existente:
             pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
@@ -564,13 +621,30 @@ def crear_pasajero_desde_viaje(request, pk):
         form = PasajeroForm(request.POST)
         if form.is_valid():
             try:
+                # Obtener datos adicionales del formulario antes de crear
+                asiento = request.POST.get('asiento', '').strip()
+                observaciones = request.POST.get('observaciones', '').strip()
+                
+                # Validar que el asiento no esté duplicado en este viaje
+                if asiento:
+                    asiento_duplicado = ViajePasajero.objects.filter(
+                        viaje=viaje,
+                        asiento=asiento
+                    ).exists()
+                    
+                    if asiento_duplicado:
+                        pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
+                        context = {
+                            'viaje': viaje,
+                            'pasajeros_en_viaje': pasajeros_en_viaje,
+                            'pasajero_form': form,
+                        }
+                        messages.error(request, f'El asiento "{asiento}" ya está asignado a otro pasajero en este viaje.')
+                        return render(request, 'viajes/viaje_pasajeros.html', context)
+                
                 with transaction.atomic():
                     # Crear el pasajero
                     pasajero = form.save()
-                    
-                    # Obtener datos adicionales del formulario
-                    asiento = request.POST.get('asiento', '').strip()
-                    observaciones = request.POST.get('observaciones', '').strip()
                     
                     # Verificar capacidad del bus
                     if viaje.get_pasajeros_count() >= viaje.bus.capacidad_pasajeros:

@@ -430,14 +430,6 @@
                             </h6>
                         </div>
                         <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-12 mb-3">
-                                    <label for="{{ form.fecha_llegada_real.id_for_label }}" class="form-label">
-                                        Fecha y Hora Real de Llegada
-                                    </label>
-                                    {{ form.fecha_llegada_real }}
-                                </div>
-                            </div>
                             
                             {{ form.estado }}
                             
@@ -949,6 +941,60 @@ document.addEventListener('DOMContentLoaded', function() {
             searchResults.classList.remove('show');
         }
     });
+    
+    // Sincronizar fechas de salida y llegada
+    function inicializarSincronizacionFechas() {
+        const fechaSalidaInput = document.getElementById('id_fecha_salida');
+        const fechaLlegadaInput = document.getElementById('id_fecha_llegada_estimada');
+        
+        if (fechaSalidaInput && fechaLlegadaInput) {
+            // Función para sumar minutos a un string datetime-local
+            function sumarMinutosDatetimeLocal(datetimeLocalStr, minutos) {
+                // Formato: "2025-12-24T23:29"
+                const fecha = new Date(datetimeLocalStr + ':00');
+                fecha.setMinutes(fecha.getMinutes() + minutos);
+                
+                // Formato de retorno: "2025-12-24T23:30"
+                const año = fecha.getFullYear();
+                const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                const dia = String(fecha.getDate()).padStart(2, '0');
+                const hora = String(fecha.getHours()).padStart(2, '0');
+                const minuto = String(fecha.getMinutes()).padStart(2, '0');
+                
+                return `${año}-${mes}-${dia}T${hora}:${minuto}`;
+            }
+            
+            // Función para actualizar el mínimo de la fecha de llegada
+            function actualizarMinFechaLlegada() {
+                if (fechaSalidaInput.value) {
+                    // Calcular el mínimo (fecha de salida + 1 minuto)
+                    const minFechaLlegada = sumarMinutosDatetimeLocal(fechaSalidaInput.value, 1);
+                    
+                    // Establecer el atributo min en el input
+                    fechaLlegadaInput.setAttribute('min', minFechaLlegada);
+                    
+                    // Si la fecha de llegada actual es menor que el nuevo mínimo, limpiarla
+                    if (fechaLlegadaInput.value && fechaLlegadaInput.value < minFechaLlegada) {
+                        fechaLlegadaInput.value = '';
+                    }
+                }
+            }
+            
+            // Ejecutar al cargar la página (incluyendo ediciones)
+            actualizarMinFechaLlegada();
+            
+            // Ejecutar cada vez que cambie la fecha de salida
+            fechaSalidaInput.addEventListener('change', actualizarMinFechaLlegada);
+            fechaSalidaInput.addEventListener('input', actualizarMinFechaLlegada);
+        }
+    }
+    
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarSincronizacionFechas);
+    } else {
+        inicializarSincronizacionFechas();
+    }
 });
 </script>
 {% endblock %}

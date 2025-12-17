@@ -8,6 +8,7 @@ from django.forms import ModelForm
 from django import forms
 from django.utils import timezone
 from django.db import models
+import re
 from .models import Conductor, Lugar, Pasajero
 from .permissions import admin_required, usuario_or_admin_required
 
@@ -40,7 +41,7 @@ class ConductorForm(ModelForm):
         widgets = {
             'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del conductor'}),
             'apellido': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellido del conductor'}),
-            'cedula': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de cédula'}),
+            'cedula': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'RUT: 12345678-9', 'style': 'text-transform: uppercase;'}),
             'cedula_frontal': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*,.pdf'}),
             'cedula_trasera': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*,.pdf'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'correo@ejemplo.com'}),
@@ -53,16 +54,107 @@ class ConductorForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        
+        # Si es una edición (tiene pk), los documentos son opcionales
+        # Si es una creación nueva, los documentos son obligatorios
+        if self.instance.pk:
+            self.fields['cedula_frontal'].required = False
+            self.fields['cedula_trasera'].required = False
+            self.fields['licencia_conducir_frontal'].required = False
+            self.fields['licencia_conducir_trasera'].required = False
+        else:
+            self.fields['cedula_frontal'].required = True
+            self.fields['cedula_trasera'].required = True
+            self.fields['licencia_conducir_frontal'].required = True
+            self.fields['licencia_conducir_trasera'].required = True
+        
+        # Agregar ayuda para el campo de RUT
+        self.fields['cedula'].help_text = '<strong>Formato de RUT (Chile):</strong><br>' \
+                                          '• Formato: <code>12345678-9</code> o <code>1234567-K</code><br>' \
+                                          '• 7 u 8 dígitos • Guión (-) • Dígito verificador (0-9 o K)<br>' \
+                                          '<i class="fas fa-exclamation-circle"></i> <strong>Importante:</strong> El RUT se validará automáticamente.'
+        
         if self.instance and self.instance.licencias:
             self.initial['licencias'] = self.instance.licencias.split(',')
+        # Establecer el máximo de fecha de contratación al día actual
+        from datetime import date
+        today_str = date.today().isoformat()
+        self.fields['fecha_contratacion'].widget.attrs['max'] = today_str
+        # Mostrar fecha actual en edición
+        if self.instance and self.instance.pk and self.instance.fecha_contratacion:
+            self.fields['fecha_contratacion'].initial = self.instance.fecha_contratacion
+
+    def clean_cedula(self):
+        cedula = self.cleaned_data.get('cedula', '').upper().strip()
+        
+        if cedula:
+            # Validar formato de RUT chileno: XXXXXXXX-X o XXXXXXX-X o XXXXXXX-K, etc.
+            patron_rut = re.compile(r'^(\d{7,8})-([0-9K])$')
+            
+            if not patron_rut.match(cedula):
+                raise forms.ValidationError(
+                    'Formato de RUT inválido (Chile). Debe ser: 12345678-9 o 1234567-K'
+                )
+            
+            # Extraer el número base y dígito verificador
+            partes = cedula.split('-')
+            numero = partes[0]
+            digito_ingresado = partes[1]
+            
+            # Calcular el dígito verificador correcto
+            digito_calculado = self._calcular_digito_verificador(numero)
+            
+            # Comparar dígitos
+            if digito_ingresado != digito_calculado:
+                raise forms.ValidationError(
+                    f'RUT inválido. El dígito verificador correcto es: {digito_calculado}'
+                )
+        
+        return cedula.upper()
+    
+    @staticmethod
+    def _calcular_digito_verificador(numero):
+        """Calcula el dígito verificador de un RUT chileno"""
+        secuencia = [2, 3, 4, 5, 6, 7]
+        suma = 0
+        contador = 0
+        
+        # Procesar de derecha a izquierda
+        for digito in reversed(numero):
+            suma += int(digito) * secuencia[contador % 6]
+            contador += 1
+        
+        digito_verificador = 11 - (suma % 11)
+        
+        if digito_verificador == 11:
+            return '0'
+        elif digito_verificador == 10:
+            return 'K'
+        else:
+            return str(digito_verificador)
 
     def clean_licencias(self):
         licencias = self.cleaned_data.get('licencias', [])
         return ','.join(licencias)
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        fecha_contratacion = cleaned_data.get('fecha_contratacion')
+        
+        if fecha_contratacion:
+            from datetime import date
+            if fecha_contratacion > date.today():
+                raise forms.ValidationError({'fecha_contratacion': 'La fecha de contratación no puede ser superior al día actual.'})
+        
+        return cleaned_data
 
     def save(self, commit=True):
         instance = super().save(commit=False)
         instance.licencias = self.cleaned_data.get('licencias', '')
+        # Asegurar que el RUT esté en formato correcto al guardar
+        cedula = self.cleaned_data.get('cedula', '')
+        if cedula:
+            instance.cedula = cedula.upper()
         if commit:
             instance.save()
         return instance
@@ -306,6 +398,12 @@ class ConductorCreateView(CreateView):
     form_class = ConductorForm
     template_name = 'core/conductor_form.html'
     success_url = reverse_lazy('conductor_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from datetime import date
+        context['today'] = date.today()
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, f'Conductor {form.instance.nombre} {form.instance.apellido} creado exitosamente.')
@@ -318,6 +416,12 @@ class ConductorUpdateView(UpdateView):
     form_class = ConductorForm
     template_name = 'core/conductor_form.html'
     success_url = reverse_lazy('conductor_list')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from datetime import date
+        context['today'] = date.today()
+        return context
 
     def form_valid(self, form):
         messages.success(self.request, f'Conductor {form.instance.nombre} {form.instance.apellido} actualizado exitosamente.')

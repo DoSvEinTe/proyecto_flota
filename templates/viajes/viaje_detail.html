@@ -587,8 +587,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         </h3>
                         <small class="text-muted">Pasajeros Registrados</small>
                     </div>
-                    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-users me-1"></i>Ver Lista
+                    <a href="{% url 'viajes:generar_pdf_pasajeros' viaje.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-file-pdf me-1"></i>PDF de Pasajeros
                     </a>
                 </div>
                 
