@@ -100,6 +100,20 @@
     .input-group-text {
         border-radius: 8px 0 0 8px;
     }
+
+    /* Estilo mejorado para botón de búsqueda en header */
+    .btn-outline-light:hover {
+        background-color: #0dcaf0 !important;
+        color: white !important;
+        border-color: white !important;
+    }
+
+    .btn-outline-light:focus {
+        background-color: #0dcaf0 !important;
+        color: white !important;
+        border-color: white !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 202, 240, 0.5) !important;
+    }
 </style>
 {% endblock %}
 
@@ -148,124 +162,168 @@
     </div>
     <div class="collapse show" id="crearPasajeroForm">
         <div class="card-body">
-            <form method="post" action="{% url 'viajes:crear_pasajero_desde_viaje' viaje.pk %}">
-                {% csrf_token %}
-                
-                <!-- Nombre Completo -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-user"></i></span>
-                            {{ pasajero_form.nombre_completo }}
-                        </div>
-                        {% if pasajero_form.nombre_completo.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in pasajero_form.nombre_completo.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-
-                <!-- Tipo de Documento -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="doc-type-selector">
-                            {% for radio in pasajero_form.tipo_documento %}
-                                <div class="doc-type-btn-wrapper">
-                                    {{ radio.tag }}
-                                    <label class="btn" for="{{ radio.id_for_label }}">
-                                        <i class="fas {% if radio.choice_value == 'rut' %}fa-id-card{% else %}fa-passport{% endif %}"></i>
-                                        {{ radio.choice_label }}
-                                    </label>
+            <div class="row">
+                <!-- Formulario (izquierda) -->
+                <div class="col-md-8">
+                    <form method="post" action="{% url 'viajes:crear_pasajero_desde_viaje' viaje.pk %}">
+                        {% csrf_token %}
+                        
+                        <!-- Nombre Completo -->
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    {{ pasajero_form.nombre_completo }}
                                 </div>
-                            {% endfor %}
+                                {% if pasajero_form.nombre_completo.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in pasajero_form.nombre_completo.errors %}
+                                            <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- RUT y Correo -->
-                <div class="row mb-3">
-                    <div class="col-md-6" id="rut_field">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-id-card"></i></span>
-                            {{ pasajero_form.rut }}
-                        </div>
-                        {% if pasajero_form.rut.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in pasajero_form.rut.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
-                                {% endfor %}
+                        <!-- Tipo de Documento -->
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <div class="doc-type-selector">
+                                    {% for radio in pasajero_form.tipo_documento %}
+                                        <div class="doc-type-btn-wrapper">
+                                            {{ radio.tag }}
+                                            <label class="btn" for="{{ radio.id_for_label }}">
+                                                <i class="fas {% if radio.choice_value == 'rut' %}fa-id-card{% else %}fa-passport{% endif %}"></i>
+                                                {{ radio.choice_label }}
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
                             </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6" id="pasaporte_field" style="display: none;">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-passport"></i></span>
-                            {{ pasajero_form.pasaporte }}
                         </div>
-                        {% if pasajero_form.pasaporte.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in pasajero_form.pasaporte.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            {{ pasajero_form.correo }}
-                        </div>
-                        {% if pasajero_form.correo.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in pasajero_form.correo.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
 
-                <!-- Teléfono y Asiento -->
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                            {{ pasajero_form.telefono }}
-                        </div>
-                        {% if pasajero_form.telefono.errors %}
-                            <div class="text-danger mt-1">
-                                {% for error in pasajero_form.telefono.errors %}
-                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
-                                {% endfor %}
+                        <!-- RUT y Correo -->
+                        <div class="row mb-2">
+                            <div class="col-md-6" id="rut_field">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                                    {{ pasajero_form.rut }}
+                                </div>
+                                {% if pasajero_form.rut.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in pasajero_form.rut.errors %}
+                                            <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-chair"></i></span>
-                            <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Asiento">
+                            <div class="col-md-6" id="pasaporte_field" style="display: none;">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-passport"></i></span>
+                                    {{ pasajero_form.pasaporte }}
+                                </div>
+                                {% if pasajero_form.pasaporte.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in pasajero_form.pasaporte.errors %}
+                                            <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    {{ pasajero_form.correo }}
+                                </div>
+                                {% if pasajero_form.correo.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in pasajero_form.correo.errors %}
+                                            <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Observaciones -->
-                <div class="row mb-3">
-                    <div class="col-12">
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-comment"></i></span>
-                            <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Observaciones"></textarea>
+                        <!-- Teléfono y Asiento -->
+                        <div class="row mb-2">
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    {{ pasajero_form.telefono }}
+                                </div>
+                                {% if pasajero_form.telefono.errors %}
+                                    <div class="text-danger mt-1">
+                                        {% for error in pasajero_form.telefono.errors %}
+                                            <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-chair"></i></span>
+                                    <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Asiento">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-comment"></i></span>
+                                    <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Observaciones"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Crear Pasajero
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- Recuadro de Formato RUT (derecha) -->
+                <div class="col-md-4">
+                    <div style="background-color: #f8f9fa; border-radius: 6px; padding: 12px; border: 1px solid #dee2e6;">
+                        <div style="margin-bottom: 12px;">
+                            <h6 style="color: #0d6efd; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem;"><i class="fas fa-id-card me-2"></i>Documentos</h6>
+                        </div>
+                        
+                        <!-- Sección RUT -->
+                        <div style="background-color: #e8e9ea; border-radius: 5px; padding: 8px 10px; margin-bottom: 10px;">
+                            <p class="mb-0" style="color: #383d41; font-size: 0.85rem;"><strong><i class="fas fa-info-circle me-1"></i>Formato RUT:</strong></p>
+                        </div>
+                        
+                        <div class="mb-2" style="background-color: #cfe2ff; border-radius: 5px; padding: 8px 10px;">
+                            <h6 style="color: #084298; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Estándar</h6>
+                            <p class="mb-1 small" style="color: #084298; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #0c5460; font-weight: 600; font-size: 0.8rem;">12345678-9</code></p>
+                            <p class="small" style="color: #084298; margin-bottom: 0; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>8 dígitos • Guión • (0-9) o K</p>
+                        </div>
+                        
+                        <div class="mb-3" style="background-color: #cfe2ff; border-radius: 5px; padding: 8px 10px;">
+                            <h6 style="color: #084298; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Alternativo</h6>
+                            <p class="mb-1 small" style="color: #084298; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #155724; font-weight: 600; font-size: 0.8rem;">1234567-K</code></p>
+                            <p class="small" style="color: #084298; margin-bottom: 3px; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>7 dígitos • Guión • (0-9) o K</p>
+                            <p class="small" style="color: #084298; margin-bottom: 0; font-size: 0.7rem; font-style: italic;"><strong>K:</strong> dígito verificador 10</p>
+                        </div>
+                        
+                        <!-- Sección Pasaporte -->
+                        <div style="background-color: #e8e9ea; border-radius: 5px; padding: 8px 10px; margin-bottom: 10px;">
+                            <p class="mb-0" style="color: #383d41; font-size: 0.85rem;"><strong><i class="fas fa-passport me-1"></i>Pasaporte:</strong></p>
+                        </div>
+                        
+                        <div style="background-color: #d1e7dd; border-radius: 5px; padding: 8px 10px;">
+                            <h6 style="color: #0f5132; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Global</h6>
+                            <p class="mb-1 small" style="color: #0f5132; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #155724; font-weight: 600; font-size: 0.8rem;">AB123456</code></p>
+                            <p class="small" style="color: #0f5132; margin-bottom: 3px; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>Letras, números, guiones, espacios</p>
+                            <p class="small" style="color: #0f5132; margin-bottom: 0; font-size: 0.7rem; font-style: italic;"><strong>Ingresa:</strong> como aparece en tu pasaporte</p>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Crear Pasajero
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
@@ -529,9 +587,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (crearPasajeroForm) {
         const formErrors = crearPasajeroForm.querySelectorAll('.text-danger');
         if (formErrors.length > 0) {
-            const bsCollapse = new bootstrap.Collapse(crearPasajeroForm, {
-                show: true
-            });
+            // Asegurar que el collapse esté abierto
+            crearPasajeroForm.classList.add('show');
+            // También mantener el botón en estado "arriba"
+            const toggleIcon = document.querySelector('[data-bs-target="#crearPasajeroForm"] i');
+            if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-down');
+                toggleIcon.classList.add('fa-chevron-up');
+            }
+            // Scroll hacia el formulario para que sea visible
+            crearPasajeroForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     }
 });

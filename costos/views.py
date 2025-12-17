@@ -314,17 +314,50 @@ class CostosViajeDeleteView(LoginRequiredMixin, DeleteView):
     template_name = 'costos/costos_confirm_delete.html'
     success_url = reverse_lazy('costos:gestion')
 
+    def post(self, request, *args, **kwargs):
+        """Aceptar POST del formulario del modal."""
+        return self.delete(request, *args, **kwargs)
+
     def delete(self, request, *args, **kwargs):
         costos_viaje = self.get_object()
-        # Eliminar puntos de recarga asociados a este registro de costos
-        costos_viaje.puntos_recarga.all().delete()
-        # Eliminar peajes asociados a este registro de costos
-        costos_viaje.peajes.all().delete()
-        # Eliminar mantenimientos solo si no están asociados a otros costos
-        for mantenimiento in costos_viaje.mantenimientos.all():
-            if mantenimiento.costos_viaje.count() == 1:
-                mantenimiento.delete()
-        messages.success(request, 'Costos del viaje y registros asociados eliminados exitosamente.')
+        viaje = costos_viaje.viaje
+        
+        # Si es un viaje de ida y vuelta, obtener también los costos del viaje de vuelta
+        costos_vuelta = None
+        if viaje.viaje_relacionado:
+            try:
+                costos_vuelta = CostosViaje.objects.get(viaje=viaje.viaje_relacionado)
+            except CostosViaje.DoesNotExist:
+                costos_vuelta = None
+        
+        # Función auxiliar para eliminar costos
+        def eliminar_costos(costos):
+            costos.puntos_recarga.all().delete()
+            costos.peajes_costos.all().delete()
+            for mantenimiento in costos.mantenimientos.all():
+                if mantenimiento.costos_viaje.count() == 1:
+                    mantenimiento.delete()
+        
+        # Eliminar costos de la ida
+        eliminar_costos(costos_viaje)
+        
+        # Eliminar costos de la vuelta si existen
+        if costos_vuelta:
+            eliminar_costos(costos_vuelta)
+            # Guardar la referencia antes de eliminar
+            viaje_vuelta = costos_vuelta.viaje
+            costos_vuelta.delete()
+            # Devolver viaje de vuelta a "En Curso"
+            viaje_vuelta.estado = 'en_curso'
+            viaje_vuelta.save()
+            messages.success(request, 'Costos de IDA y VUELTA eliminados exitosamente. Los viajes han sido devueltos a "En Curso".')
+        else:
+            messages.success(request, 'Costos del viaje eliminados exitosamente.')
+        
+        # Devolver viaje de ida a "En Curso"
+        viaje.estado = 'en_curso'
+        viaje.save()
+        
         return super().delete(request, *args, **kwargs)
 
 
@@ -1620,6 +1653,40 @@ def registrar_ida_vuelta(request, viaje_ida_id):
             }
             return render(request, 'costos/registrar_ida_vuelta.html', context)
         
+        # Validar que los kilometrajes no sean menores al kilometraje de ingreso del bus
+        try:
+            ida_km_inicial = int(request.POST.get('ida_km_inicial', 0))
+            ida_km_final = int(request.POST.get('ida_km_final', 0))
+            vuelta_km_inicial = int(request.POST.get('vuelta_km_inicial', 0))
+            vuelta_km_final = int(request.POST.get('vuelta_km_final', 0))
+            
+            bus_ida = viaje_ida.bus
+            bus_vuelta = viaje_vuelta.bus
+            
+            if bus_ida.kilometraje_ingreso and ida_km_inicial < bus_ida.kilometraje_ingreso:
+                messages.error(request, f'❌ El kilometraje inicial de IDA ({ida_km_inicial}) no puede ser menor al del bus ({bus_ida.kilometraje_ingreso}).')
+                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
+                return render(request, 'costos/registrar_ida_vuelta.html', context)
+            
+            if bus_ida.kilometraje_ingreso and ida_km_final < bus_ida.kilometraje_ingreso:
+                messages.error(request, f'❌ El kilometraje final de IDA ({ida_km_final}) no puede ser menor al del bus ({bus_ida.kilometraje_ingreso}).')
+                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
+                return render(request, 'costos/registrar_ida_vuelta.html', context)
+            
+            if bus_vuelta.kilometraje_ingreso and vuelta_km_inicial < bus_vuelta.kilometraje_ingreso:
+                messages.error(request, f'❌ El kilometraje inicial de VUELTA ({vuelta_km_inicial}) no puede ser menor al del bus ({bus_vuelta.kilometraje_ingreso}).')
+                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
+                return render(request, 'costos/registrar_ida_vuelta.html', context)
+            
+            if bus_vuelta.kilometraje_ingreso and vuelta_km_final < bus_vuelta.kilometraje_ingreso:
+                messages.error(request, f'❌ El kilometraje final de VUELTA ({vuelta_km_final}) no puede ser menor al del bus ({bus_vuelta.kilometraje_ingreso}).')
+                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
+                return render(request, 'costos/registrar_ida_vuelta.html', context)
+        except (ValueError, TypeError):
+            messages.error(request, '❌ Los kilometrajes deben ser números enteros válidos.')
+            context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
+            return render(request, 'costos/registrar_ida_vuelta.html', context)
+        
         try:
             from django.db import transaction
             
@@ -1628,8 +1695,8 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                 if not costos_ida:
                     costos_ida = CostosViaje.objects.create(
                         viaje=viaje_ida,
-                        km_inicial=Decimal(request.POST.get('ida_km_inicial', 0)),
-                        km_final=Decimal(request.POST.get('ida_km_final', 0)),
+                        km_inicial=int(request.POST.get('ida_km_inicial', 0)),
+                        km_final=int(request.POST.get('ida_km_final', 0)),
                         observaciones=request.POST.get('ida_observaciones', '')
                     )
                 
@@ -1761,8 +1828,8 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                 if not costos_vuelta:
                     costos_vuelta = CostosViaje.objects.create(
                         viaje=viaje_vuelta,
-                        km_inicial=Decimal(request.POST.get('vuelta_km_inicial', 0)),
-                        km_final=Decimal(request.POST.get('vuelta_km_final', 0)),
+                        km_inicial=int(request.POST.get('vuelta_km_inicial', 0)),
+                        km_final=int(request.POST.get('vuelta_km_final', 0)),
                         observaciones=request.POST.get('vuelta_observaciones', '')
                     )
                 
@@ -1898,9 +1965,23 @@ def registrar_ida_vuelta(request, viaje_ida_id):
             import traceback
             print(traceback.format_exc())
     
+    # Obtener el km_inicial mínimo del kilometraje de ingreso del bus
+    km_inicial_minimo = 0
+    bus = viaje_ida.bus
+    if bus:
+        km_inicial_minimo = bus.kilometraje_ingreso
+    
+    # Si ya existen costos para ida, usar su km_final como mínimo para vuelta_km_inicial
+    km_vuelta_inicial_minimo = km_inicial_minimo
+    if costos_ida and costos_ida.km_final:
+        km_vuelta_inicial_minimo = costos_ida.km_final
+    
     context = {
         'viaje_ida': viaje_ida,
         'viaje_vuelta': viaje_vuelta,
+        'km_inicial_minimo': km_inicial_minimo,
+        'km_vuelta_inicial_minimo': km_vuelta_inicial_minimo,
+        'costos_ida': costos_ida,
     }
     
     return render(request, 'costos/registrar_ida_vuelta.html', context)
@@ -1916,28 +1997,44 @@ def registrar_costos_completo(request, viaje_id):
     costos_existentes = CostosViaje.objects.filter(viaje=viaje).first()
     es_edicion = costos_existentes is not None
     
+    form = None  # Inicializar como None
+    
     if request.method == 'POST':
-        if es_edicion:
-            form = CostosViajeFormCompleto(request.POST, instance=costos_existentes)
-        else:
-            form = CostosViajeFormCompleto(request.POST)
-        
-        if form.is_valid():
+        try:
             # Crear o actualizar el registro de costos
-            costos_viaje = form.save(commit=False)
-            if not es_edicion:
-                costos_viaje.viaje = viaje
+            if es_edicion:
+                costos_viaje = costos_existentes
+            else:
+                # En creación, crear instancia directamente
+                costos_viaje = CostosViaje(viaje=viaje)
+            
+            # Asignar datos directamente del POST sin usar form.save()
+            costos_viaje.km_inicial = request.POST.get('km_inicial') or None
+            costos_viaje.km_final = request.POST.get('km_final') or None
+            combustible = request.POST.get('combustible', '0').strip()
+            costos_viaje.combustible = int(combustible) if combustible.isdigit() else 0
+            
+            peajes = request.POST.get('peajes', '0').strip()
+            costos_viaje.peajes = int(peajes) if peajes.isdigit() else 0
+            
+            otros_costos = request.POST.get('otros_costos', '0').strip()
+            costos_viaje.otros_costos = int(otros_costos) if otros_costos.isdigit() else 0
+            
+            observaciones = request.POST.get('observaciones', '').strip()
+            if observaciones:
+                costos_viaje.observaciones = observaciones
+            
             costos_viaje.save()
             
             # Si es edición, eliminar registros antiguos antes de crear nuevos
             if es_edicion:
                 costos_viaje.puntos_recarga.all().delete()
-                costos_viaje.viaje.peajes.filter(costos_viaje=costos_viaje).delete()
+                costos_viaje.peajes_costos.all().delete()
                 costos_viaje.mantenimientos.clear()
             
             # Procesar mantenimientos
             mantenimientos_list = []
-            bus = costos_viaje.viaje.bus
+            bus = viaje.bus
             for key in request.POST:
                 if key.startswith('nuevo_mant_fecha_'):
                     idx = key.split('_')[-1]
@@ -2107,9 +2204,11 @@ def registrar_costos_completo(request, viaje_id):
             else:
                 messages.success(request, 'Costos del viaje registrados exitosamente. El viaje ha sido marcado como COMPLETADO.')
             return redirect('costos:gestion')
-        else:
-            messages.error(request, 'Por favor corrija los errores en el formulario.')
-    else:
+        except Exception as e:
+            messages.error(request, f'Error al procesar los costos: {str(e)}')
+    
+    # Inicializar el formulario para mostrar (GET o después de error en POST)
+    if form is None:
         if es_edicion:
             form = CostosViajeFormCompleto(instance=costos_existentes)
         else:
@@ -2121,90 +2220,93 @@ def registrar_costos_completo(request, viaje_id):
     mantenimientos_existentes = []
     otros_costos_existentes = []
     
-    if es_edicion:
-        puntos_recarga_existentes = list(costos_existentes.puntos_recarga.all().values(
-            'id', 'orden', 'ubicacion', 'kilometraje', 'litros_cargados', 
-            'precio_combustible', 'observaciones'
-        ))
-        # Formatear números para mostrar sin decimales innecesarios y extraer fecha
-        for punto in puntos_recarga_existentes:
-            if punto['kilometraje']:
-                km = float(punto['kilometraje'])
-                punto['kilometraje'] = int(km) if km == int(km) else km
-            if punto['litros_cargados']:
-                litros = float(punto['litros_cargados'])
-                punto['litros_cargados'] = int(litros) if litros == int(litros) else litros
-            if punto['precio_combustible']:
-                precio = float(punto['precio_combustible'])
-                punto['precio_combustible'] = int(precio) if precio == int(precio) else precio
+    if es_edicion and costos_existentes and costos_existentes.viaje:
+        try:
+            puntos_recarga_existentes = list(costos_existentes.puntos_recarga.all().values(
+                'id', 'orden', 'ubicacion', 'kilometraje', 'litros_cargados', 
+                'precio_combustible', 'observaciones'
+            ))
+            # Formatear números para mostrar sin decimales innecesarios y extraer fecha
+            for punto in puntos_recarga_existentes:
+                if punto['kilometraje']:
+                    km = float(punto['kilometraje'])
+                    punto['kilometraje'] = int(km) if km == int(km) else km
+                if punto['litros_cargados']:
+                    litros = float(punto['litros_cargados'])
+                    punto['litros_cargados'] = int(litros) if litros == int(litros) else litros
+                if punto['precio_combustible']:
+                    precio = float(punto['precio_combustible'])
+                    punto['precio_combustible'] = int(precio) if precio == int(precio) else precio
+                
+                # Extraer fecha de las observaciones
+                punto['fecha_pago'] = ''
+                if punto['observaciones'] and 'Fecha de pago:' in punto['observaciones']:
+                    import re
+                    match = re.search(r'Fecha de pago:\s*(\d{4}-\d{2}-\d{2})', punto['observaciones'])
+                    if match:
+                        punto['fecha_pago'] = match.group(1)
+                if punto['precio_combustible']:
+                    precio = float(punto['precio_combustible'])
+                    punto['precio_combustible'] = int(precio) if precio == int(precio) else precio
             
-            # Extraer fecha de las observaciones
-            punto['fecha_pago'] = ''
-            if punto['observaciones'] and 'Fecha de pago:' in punto['observaciones']:
-                import re
-                match = re.search(r'Fecha de pago:\s*(\d{4}-\d{2}-\d{2})', punto['observaciones'])
-                if match:
-                    punto['fecha_pago'] = match.group(1)
-            if punto['precio_combustible']:
-                precio = float(punto['precio_combustible'])
-                punto['precio_combustible'] = int(precio) if precio == int(precio) else precio
+            peajes_existentes = list(costos_existentes.peajes_costos.all().values(
+                'id', 'lugar', 'monto', 'fecha_pago', 'comprobante'
+            ))
+            # Formatear monto de peajes
+            for peaje in peajes_existentes:
+                if peaje['monto']:
+                    monto = float(peaje['monto'])
+                    peaje['monto'] = int(monto) if monto == int(monto) else monto
+                
+            mantenimientos_existentes = list(costos_existentes.mantenimientos.all().values(
+                'id', 'fecha_mantenimiento', 'tipo', 'descripcion', 'costo', 
+                'kilometraje', 'proveedor', 'taller', 'observaciones'
+            ))
             
-        peajes_existentes = list(costos_existentes.viaje.peajes.all().values(
-            'id', 'lugar', 'monto', 'fecha_pago', 'comprobante'
-        ))
-        # Formatear monto de peajes
-        for peaje in peajes_existentes:
-            if peaje['monto']:
-                monto = float(peaje['monto'])
-                peaje['monto'] = int(monto) if monto == int(monto) else monto
+            # Parsear otros costos desde observaciones
+            observaciones_limpias = ""
+            if costos_existentes.observaciones and 'OTROS COSTOS:' in costos_existentes.observaciones:
+                lineas = costos_existentes.observaciones.split('\n')
+                capturando = False
+                lineas_sin_otros_costos = []
+                
+                for linea in lineas:
+                    if 'OTROS COSTOS:' in linea:
+                        capturando = True
+                        continue
+                    if capturando and linea.strip():
+                        # Formato: TIPO: Descripción - $Monto
+                        if ':' in linea and '-' in linea and '$' in linea:
+                            try:
+                                partes = linea.split(':', 1)
+                                tipo = partes[0].strip()
+                                resto = partes[1].split('-')
+                                descripcion = resto[0].strip()
+                                monto_str = resto[1].strip().replace('$', '').replace(',', '')
+                                monto = float(monto_str)
+                                otros_costos_existentes.append({
+                                    'tipo': tipo,
+                                    'descripcion': descripcion,
+                                    'monto': monto
+                                })
+                            except:
+                                pass
+                    else:
+                        if not capturando:
+                            lineas_sin_otros_costos.append(linea)
+                
+                observaciones_limpias = '\n'.join(lineas_sin_otros_costos).strip()
+            else:
+                observaciones_limpias = costos_existentes.observaciones if costos_existentes.observaciones else ""
             
-        mantenimientos_existentes = list(costos_existentes.mantenimientos.all().values(
-            'id', 'fecha_mantenimiento', 'tipo', 'descripcion', 'costo', 
-            'kilometraje', 'proveedor', 'taller', 'observaciones'
-        ))
-        
-        # Parsear otros costos desde observaciones
-        observaciones_limpias = ""
-        if costos_existentes.observaciones and 'OTROS COSTOS:' in costos_existentes.observaciones:
-            lineas = costos_existentes.observaciones.split('\n')
-            capturando = False
-            lineas_sin_otros_costos = []
-            
-            for linea in lineas:
-                if 'OTROS COSTOS:' in linea:
-                    capturando = True
-                    continue
-                if capturando and linea.strip():
-                    # Formato: TIPO: Descripción - $Monto
-                    if ':' in linea and '-' in linea and '$' in linea:
-                        try:
-                            partes = linea.split(':', 1)
-                            tipo = partes[0].strip()
-                            resto = partes[1].split('-')
-                            descripcion = resto[0].strip()
-                            monto_str = resto[1].strip().replace('$', '').replace(',', '')
-                            monto = float(monto_str)
-                            otros_costos_existentes.append({
-                                'tipo': tipo,
-                                'descripcion': descripcion,
-                                'monto': monto
-                            })
-                        except:
-                            pass
-                else:
-                    if not capturando:
-                        lineas_sin_otros_costos.append(linea)
-            
-            observaciones_limpias = '\n'.join(lineas_sin_otros_costos).strip()
-        else:
-            observaciones_limpias = costos_existentes.observaciones if costos_existentes.observaciones else ""
-        
-        # Actualizar el form con observaciones limpias
-        if es_edicion:
-            form.initial['observaciones'] = observaciones_limpias
+            # Actualizar el form con observaciones limpias
+            if es_edicion:
+                form.initial['observaciones'] = observaciones_limpias
+        except Exception as e:
+            messages.warning(request, f'Advertencia al cargar datos anteriores: {str(e)}')
     
     context = {
-        'form': form, 
+        'form': form,
         'viaje': viaje,
         'es_edicion': es_edicion,
         'puntos_recarga_existentes': puntos_recarga_existentes,

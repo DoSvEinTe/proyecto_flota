@@ -82,6 +82,37 @@
                 </form>
             </div>
         </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-id-card me-2"></i>
+                    Formato de RUT
+                </h5>
+            </div>
+            <div class="card-body">
+                <div style="background-color: #e8e9ea; border-radius: 6px; padding: 12px 15px; margin-bottom: 15px;">
+                    <p class="mb-0" style="color: #383d41;"><strong><i class="fas fa-info-circle me-2"></i>Formato correcto del RUT:</strong></p>
+                </div>
+                
+                <div class="mb-3" style="background-color: #cfe2ff; border-color: #b6d4fe; border-radius: 6px; padding: 12px 15px;">
+                    <h6 style="color: #084298; margin-bottom: 8px;"><i class="fas fa-check me-2"></i>Formato Estándar</h6>
+                    <p class="mb-1 small" style="color: #084298;"><code style="background-color: #fff; padding: 6px 10px; border-radius: 4px; color: #0c5460; font-weight: 600;">12345678-9</code></p>
+                    <p class="small" style="color: #084298; margin-bottom: 0;"><i class="fas fa-arrow-right me-1"></i>8 dígitos • Guión (-) • Dígito verificador</p>
+                </div>
+                
+                <div class="mb-3" style="background-color: #cfe2ff; border-color: #b6d4fe; border-radius: 6px; padding: 12px 15px;">
+                    <h6 style="color: #084298; margin-bottom: 8px;"><i class="fas fa-check me-2"></i>Formato Alternativo</h6>
+                    <p class="mb-1 small" style="color: #084298;"><code style="background-color: #fff; padding: 6px 10px; border-radius: 4px; color: #155724; font-weight: 600;">1234567-K</code></p>
+                    <p class="small" style="color: #084298; margin-bottom: 0;"><i class="fas fa-arrow-right me-1"></i>7 dígitos • Guión (-) • Letra K o dígito</p>
+                </div>
+                
+                <div style="background-color: #fff3cd; border-color: #ffe69c; border-radius: 6px; padding: 12px 15px;">
+                    <h6 style="color: #664d03; margin-bottom: 8px;"><i class="fas fa-exclamation-triangle me-2"></i>Validación Automática</h6>
+                    <p class="mb-0 small" style="color: #664d03;">El RUT debe ingresar con el formato correcto. Verifica que incluyas el guión (-) en la posición correcta.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

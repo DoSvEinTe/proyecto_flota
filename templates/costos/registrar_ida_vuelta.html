@@ -221,13 +221,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Kilometraje Inicial <span class="text-danger">*</span></label>
-                                <input type="number" name="ida_km_inicial" class="form-control" step="0.01" min="0" required>
-                                <small class="text-muted">Kilometraje al inicio del viaje</small>
+                                <input type="number" id="ida_km_inicial" name="ida_km_inicial" class="form-control" step="0.01" min="{{ km_inicial_minimo }}" required>
+                                <small class="text-muted">Kilometraje al inicio del viaje (mínimo: {{ km_inicial_minimo }} km - km de ingreso del bus a la flota)</small>
+                                <div id="error_ida_km_inicial" class="text-danger small mt-1" style="display:none;"></div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Kilometraje Final <span class="text-danger">*</span></label>
-                                <input type="number" name="ida_km_final" class="form-control" step="0.01" min="0" required>
-                                <small class="text-muted">Kilometraje al finalizar el viaje</small>
+                                <input type="number" id="ida_km_final" name="ida_km_final" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al finalizar el viaje (debe ser ≥ km inicial)</small>
+                                <div id="error_ida_km_final" class="text-danger small mt-1" style="display:none;"></div>
                             </div>
                         </div>
                     </div>
@@ -400,13 +402,15 @@
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Kilometraje Inicial <span class="text-danger">*</span></label>
-                                <input type="number" name="vuelta_km_inicial" class="form-control" step="0.01" min="0" required>
-                                <small class="text-muted">Kilometraje al inicio del viaje</small>
+                                <input type="number" id="vuelta_km_inicial" name="vuelta_km_inicial" class="form-control" step="0.01" min="{{ km_vuelta_inicial_minimo }}" required>
+                                <small class="text-muted">Kilometraje al inicio del viaje (debe ser ≥ {{ km_vuelta_inicial_minimo }} km - km final de ida)</small>
+                                <div id="error_vuelta_km_inicial" class="text-danger small mt-1" style="display:none;"></div>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label fw-bold">Kilometraje Final <span class="text-danger">*</span></label>
-                                <input type="number" name="vuelta_km_final" class="form-control" step="0.01" min="0" required>
-                                <small class="text-muted">Kilometraje al finalizar el viaje</small>
+                                <input type="number" id="vuelta_km_final" name="vuelta_km_final" class="form-control" step="0.01" min="0" required>
+                                <small class="text-muted">Kilometraje al finalizar el viaje (debe ser ≥ km inicial de vuelta)</small>
+                                <div id="error_vuelta_km_final" class="text-danger small mt-1" style="display:none;"></div>
                             </div>
                         </div>
                     </div>
@@ -946,12 +950,139 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ==================== VALIDACIÓN DEL FORMULARIO ====================
     
+    // Obtener referencias a los campos
+    const idaKmInicialInput = document.getElementById('ida_km_inicial');
+    const idaKmFinalInput = document.getElementById('ida_km_final');
+    const vueltaKmInicialInput = document.getElementById('vuelta_km_inicial');
+    const vueltaKmFinalInput = document.getElementById('vuelta_km_final');
+    
+    // Valores mínimos
+    const kmInicialMinimo = {{ km_inicial_minimo|default:0 }};
+    const kmVueltaInicialMinimo = {{ km_vuelta_inicial_minimo|default:0 }};
+    
+    // Función para validar IDA KM Inicial
+    function validarIdaKmInicial() {
+        const valor = parseFloat(idaKmInicialInput.value);
+        const errorDiv = document.getElementById('error_ida_km_inicial');
+        
+        if (isNaN(valor)) {
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (valor < kmInicialMinimo) {
+            errorDiv.textContent = `❌ El km inicial no puede ser menor a ${kmInicialMinimo} km`;
+            errorDiv.style.display = 'block';
+            idaKmInicialInput.classList.add('is-invalid');
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+            idaKmInicialInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+    
+    // Función para validar IDA KM Final
+    function validarIdaKmFinal() {
+        const kmInicial = parseFloat(idaKmInicialInput.value);
+        const kmFinal = parseFloat(idaKmFinalInput.value);
+        const errorDiv = document.getElementById('error_ida_km_final');
+        
+        if (isNaN(kmFinal)) {
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (kmFinal <= kmInicial) {
+            errorDiv.textContent = `❌ El km final debe ser mayor al km inicial (${kmInicial} km)`;
+            errorDiv.style.display = 'block';
+            idaKmFinalInput.classList.add('is-invalid');
+            // Actualizar min de vuelta_km_inicial (debe ser mayor, no igual)
+            vueltaKmInicialInput.setAttribute('min', kmFinal + 0.01);
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+            idaKmFinalInput.classList.remove('is-invalid');
+            // Actualizar min de vuelta_km_inicial (debe ser mayor, no igual)
+            vueltaKmInicialInput.setAttribute('min', kmFinal + 0.01);
+            return true;
+        }
+    }
+    
+    // Función para validar VUELTA KM Inicial
+    function validarVueltaKmInicial() {
+        const valor = parseFloat(vueltaKmInicialInput.value);
+        const kmFinalIda = parseFloat(idaKmFinalInput.value);
+        const errorDiv = document.getElementById('error_vuelta_km_inicial');
+        
+        if (isNaN(valor)) {
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (valor <= kmFinalIda) {
+            errorDiv.textContent = `❌ El km inicial de vuelta debe ser mayor al km final de ida (${kmFinalIda} km)`;
+            errorDiv.style.display = 'block';
+            vueltaKmInicialInput.classList.add('is-invalid');
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+            vueltaKmInicialInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+    
+    // Función para validar VUELTA KM Final
+    function validarVueltaKmFinal() {
+        const kmInicial = parseFloat(vueltaKmInicialInput.value);
+        const kmFinal = parseFloat(vueltaKmFinalInput.value);
+        const errorDiv = document.getElementById('error_vuelta_km_final');
+        
+        if (isNaN(kmFinal)) {
+            errorDiv.style.display = 'none';
+            return true;
+        }
+        
+        if (kmFinal <= kmInicial) {
+            errorDiv.textContent = `❌ El km final debe ser mayor al km inicial (${kmInicial} km)`;
+            errorDiv.style.display = 'block';
+            vueltaKmFinalInput.classList.add('is-invalid');
+            return false;
+        } else {
+            errorDiv.style.display = 'none';
+            vueltaKmFinalInput.classList.remove('is-invalid');
+            return true;
+        }
+    }
+    
+    // Agregar listeners para validación en tiempo real
+    idaKmInicialInput.addEventListener('change', validarIdaKmInicial);
+    idaKmInicialInput.addEventListener('blur', validarIdaKmInicial);
+    
+    idaKmFinalInput.addEventListener('change', validarIdaKmFinal);
+    idaKmFinalInput.addEventListener('blur', validarIdaKmFinal);
+    
+    vueltaKmInicialInput.addEventListener('change', validarVueltaKmInicial);
+    vueltaKmInicialInput.addEventListener('blur', validarVueltaKmInicial);
+    
+    vueltaKmFinalInput.addEventListener('change', validarVueltaKmFinal);
+    vueltaKmFinalInput.addEventListener('blur', validarVueltaKmFinal);
+    
+    // Validación al enviar
     document.getElementById('costosIdaVueltaForm').addEventListener('submit', function(e) {
-        // Validar que ambos viajes tengan datos mínimos
-        const idaKmInicial = document.querySelector('input[name="ida_km_inicial"]').value;
-        const idaKmFinal = document.querySelector('input[name="ida_km_final"]').value;
-        const vueltaKmInicial = document.querySelector('input[name="vuelta_km_inicial"]').value;
-        const vueltaKmFinal = document.querySelector('input[name="vuelta_km_final"]').value;
+        let esValido = true;
+        
+        // Validar todos los campos
+        if (!validarIdaKmInicial()) esValido = false;
+        if (!validarIdaKmFinal()) esValido = false;
+        if (!validarVueltaKmInicial()) esValido = false;
+        if (!validarVueltaKmFinal()) esValido = false;
+        
+        // Validar que ambos tengan datos mínimos
+        const idaKmInicial = idaKmInicialInput.value;
+        const idaKmFinal = idaKmFinalInput.value;
+        const vueltaKmInicial = vueltaKmInicialInput.value;
+        const vueltaKmFinal = vueltaKmFinalInput.value;
 
         if (!idaKmInicial || !idaKmFinal) {
             e.preventDefault();
@@ -966,19 +1097,10 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('vuelta-tab').click();
             return false;
         }
-
-        // Validar que km final > km inicial
-        if (parseFloat(idaKmFinal) <= parseFloat(idaKmInicial)) {
+        
+        if (!esValido) {
             e.preventDefault();
-            alert('El kilometraje final debe ser mayor al inicial en el viaje de IDA');
-            document.getElementById('ida-tab').click();
-            return false;
-        }
-
-        if (parseFloat(vueltaKmFinal) <= parseFloat(vueltaKmInicial)) {
-            e.preventDefault();
-            alert('El kilometraje final debe ser mayor al inicial en el viaje de VUELTA');
-            document.getElementById('vuelta-tab').click();
+            alert('Por favor corrige los errores en los kilometrajes');
             return false;
         }
 

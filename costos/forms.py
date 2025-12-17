@@ -20,8 +20,8 @@ class CostosViajeForm(forms.ModelForm):
         fields = ['viaje', 'mantenimientos', 'peajes', 'otros_costos', 'observaciones']
         widgets = {
             'viaje': forms.Select(attrs={'class': 'form-control'}),
-            'peajes': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
-            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'peajes': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '0'}),
+            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '0'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
@@ -163,6 +163,21 @@ class KmInicialForm(forms.ModelForm):
         help_texts = {
             'km_inicial': 'Este valor se usará como referencia para todos los cálculos de este viaje.'
         }
+    
+    def clean_km_inicial(self):
+        km_inicial = self.cleaned_data.get('km_inicial')
+        
+        if km_inicial is not None and self.instance and self.instance.viaje:
+            # Obtener el km de ingreso del bus
+            bus = self.instance.viaje.bus
+            if bus and bus.kilometraje_ingreso is not None:
+                if km_inicial < bus.kilometraje_ingreso:
+                    raise forms.ValidationError(
+                        f'El kilometraje inicial no puede ser inferior a {bus.kilometraje_ingreso} km '
+                        f'(kilometraje de ingreso del bus {bus.placa} a la flota).'
+                    )
+        
+        return km_inicial
 
 
 class KmFinalForm(forms.ModelForm):
@@ -228,8 +243,19 @@ class CostosViajeFormCompleto(forms.ModelForm):
         km_inicial = cleaned_data.get('km_inicial')
         km_final = cleaned_data.get('km_final')
         
+        # Validar que km_final > km_inicial
         if km_inicial and km_final:
             if km_final <= km_inicial:
                 raise forms.ValidationError('El kilometraje final debe ser mayor al kilometraje inicial.')
+        
+        # Validar que km_inicial no sea menor que el km de ingreso del bus
+        if km_inicial is not None and self.instance and self.instance.viaje:
+            bus = self.instance.viaje.bus
+            if bus and bus.kilometraje_ingreso is not None:
+                if km_inicial < bus.kilometraje_ingreso:
+                    raise forms.ValidationError(
+                        f'El kilometraje inicial no puede ser inferior a {bus.kilometraje_ingreso} km '
+                        f'(kilometraje de ingreso del bus {bus.placa} a la flota).'
+                    )
         
         return cleaned_data

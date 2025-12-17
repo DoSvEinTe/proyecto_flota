@@ -69,7 +69,7 @@ class ConductorForm(ModelForm):
             self.fields['licencia_conducir_trasera'].required = True
         
         # Agregar ayuda para el campo de RUT
-        self.fields['cedula'].help_text = '<strong>Formato de RUT (Chile):</strong><br>' \
+        self.fields['cedula'].help_text = '<strong>Formato de RUT:</strong><br>' \
                                           '• Formato: <code>12345678-9</code> o <code>1234567-K</code><br>' \
                                           '• 7 u 8 dígitos • Guión (-) • Dígito verificador (0-9 o K)<br>' \
                                           '<i class="fas fa-exclamation-circle"></i> <strong>Importante:</strong> El RUT se validará automáticamente.'
@@ -231,11 +231,34 @@ class PasajeroForm(ModelForm):
                 raise forms.ValidationError('Debe ingresar un RUT/Cédula')
             # Limpiar pasaporte si se seleccionó RUT
             cleaned_data['pasaporte'] = None
+            
+            # Validar formato de RUT (Chile)
+            rut_upper = rut.upper().strip()
+            # Formato estándar: 12345678-9 (8 dígitos - 1 dígito verificador)
+            # Formato alternativo: 1234567-K (7 dígitos - 1 letra/dígito)
+            patron_estandar = re.compile(r'^\d{8}-[\dK]$')
+            patron_alternativo = re.compile(r'^\d{7}-[\dK]$')
+            
+            if not (patron_estandar.match(rut_upper) or patron_alternativo.match(rut_upper)):
+                raise forms.ValidationError({
+                    'rut': 'Formato de RUT inválido. Debe ser: 12345678-9 (estándar) o 1234567-K (alternativo)'
+                })
         elif tipo_documento == 'pasaporte':
             if not pasaporte:
                 raise forms.ValidationError('Debe ingresar un número de pasaporte')
             # Limpiar RUT si se seleccionó Pasaporte
             cleaned_data['rut'] = None
+            
+            # Validar formato de pasaporte (Chile)
+            # Formato flexible: 1-2 letras seguidas de números, o solo números, con posibles guiones/espacios
+            # Ejemplo: AB123456, A1234567, 123456789, AB-123456, etc.
+            pasaporte_upper = pasaporte.upper().strip()
+            patron_pasaporte = re.compile(r'^[A-Z0-9\s\-]{5,20}$')
+            
+            if not patron_pasaporte.match(pasaporte_upper):
+                raise forms.ValidationError({
+                    'pasaporte': 'Formato de pasaporte inválido. Debe contener letras y/o números (5-20 caracteres)'
+                })
         
         return cleaned_data
 

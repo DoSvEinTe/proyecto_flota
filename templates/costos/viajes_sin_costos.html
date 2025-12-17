@@ -351,9 +351,25 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Conductor con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        <!-- Mostrar fecha menor con rowspan para ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">
+                                            {% if viaje.fecha_salida <= viaje.viaje_relacionado.fecha_salida %}
+                                                {{ viaje.fecha_salida|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                {{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}
+                                            {% endif %}
+                                        </td>
+                                        {% else %}
+                                        <!-- Conductor normal para viajes simples -->
+                                        <td class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                         <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
-                                        <td>
+                                        {% endif %}
+                                        {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Estado con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">
                                             {% if viaje.estado == 'completado' %}
                                                 <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
                                             {% elif viaje.estado == 'en_curso' %}
@@ -364,6 +380,20 @@
                                                 <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
                                             {% endif %}
                                         </td>
+                                        {% else %}
+                                        <!-- Estado normal para viajes simples -->
+                                        <td class="align-middle">
+                                            {% if viaje.estado == 'completado' %}
+                                                <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
+                                            {% elif viaje.estado == 'en_curso' %}
+                                                <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
+                                            {% elif viaje.estado == 'programado' %}
+                                                <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        {% endif %}
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
                                         <!-- Acciones unificadas con rowspan para IDA y VUELTA -->
                                         <td rowspan="2" class="align-middle">
@@ -455,20 +485,9 @@
                                                 </span>
                                             </div>
                                         </td>
-                                        
-                                        <td>{{ viaje.viaje_relacionado.conductor.nombre }} {{ viaje.viaje_relacionado.conductor.apellido }}</td>
-                                        <td>{{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}</td>
-                                        <td>
-                                            {% if viaje.viaje_relacionado.estado == 'completado' %}
-                                                <span class="badge bg-success">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% elif viaje.viaje_relacionado.estado == 'en_curso' %}
-                                                <span class="badge bg-warning text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% elif viaje.viaje_relacionado.estado == 'programado' %}
-                                                <span class="badge bg-info text-dark">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">{{ viaje.viaje_relacionado.get_estado_display }}</span>
-                                            {% endif %}
-                                        </td>
+                                        <!-- Conductor ya está con rowspan="2" en la fila IDA -->
+                                        <!-- Fecha salida ya está con rowspan="2" en la fila IDA -->
+                                        <!-- Estado ya está con rowspan="2" en la fila IDA -->
                                         <!-- Columna de acciones con rowspan="2" ya está en la fila IDA -->
                                     </tr>
                                     {% endif %}

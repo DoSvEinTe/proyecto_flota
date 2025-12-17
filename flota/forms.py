@@ -36,7 +36,7 @@ class BusForm(forms.ModelForm):
         self.fields['numero_motor'].required = False
         
         # Agregar ayuda para el campo de placa
-        self.fields['placa'].help_text = '<strong>Formato de Patente (Chile):</strong><br>' \
+        self.fields['placa'].help_text = '<strong>Formato de Patente:</strong><br>' \
                                          '• Formato antiguo: <code>AB-1234-CD</code> (2 letras - 4 números - 2 letras)<br>' \
                                          '• Formato moderno: <code>ABCD-12-EF</code> (4 caracteres - 2 números - 2 caracteres)<br>' \
                                          '<i class="fas fa-exclamation-circle"></i> <strong>Importante:</strong> La patente DEBE incluir guiones (-) en las posiciones correctas.'

@@ -42,6 +42,11 @@ class CostosViaje(models.Model):
             self.viaje.estado = 'completado'
             self.viaje.save()
         
+        # Si el viaje tiene un viaje relacionado (ida-vuelta), marcarlo como completado también
+        if self.viaje.viaje_relacionado and self.viaje.viaje_relacionado.estado != 'completado':
+            self.viaje.viaje_relacionado.estado = 'completado'
+            self.viaje.viaje_relacionado.save()
+        
         super().save(*args, **kwargs)
 
     def __str__(self):

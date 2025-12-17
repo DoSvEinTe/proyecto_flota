@@ -142,7 +142,10 @@
         <span><i class="fas fa-user-edit me-2"></i>Editar Información del Pasajero</span>
     </div>
     <div class="card-body">
-        <form method="post" action="">
+        <div class="row">
+            <!-- Formulario (izquierda) -->
+            <div class="col-md-8">
+                <form method="post" action="">
             {% csrf_token %}
             
             <!-- Nombre Completo -->
@@ -282,6 +285,47 @@
                 </button>
             </div>
         </form>
+            </div>
+            
+            <!-- Recuadro de Documentos (derecha) -->
+            <div class="col-md-4">
+                <div style="background-color: #f8f9fa; border-radius: 6px; padding: 12px; border: 1px solid #dee2e6;">
+                    <div style="margin-bottom: 12px;">
+                        <h6 style="color: #0d6efd; margin-bottom: 8px; font-weight: 600; font-size: 0.95rem;"><i class="fas fa-id-card me-2"></i>Documentos</h6>
+                    </div>
+                    
+                    <!-- Sección RUT -->
+                    <div style="background-color: #e8e9ea; border-radius: 5px; padding: 8px 10px; margin-bottom: 10px;">
+                        <p class="mb-0" style="color: #383d41; font-size: 0.85rem;"><strong><i class="fas fa-info-circle me-1"></i>Formato RUT:</strong></p>
+                    </div>
+                    
+                    <div class="mb-2" style="background-color: #cfe2ff; border-radius: 5px; padding: 8px 10px;">
+                        <h6 style="color: #084298; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Estándar</h6>
+                        <p class="mb-1 small" style="color: #084298; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #0c5460; font-weight: 600; font-size: 0.8rem;">12345678-9</code></p>
+                        <p class="small" style="color: #084298; margin-bottom: 0; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>8 dígitos • Guión • (0-9) o K</p>
+                    </div>
+                    
+                    <div class="mb-3" style="background-color: #cfe2ff; border-radius: 5px; padding: 8px 10px;">
+                        <h6 style="color: #084298; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Alternativo</h6>
+                        <p class="mb-1 small" style="color: #084298; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #155724; font-weight: 600; font-size: 0.8rem;">1234567-K</code></p>
+                        <p class="small" style="color: #084298; margin-bottom: 3px; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>7 dígitos • Guión • (0-9) o K</p>
+                        <p class="small" style="color: #084298; margin-bottom: 0; font-size: 0.7rem; font-style: italic;"><strong>K:</strong> dígito verificador 10</p>
+                    </div>
+                    
+                    <!-- Sección Pasaporte -->
+                    <div style="background-color: #e8e9ea; border-radius: 5px; padding: 8px 10px; margin-bottom: 10px;">
+                        <p class="mb-0" style="color: #383d41; font-size: 0.85rem;"><strong><i class="fas fa-passport me-1"></i>Pasaporte:</strong></p>
+                    </div>
+                    
+                    <div style="background-color: #d1e7dd; border-radius: 5px; padding: 8px 10px;">
+                        <h6 style="color: #0f5132; margin-bottom: 3px; font-size: 0.85rem;"><i class="fas fa-check me-1"></i>Global</h6>
+                        <p class="mb-1 small" style="color: #0f5132; font-size: 0.75rem;"><code style="background-color: #fff; padding: 3px 6px; border-radius: 3px; color: #155724; font-weight: 600; font-size: 0.8rem;">AB123456</code></p>
+                        <p class="small" style="color: #0f5132; margin-bottom: 3px; font-size: 0.75rem;"><i class="fas fa-arrow-right me-1"></i>Letras, números, guiones, espacios</p>
+                        <p class="small" style="color: #0f5132; margin-bottom: 0; font-size: 0.7rem; font-style: italic;"><strong>Ingresa:</strong> como aparece en tu pasaporte</p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

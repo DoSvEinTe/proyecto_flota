@@ -422,11 +422,19 @@
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
                                         <!-- Conductor con rowspan para viajes de ida y vuelta -->
                                         <td rowspan="2" class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
+                                        <!-- Mostrar fecha menor con rowspan para ida y vuelta -->
+                                        <td rowspan="2" class="align-middle">
+                                            {% if viaje.fecha_salida <= viaje.viaje_relacionado.fecha_salida %}
+                                                {{ viaje.fecha_salida|date:"d/m/Y H:i" }}
+                                            {% else %}
+                                                {{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}
+                                            {% endif %}
+                                        </td>
                                         {% else %}
                                         <!-- Conductor normal para viajes simples -->
                                         <td class="align-middle">{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
-                                        {% endif %}
                                         <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
+                                        {% endif %}
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
                                         <!-- Estado con rowspan para viajes de ida y vuelta -->
                                         <td rowspan="2" class="align-middle">
@@ -547,7 +555,7 @@
                                             </div>
                                         </td>
                                         <!-- Conductor ya está con rowspan="2" en la fila IDA -->
-                                        <td>{{ viaje.viaje_relacionado.fecha_salida|date:"d/m/Y H:i" }}</td>
+                                        <!-- Fecha salida ya está con rowspan="2" en la fila IDA -->
                                         <!-- Estado ya está con rowspan="2" en la fila IDA -->
                                         <!-- Columna de acciones con rowspan="2" ya está en la fila IDA -->
                                     </tr>
@@ -557,11 +565,6 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-                    <div class="d-flex justify-content-end mt-2">
-                        <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-action btn-details" style="background-color: #0d47a1; color: #fff;">
-                            <i class="fas fa-list me-1"></i>Ver Todos
-                        </a>
                     </div>
                 </div>
             </div>
@@ -958,45 +961,31 @@
                     <div class="modal-content">
                         <div class="modal-header bg-danger text-white">
                             <h5 class="modal-title">
-                                <i class="fas fa-trash me-2"></i>¿Cuál viaje deseas eliminar?
+                                <i class="fas fa-trash me-2"></i>Eliminar Costos
                             </h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-4">
                             <div class="alert alert-warning mb-4">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Advertencia:</strong> Esta acción no se puede deshacer.
+                                <strong>Advertencia:</strong> Se eliminarán los costos de ambos trayectos (IDA y VUELTA) y no se puede deshacer.
                             </div>
-                            <p class="text-center mb-4 text-muted">Selecciona el trayecto que deseas eliminar:</p>
-                            <div class="d-grid gap-3">
-                                <a href="{% url 'costos:eliminar' costos.pk %}" 
-                                   class="btn btn-danger btn-lg py-3">
-                                    <div class="d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-arrow-right me-3 fa-2x"></i>
-                                        <div class="text-start">
-                                            <strong class="d-block">ELIMINAR IDA</strong>
-                                            <small>{{ costos.viaje.get_origen_display }} → {{ costos.viaje.get_destino_display }}</small>
-                                        </div>
-                                    </div>
-                                </a>
-                                {% if costos.costos_vuelta %}
-                                <a href="{% url 'costos:eliminar' costos.costos_vuelta.pk %}" 
-                                   class="btn btn-danger btn-lg py-3">
-                                    <div class="d-flex align-items-center justify-content-center">
-                                        <i class="fas fa-arrow-left me-3 fa-2x"></i>
-                                        <div class="text-start">
-                                            <strong class="d-block">ELIMINAR VUELTA</strong>
-                                            <small>{{ costos.viaje.viaje_relacionado.get_origen_display }} → {{ costos.viaje.viaje_relacionado.get_destino_display }}</small>
-                                        </div>
-                                    </div>
-                                </a>
-                                {% endif %}
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Los viajes serán devueltos a la tabla de "Viajes Pendientes" con estado "En Curso".
                             </div>
+                            <p class="text-center mb-3 text-muted"><strong>¿Desea continuar?</strong></p>
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                 <i class="fas fa-times me-2"></i>Cancelar
                             </button>
+                            <form method="post" action="{% url 'costos:eliminar' costos.pk %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash me-2"></i>Sí, Eliminar
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>

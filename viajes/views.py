@@ -551,6 +551,19 @@ def editar_pasajero_viaje(request, pk, pasajero_pk):
                     messages.error(request, 'Este documento (RUT/Pasaporte) ya está registrado en otro pasajero de este viaje.')
                     return redirect('viajes:editar_pasajero_viaje', pk=pk, pasajero_pk=pasajero_pk)
             
+            # Validar que el asiento no esté ocupado por otro pasajero (si se proporciona asiento)
+            if asiento:
+                asiento_duplicado = ViajePasajero.objects.filter(
+                    viaje=viaje,
+                    asiento=asiento
+                ).exclude(
+                    pasajero=pasajero
+                ).exists()
+                
+                if asiento_duplicado:
+                    messages.error(request, f'El asiento {asiento} ya está ocupado por otro pasajero en este viaje.')
+                    return redirect('viajes:editar_pasajero_viaje', pk=pk, pasajero_pk=pasajero_pk)
+            
             # Actualizar datos del pasajero
             pasajero.nombre_completo = nombre_completo
             pasajero.rut = rut
@@ -615,7 +628,7 @@ def crear_pasajero_desde_viaje(request, pk):
                 'pasajeros_en_viaje': pasajeros_en_viaje,
                 'pasajero_form': form,
             }
-            messages.error(request, 'Este pasajero (con el mismo RUT/Pasaporte) ya está registrado en este viaje.')
+            messages.warning(request, '⚠️ Este pasajero (con el mismo RUT/Pasaporte) ya está registrado en este viaje.')
             return render(request, 'viajes/viaje_pasajeros.html', context)
         
         form = PasajeroForm(request.POST)
@@ -676,8 +689,9 @@ def crear_pasajero_desde_viaje(request, pk):
                 'viaje': viaje,
                 'pasajeros_en_viaje': pasajeros_en_viaje,
                 'pasajero_form': form,  # Formulario con errores
+                'formulario_con_errores': True,
             }
-            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+            messages.error(request, '⚠️ Revisa los datos ingresados. Algunos campos tienen errores.')
             return render(request, 'viajes/viaje_pasajeros.html', context)
     
     # Si es GET, redirigir a la vista de pasajeros
