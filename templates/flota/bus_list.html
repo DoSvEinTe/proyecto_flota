@@ -2,20 +2,176 @@
 
 {% block title %}Buses - Sistema de Gestión de Flota{% endblock %}
 
+{% block extra_css %}
+<style>
+    .search-filter-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 1.5rem;
+    }
+
+    .search-box {
+        position: relative;
+    }
+
+    .search-box .search-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+    }
+
+    .search-box input {
+        padding-left: 40px;
+    }
+
+    .pagination {
+        justify-content: center;
+        margin-top: 2rem;
+    }
+
+    .pagination .page-link {
+        color: #0d47a1;
+        border-color: #dee2e6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0d47a1;
+        border-color: #0d47a1;
+    }
+
+    .pagination .page-link:hover {
+        background-color: #e3f2fd;
+        color: #0d47a1;
+    }
+
+    .results-info {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <div></div>
-    <a href="{% url 'flota:bus_create' %}" class="btn btn-create">
-        <i class="fas fa-plus me-2"></i>Crear Nuevo Bus
-    </a>
+    <h2><i class="fas fa-bus me-2"></i>Buses</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#searchFilters" aria-expanded="false" aria-controls="searchFilters">
+            <i class="fas fa-filter me-2"></i>Búsqueda y Filtros
+        </button>
+        <a href="{% url 'flota:bus_create' %}" class="btn btn-create">
+            <i class="fas fa-plus me-2"></i>Crear Nuevo Bus
+        </a>
+    </div>
 </div>
 
+<!-- Sección de Búsqueda y Filtros -->
+<div class="collapse {% if search or estado or marca or año_min or año_max %}show{% endif %}" id="searchFilters">
+    <div class="search-filter-section">
+        <form method="get" id="filterForm">
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <label class="form-label"><i class="fas fa-search me-2"></i>Buscar</label>
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" 
+                           class="form-control" 
+                           name="search" 
+                           value="{{ search }}" 
+                           placeholder="Buscar por placa, marca, modelo, chasis o motor...">
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-2">
+                <label class="form-label"><i class="fas fa-filter me-2"></i>Estado</label>
+                <select class="form-select" name="estado">
+                    <option value="">Todos</option>
+                    <option value="activo" {% if estado == 'activo' %}selected{% endif %}>Activo</option>
+                    <option value="mantenimiento" {% if estado == 'mantenimiento' %}selected{% endif %}>En Mantenimiento</option>
+                    <option value="inactivo" {% if estado == 'inactivo' %}selected{% endif %}>Inactivo</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label"><i class="fas fa-car me-2"></i>Marca</label>
+                <select class="form-select" name="marca">
+                    <option value="">Todas</option>
+                    {% for marca_item in marcas_disponibles %}
+                        <option value="{{ marca_item }}" {% if marca == marca_item %}selected{% endif %}>{{ marca_item }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label"><i class="fas fa-calendar me-2"></i>Año desde</label>
+                <input type="number" class="form-control" name="año_min" value="{{ año_min }}" placeholder="Ej: 2015" min="1980" max="2030">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label"><i class="fas fa-calendar me-2"></i>Año hasta</label>
+                <input type="number" class="form-control" name="año_max" value="{{ año_max }}" placeholder="Ej: 2024" min="1980" max="2030">
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label"><i class="fas fa-sort me-2"></i>Ordenar</label>
+                <select class="form-select" name="orden">
+                    <option value="-creado_en" {% if orden == '-creado_en' %}selected{% endif %}>Más recientes</option>
+                    <option value="creado_en" {% if orden == 'creado_en' %}selected{% endif %}>Más antiguos</option>
+                    <option value="placa" {% if orden == 'placa' %}selected{% endif %}>Placa (A-Z)</option>
+                    <option value="-placa" {% if orden == '-placa' %}selected{% endif %}>Placa (Z-A)</option>
+                    <option value="marca" {% if orden == 'marca' %}selected{% endif %}>Marca (A-Z)</option>
+                    <option value="-año_fabricacion" {% if orden == '-año_fabricacion' %}selected{% endif %}>Año (Nuevo-Viejo)</option>
+                    <option value="año_fabricacion" {% if orden == 'año_fabricacion' %}selected{% endif %}>Año (Viejo-Nuevo)</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="fas fa-search me-2"></i>Buscar
+                    </button>
+                    <a href="{% url 'flota:bus_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-redo"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </form>
+    </div>
+</div>
+
+<!-- Información de resultados -->
 {% if buses %}
+    <div class="results-info">
+        <i class="fas fa-info-circle me-1"></i>
+        Mostrando 
+        {% if page_obj.has_previous %}
+            {{ page_obj.start_index }}
+        {% else %}
+            1
+        {% endif %}
+        - 
+        {% if page_obj.has_next %}
+            {{ page_obj.end_index }}
+        {% else %}
+            {{ page_obj.paginator.count }}
+        {% endif %}
+        de {{ page_obj.paginator.count }} bus{{ page_obj.paginator.count|pluralize:"es" }}
+    </div>
+
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
-                <tr>
+                <tr style="background-color: #0d47a1; color: #fff;">
                     <th>Placa</th>
+                    <th>Marca</th>
                     <th>Modelo</th>
                     <th>Año</th>
                     <th>Capacidad</th>
@@ -27,6 +183,7 @@
                 {% for bus in buses %}
                 <tr>
                     <td><strong>{{ bus.placa }}</strong></td>
+                    <td>{{ bus.marca }}</td>
                     <td>{{ bus.modelo }}</td>
                     <td>{{ bus.año_fabricacion }}</td>
                     <td>{{ bus.capacidad_pasajeros }} pasajeros</td>
@@ -36,13 +193,13 @@
                         </span>
                     </td>
                     <td>
-                        <a href="{% url 'flota:bus_detail' bus.id %}" class="btn btn-action btn-details" title="Ver Detalles">
+                        <a href="{% url 'flota:bus_detail' bus.id %}" class="btn btn-action btn-details" title="Ver Detalles" style="background-color: #2196f3; color: #fff;">
                             <i class="fas fa-eye"></i>
                         </a>
-                        <a href="{% url 'flota:bus_update' bus.pk %}" class="btn btn-action btn-edit" title="Editar">
+                        <a href="{% url 'flota:bus_update' bus.pk %}" class="btn btn-action btn-edit" title="Editar" style="background-color: #ffc107; color: #fff;">
                             <i class="fas fa-edit"></i>
                         </a>
-                        <a href="{% url 'flota:bus_delete' bus.pk %}" class="btn btn-action btn-delete" title="Eliminar">
+                        <a href="{% url 'flota:bus_delete' bus.pk %}" class="btn btn-action btn-delete" title="Eliminar" style="background-color: #f44336; color: #fff;">
                             <i class="fas fa-trash"></i>
                         </a>
                     </td>
@@ -51,14 +208,68 @@
             </tbody>
         </table>
     </div>
+
+    <!-- Paginación -->
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav aria-label="Paginación de buses">
+        <ul class="pagination">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if marca %}&marca={{ marca }}{% endif %}{% if año_min %}&año_min={{ año_min }}{% endif %}{% if año_max %}&año_max={{ año_max }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" aria-label="Primera">
+                        <span aria-hidden="true">&laquo;&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if marca %}&marca={{ marca }}{% endif %}{% if año_min %}&año_min={{ año_min }}{% endif %}{% if año_max %}&año_max={{ año_max }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" aria-label="Anterior">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if marca %}&marca={{ marca }}{% endif %}{% if año_min %}&año_min={{ año_min }}{% endif %}{% if año_max %}&año_max={{ año_max }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if marca %}&marca={{ marca }}{% endif %}{% if año_min %}&año_min={{ año_min }}{% endif %}{% if año_max %}&año_max={{ año_max }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" aria-label="Siguiente">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if estado %}&estado={{ estado }}{% endif %}{% if marca %}&marca={{ marca }}{% endif %}{% if año_min %}&año_min={{ año_min }}{% endif %}{% if año_max %}&año_max={{ año_max }}{% endif %}{% if orden %}&orden={{ orden }}{% endif %}" aria-label="Última">
+                        <span aria-hidden="true">&raquo;&raquo;</span>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
 {% else %}
     <div class="text-center py-5">
         <i class="fas fa-bus fa-3x text-muted mb-3"></i>
-        <h4 class="text-muted">No hay buses registrados</h4>
-        <p class="text-muted">Comienza agregando tu primer bus a la flota</p>
-        <a href="{% url 'flota:bus_create' %}" class="btn btn-create">
-            <i class="fas fa-plus me-2"></i>Crear Nuevo Bus
-        </a>
+        {% if search or estado or marca or año_min or año_max %}
+            <h4 class="text-muted">No se encontraron buses</h4>
+            <p class="text-muted">Intenta ajustar los criterios de búsqueda o filtros</p>
+            <a href="{% url 'flota:bus_list' %}" class="btn btn-secondary">
+                <i class="fas fa-redo me-2"></i>Limpiar filtros
+            </a>
+        {% else %}
+            <h4 class="text-muted">No hay buses registrados</h4>
+            <p class="text-muted">Comienza agregando tu primer bus a la flota</p>
+            <a href="{% url 'flota:bus_create' %}" class="btn btn-create">
+                <i class="fas fa-plus me-2"></i>Crear Nuevo Bus
+            </a>
+        {% endif %}
     </div>
 {% endif %}
 {% endblock %}

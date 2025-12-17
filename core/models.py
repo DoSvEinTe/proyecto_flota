@@ -60,8 +60,8 @@ class Pasajero(models.Model):
     Modelo para registrar pasajeros del sistema.
     """
     nombre_completo = models.CharField(max_length=200)
-    rut = models.CharField(max_length=12, unique=True, null=True, blank=True, help_text='RUT para ciudadanos chilenos')
-    pasaporte = models.CharField(max_length=20, unique=True, null=True, blank=True, help_text='Pasaporte para extranjeros')
+    rut = models.CharField(max_length=12, null=True, blank=True, help_text='RUT para ciudadanos chilenos')
+    pasaporte = models.CharField(max_length=20, null=True, blank=True, help_text='Pasaporte para extranjeros')
     telefono = models.CharField(max_length=15)
     correo = models.EmailField()
     creado_en = models.DateTimeField(auto_now_add=True)

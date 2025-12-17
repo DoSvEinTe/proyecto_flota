@@ -56,9 +56,73 @@ class ViajesSinCostosListView(LoginRequiredMixin, ListView):
     paginate_by = 10
 
     def get_queryset(self):
+        from django.db.models import Q
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
         # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
-        return Viaje.objects.exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')
+        # Solo mostrar viajes EN CURSO que no tengan costos registrados
+        queryset = Viaje.objects.filter(estado='en_curso').exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')
+        
+        # Búsqueda
+        search = self.request.GET.get('search', '')
+        if search:
+            # Si buscan por ID (ej: "VJ-56" o solo "56")
+            search_clean = search.replace('VJ-', '').replace('vj-', '').strip()
+            q_filter = Q(
+                bus__placa__icontains=search
+            ) | Q(
+                bus__modelo__icontains=search
+            ) | Q(
+                conductor__nombre__icontains=search
+            ) | Q(
+                conductor__apellido__icontains=search
+            ) | Q(
+                origen_ciudad__icontains=search
+            ) | Q(
+                destino_ciudad__icontains=search
+            )
+            
+            # Agregar búsqueda por ID si es un número
+            if search_clean.isdigit():
+                q_filter |= Q(pk=int(search_clean))
+            
+            queryset = queryset.filter(q_filter)
+        
+        # Filtros
+        bus = self.request.GET.get('bus', '')
+        if bus:
+            queryset = queryset.filter(bus_id=bus)
+        
+        conductor = self.request.GET.get('conductor', '')
+        if conductor:
+            queryset = queryset.filter(conductor_id=conductor)
+        
+        estado = self.request.GET.get('estado', '')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        
+        # Ordenamiento
+        orden = self.request.GET.get('orden', '-fecha_salida')
+        queryset = queryset.order_by(orden)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from flota.models import Bus
+        from core.models import Conductor
+        
+        # Mantener parámetros de búsqueda y filtros
+        context['search'] = self.request.GET.get('search', '')
+        context['bus'] = self.request.GET.get('bus', '')
+        context['conductor'] = self.request.GET.get('conductor', '')
+        context['estado'] = self.request.GET.get('estado', '')
+        context['orden'] = self.request.GET.get('orden', '-fecha_salida')
+        
+        # Listas para filtros
+        context['buses_disponibles'] = Bus.objects.filter(estado='activo').order_by('placa')
+        context['conductores_disponibles'] = Conductor.objects.filter(activo=True).order_by('apellido', 'nombre')
+        
+        return context
 
 
 class CostosViajeCreateView(LoginRequiredMixin, View):
@@ -66,20 +130,22 @@ class CostosViajeCreateView(LoginRequiredMixin, View):
 
     def get(self, request):
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        viajes = Viaje.objects.exclude(id__in=viajes_con_costos)
+        # Solo mostrar viajes en estado EN CURSO sin costos registrados
+        viajes = Viaje.objects.filter(estado='en_curso').exclude(id__in=viajes_con_costos).order_by('-fecha_salida')
         return render(request, self.template_name, {'viajes': viajes})
 
     def post(self, request):
         viaje_id = request.POST.get('viaje')
         if viaje_id:
             viaje = Viaje.objects.get(pk=viaje_id)
-            # Cambiar estado a EN CURSO al iniciar registro de costos
-            viaje.estado = 'en_curso'
-            viaje.save()
+            # Verificar que el viaje esté en estado EN CURSO
+            if viaje.estado != 'en_curso':
+                messages.error(request, 'Solo se pueden registrar costos de viajes en estado EN CURSO.')
+                return redirect('costos:crear')
             costos_viaje = CostosViaje.objects.create(viaje=viaje)
             return redirect('costos:registrar_km_inicial', costos_pk=costos_viaje.pk)
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
-        viajes = Viaje.objects.exclude(id__in=viajes_con_costos)
+        viajes = Viaje.objects.filter(estado='en_curso').exclude(id__in=viajes_con_costos).order_by('-fecha_salida')
         messages.error(request, 'Debes seleccionar un viaje.')
         return render(request, self.template_name, {'viajes': viajes})
 
@@ -354,14 +420,14 @@ class GestionCostosView(LoginRequiredMixin, View):
     template_name = 'costos/gestion_costos.html'
 
     def get(self, request):
-        # Obtener viajes sin costos asignados
+        from django.db.models import Q
+        from flota.models import Bus
+        from core.models import Conductor
+        
+        # Obtener viajes sin costos asignados (solo los que están EN CURSO)
         viajes_con_costos = CostosViaje.objects.values_list('viaje_id', flat=True)
         # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
-        viajes_sin_costos = Viaje.objects.exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')[:5]
-        
-        # Agregar un atributo temporal para mostrar "EN CURSO" en la tabla
-        for viaje in viajes_sin_costos:
-            viaje.estado_display = 'en_curso'
+        viajes_sin_costos = Viaje.objects.filter(estado='en_curso').exclude(id__in=viajes_con_costos).exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')[:5]
 
         # Obtener todos los costos registrados para el CRUD (excluyendo viajes de vuelta para evitar duplicados)
         costos_list = CostosViaje.objects.select_related(
@@ -373,7 +439,45 @@ class GestionCostosView(LoginRequiredMixin, View):
         ).prefetch_related(
             'puntos_recarga',
             'viaje__peajes'
-        ).exclude(viaje__tipo_trayecto='vuelta').order_by('-id')
+        ).exclude(viaje__tipo_trayecto='vuelta')
+        
+        # Búsqueda en costos registrados
+        search_costos = request.GET.get('search_costos', '')
+        if search_costos:
+            # Si buscan por ID (ej: "VJ-56" o solo "56")
+            search_clean = search_costos.replace('VJ-', '').replace('vj-', '').strip()
+            q_filter = Q(
+                viaje__bus__placa__icontains=search_costos
+            ) | Q(
+                viaje__bus__modelo__icontains=search_costos
+            ) | Q(
+                viaje__conductor__nombre__icontains=search_costos
+            ) | Q(
+                viaje__conductor__apellido__icontains=search_costos
+            ) | Q(
+                viaje__origen_ciudad__icontains=search_costos
+            ) | Q(
+                viaje__destino_ciudad__icontains=search_costos
+            )
+            
+            # Agregar búsqueda por ID si es un número
+            if search_clean.isdigit():
+                q_filter |= Q(viaje__pk=int(search_clean))
+            
+            costos_list = costos_list.filter(q_filter)
+        
+        # Filtros en costos registrados
+        bus_costos = request.GET.get('bus_costos', '')
+        if bus_costos:
+            costos_list = costos_list.filter(viaje__bus_id=bus_costos)
+        
+        conductor_costos = request.GET.get('conductor_costos', '')
+        if conductor_costos:
+            costos_list = costos_list.filter(viaje__conductor_id=conductor_costos)
+        
+        # Ordenamiento
+        orden_costos = request.GET.get('orden_costos', '-id')
+        costos_list = costos_list.order_by(orden_costos)
         
         # Agregar los costos de vuelta a cada costo de ida
         for costo in costos_list:
@@ -392,6 +496,14 @@ class GestionCostosView(LoginRequiredMixin, View):
             'costos_list': costos_list,
             'total_viajes_con_costos': total_viajes_con_costos,
             'total_viajes': total_viajes,
+            # Parámetros de búsqueda y filtros
+            'search_costos': search_costos,
+            'bus_costos': bus_costos,
+            'conductor_costos': conductor_costos,
+            'orden_costos': orden_costos,
+            # Listas para filtros
+            'buses_disponibles': Bus.objects.filter(estado='activo').order_by('placa'),
+            'conductores_disponibles': Conductor.objects.filter(activo=True).order_by('apellido', 'nombre'),
         }
 
         return render(request, self.template_name, context)
@@ -1977,10 +2089,23 @@ def registrar_costos_completo(request, viaje_id):
             
             costos_viaje.save()
             
+            # Marcar el viaje como COMPLETADO al registrar los costos
+            viaje.estado = 'completado'
+            viaje.save()
+            
+            # Si es un viaje de ida con viaje de vuelta relacionado, también marcar la vuelta como completada
+            if viaje.es_ida_vuelta and viaje.tipo_trayecto == 'ida' and viaje.viaje_relacionado:
+                viaje_vuelta = viaje.viaje_relacionado
+                # Verificar si el viaje de vuelta también tiene sus costos registrados
+                costos_vuelta = CostosViaje.objects.filter(viaje=viaje_vuelta).first()
+                if costos_vuelta:
+                    viaje_vuelta.estado = 'completado'
+                    viaje_vuelta.save()
+            
             if es_edicion:
                 messages.success(request, 'Costos del viaje actualizados exitosamente.')
             else:
-                messages.success(request, 'Costos del viaje registrados exitosamente.')
+                messages.success(request, 'Costos del viaje registrados exitosamente. El viaje ha sido marcado como COMPLETADO.')
             return redirect('costos:gestion')
         else:
             messages.error(request, 'Por favor corrija los errores en el formulario.')

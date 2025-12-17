@@ -7,6 +7,7 @@ from django.utils.decorators import method_decorator
 from django.forms import ModelForm
 from django import forms
 from django.utils import timezone
+from django.db import models
 from .models import Conductor, Lugar, Pasajero
 from .permissions import admin_required, usuario_or_admin_required
 
@@ -153,14 +154,64 @@ class ConductorListView(ListView):
     model = Conductor
     template_name = 'core/conductor_list.html'
     context_object_name = 'conductores'
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
-        return Conductor.objects.all().order_by('-creado_en')
+        queryset = Conductor.objects.all()
+        
+        # Búsqueda
+        search = self.request.GET.get('search', '')
+        if search:
+            # Normalizar el texto de búsqueda (remover tildes)
+            import unicodedata
+            from django.db.models import Value, CharField
+            from django.db.models.functions import Concat
+            
+            search_normalized = ''.join(
+                c for c in unicodedata.normalize('NFD', search)
+                if unicodedata.category(c) != 'Mn'
+            )
+            
+            # Crear campo virtual con nombre completo
+            queryset = queryset.annotate(
+                nombre_completo=Concat('nombre', Value(' '), 'apellido', output_field=CharField())
+            )
+            
+            # Buscar tanto en el texto original como en el normalizado
+            q_filter = models.Q()
+            for term in [search, search_normalized]:
+                q_filter |= (
+                    models.Q(nombre__icontains=term) |
+                    models.Q(apellido__icontains=term) |
+                    models.Q(nombre_completo__icontains=term) |
+                    models.Q(cedula__icontains=term) |
+                    models.Q(email__icontains=term) |
+                    models.Q(telefono__icontains=term)
+                )
+            
+            queryset = queryset.filter(q_filter)
+        
+        # Filtros
+        estado = self.request.GET.get('estado', '')
+        if estado == 'activo':
+            queryset = queryset.filter(activo=True)
+        elif estado == 'inactivo':
+            queryset = queryset.filter(activo=False)
+        
+        licencia = self.request.GET.get('licencia', '')
+        if licencia:
+            queryset = queryset.filter(licencias__icontains=licencia)
+        
+        # Ordenamiento
+        orden = self.request.GET.get('orden', '-creado_en')
+        queryset = queryset.order_by(orden)
+        
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         conductores = context['conductores']
+        
         # Agregar lista de licencias procesada para cada conductor
         licencias_dict = {
             'A1': 'Taxis',
@@ -174,6 +225,7 @@ class ConductorListView(ListView):
             'E': 'Vehículos de tracción animal',
             'F': 'Vehículos de FF.AA., Carabineros, PDI, Bomberos',
         }
+        
         lista_conductores = []
         for conductor in conductores:
             licencias_list = []
@@ -184,6 +236,27 @@ class ConductorListView(ListView):
                 'licencias_list': licencias_list
             })
         context['conductores_list'] = lista_conductores
+        
+        # Mantener parámetros de búsqueda y filtros en el contexto
+        context['search'] = self.request.GET.get('search', '')
+        context['estado'] = self.request.GET.get('estado', '')
+        context['licencia'] = self.request.GET.get('licencia', '')
+        context['orden'] = self.request.GET.get('orden', '-creado_en')
+        
+        # Lista de licencias disponibles para el filtro
+        context['licencias_opciones'] = [
+            {'codigo': 'A1', 'nombre': 'A1 - Taxis'},
+            {'codigo': 'A2', 'nombre': 'A2 - Transporte público 10-17 pasajeros'},
+            {'codigo': 'A3', 'nombre': 'A3 - Transporte escolar'},
+            {'codigo': 'A4', 'nombre': 'A4 - Carga > 3.500 kg'},
+            {'codigo': 'A5', 'nombre': 'A5 - Carga pesada'},
+            {'codigo': 'B', 'nombre': 'B - Particulares'},
+            {'codigo': 'C', 'nombre': 'C - Motos'},
+            {'codigo': 'D', 'nombre': 'D - Maquinaria'},
+            {'codigo': 'E', 'nombre': 'E - Tracción animal'},
+            {'codigo': 'F', 'nombre': 'F - FF.AA.'},
+        ]
+        
         return context
 
 

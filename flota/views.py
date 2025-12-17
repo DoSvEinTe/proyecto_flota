@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.http import HttpResponseRedirect, FileResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_http_methods
-from django.db.models import Sum
+from django.db.models import Sum, Q
 import os
 from .models import Bus, DocumentoVehiculo, Mantenimiento
 from .forms import BusForm, MantenimientoForm, DocumentoVehiculoForm
@@ -18,10 +18,60 @@ class BusListView(ListView):
     model = Bus
     template_name = 'flota/bus_list.html'
     context_object_name = 'buses'
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
-        return Bus.objects.all().order_by('-creado_en')
+        queryset = Bus.objects.all()
+        
+        # Búsqueda
+        search = self.request.GET.get('search', '')
+        if search:
+            queryset = queryset.filter(
+                Q(placa__icontains=search) |
+                Q(marca__icontains=search) |
+                Q(modelo__icontains=search) |
+                Q(numero_chasis__icontains=search) |
+                Q(numero_motor__icontains=search)
+            )
+        
+        # Filtros
+        estado = self.request.GET.get('estado', '')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        
+        marca = self.request.GET.get('marca', '')
+        if marca:
+            queryset = queryset.filter(marca__icontains=marca)
+        
+        año_min = self.request.GET.get('año_min', '')
+        if año_min:
+            queryset = queryset.filter(año_fabricacion__gte=año_min)
+        
+        año_max = self.request.GET.get('año_max', '')
+        if año_max:
+            queryset = queryset.filter(año_fabricacion__lte=año_max)
+        
+        # Ordenamiento
+        orden = self.request.GET.get('orden', '-creado_en')
+        queryset = queryset.order_by(orden)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Mantener parámetros de búsqueda y filtros en el contexto
+        context['search'] = self.request.GET.get('search', '')
+        context['estado'] = self.request.GET.get('estado', '')
+        context['marca'] = self.request.GET.get('marca', '')
+        context['año_min'] = self.request.GET.get('año_min', '')
+        context['año_max'] = self.request.GET.get('año_max', '')
+        context['orden'] = self.request.GET.get('orden', '-creado_en')
+        
+        # Lista de marcas únicas para el filtro
+        context['marcas_disponibles'] = Bus.objects.values_list('marca', flat=True).distinct().order_by('marca')
+        
+        return context
 
 
 @method_decorator(admin_required, name='dispatch')

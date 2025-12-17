@@ -157,6 +157,73 @@
         box-shadow: 0 2px 6px rgba(107, 114, 128, 0.4);
     }
     
+    /* Estilos mejorados para botones de acciones */
+    .acciones-container {
+        min-width: 180px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .btn-action-primary {
+        background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn-action-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+        color: white;
+    }
+    
+    .btn-action-secondary {
+        background: #6b7280;
+        color: white;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+    
+    .btn-action-secondary:hover {
+        background: #4b5563;
+        transform: translateY(-1px);
+        color: white;
+    }
+    
+    .acciones-group {
+        display: flex;
+        gap: 4px;
+    }
+    
+    .acciones-group .btn {
+        flex: 1;
+        padding: 6px 8px;
+        font-size: 11px;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+    }
+    
     /* Timeline Connector */
     .timeline-connector {
         width: 2px;
@@ -285,17 +352,21 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="fas fa-exclamation-triangle me-2 text-warning"></i>
                         Viajes Pendientes de Registro de Costos
                     </h5>
+                    <a href="{% url 'costos:viajes_sin_costos' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-filter me-2"></i>Ver Todos y Buscar
+                    </a>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>Código</th>
                                     <th>Bus</th>
                                     <th>Ruta (Timeline)</th>
                                     <th>Conductor</th>
@@ -310,6 +381,10 @@
                                     <!-- Fila de IDA (o SIMPLE) -->
                                     <tr>
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
+                                        <!-- Código con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle text-center">
+                                            <span class="badge" style="background-color: #1e40af; font-size: 0.85em;">VJ-{{ viaje.pk }}</span>
+                                        </td>
                                         <!-- Bus con rowspan para viajes de ida y vuelta -->
                                         <td rowspan="2" class="align-middle text-center">
                                             <div class="d-flex flex-column align-items-center">
@@ -318,6 +393,10 @@
                                             </div>
                                         </td>
                                         {% else %}
+                                        <!-- Código para viajes simples -->
+                                        <td class="align-middle text-center">
+                                            <span class="badge" style="background-color: #1e40af; font-size: 0.85em;">VJ-{{ viaje.pk }}</span>
+                                        </td>
                                         <!-- Bus normal para viajes simples -->
                                         <td class="align-middle text-center">
                                             <strong>{{ viaje.bus.placa }}</strong>
@@ -343,62 +422,82 @@
                                         <td>{{ viaje.conductor.nombre }} {{ viaje.conductor.apellido }}</td>
                                         <td>{{ viaje.fecha_salida|date:"d/m/Y H:i" }}</td>
                                         <td>
-                                            {% if viaje.estado_display %}
+                                            {% if viaje.estado == 'en_curso' %}
                                                 <span class="badge bg-warning text-dark">EN CURSO</span>
                                             {% elif viaje.estado == 'completado' %}
-                                                <span class="badge bg-success">{{ viaje.get_estado_display }}</span>
-                                            {% elif viaje.estado == 'en_curso' %}
-                                                <span class="badge bg-warning text-dark">{{ viaje.get_estado_display }}</span>
+                                                <span class="badge bg-success">COMPLETADO</span>
                                             {% elif viaje.estado == 'programado' %}
-                                                <span class="badge bg-info text-dark">{{ viaje.get_estado_display }}</span>
-                                            {% else %}
-                                                <span class="badge bg-danger">{{ viaje.get_estado_display }}</span>
+                                                <span class="badge bg-info text-dark">PROGRAMADO</span>
+                                            {% elif viaje.estado == 'cancelado' %}
+                                                <span class="badge bg-danger">CANCELADO</span>
                                             {% endif %}
                                         </td>
                                         {% if viaje.es_ida_vuelta and viaje.viaje_relacionado %}
                                         <!-- Acciones unificadas con rowspan para IDA y VUELTA -->
                                         <td rowspan="2" class="align-middle">
-                                            <div class="acciones-ida-vuelta">
-                                                <!-- Botón Registrar único -->
+                                            <div class="acciones-container">
+                                                <!-- Botón Registrar principal -->
                                                 <a href="{% url 'costos:registrar_ida_vuelta' viaje_ida_id=viaje.id %}" 
-                                                   class="btn btn-primary w-100 mb-2" title="Registrar Costos de Ida y Vuelta">
-                                                    <i class="fas fa-plus me-1"></i>Registrar
+                                                   class="btn-action-primary" title="Registrar Costos de Ida y Vuelta">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    <span>Registrar Costos</span>
                                                 </a>
                                                 
-                                                <!-- Botones PDF lado a lado -->
-                                                <div class="d-flex gap-1 mb-2">
+                                                <!-- Grupo de acciones secundarias -->
+                                                <div class="acciones-group">
                                                     <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
-                                                       class="btn btn-danger btn-sm flex-fill" title="PDF Viaje de Ida" target="_blank">
-                                                        <i class="fas fa-file-pdf me-1"></i>PDF IDA
+                                                       class="btn btn-danger btn-sm" title="PDF Viaje de Ida" target="_blank">
+                                                        <i class="fas fa-file-pdf"></i> IDA
                                                     </a>
                                                     <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.viaje_relacionado.id %}" 
-                                                       class="btn btn-danger btn-sm flex-fill" title="PDF Viaje de Vuelta" target="_blank">
-                                                        <i class="fas fa-file-pdf me-1"></i>PDF VUELTA
+                                                       class="btn btn-danger btn-sm" title="PDF Viaje de Vuelta" target="_blank">
+                                                        <i class="fas fa-file-pdf"></i> VUELTA
                                                     </a>
                                                 </div>
                                                 
-                                                <!-- Botón Email único -->
                                                 <a href="{% url 'costos:enviar_email_ida_vuelta' viaje_ida_id=viaje.id %}" 
-                                                   class="btn btn-success w-100" title="Enviar ambos formularios por email">
-                                                    <i class="fas fa-envelope me-1"></i>Email
+                                                   class="btn btn-success btn-sm" title="Enviar ambos formularios por email">
+                                                    <i class="fas fa-envelope"></i> Enviar Email
+                                                </a>
+                                                
+                                                <!-- Botón Revertir -->
+                                                <a href="{% url 'viajes:revertir_viaje' viaje.pk %}" 
+                                                   class="btn-action-secondary" title="Revertir a Programado"
+                                                   onclick="return confirm('¿Revertir este viaje a estado PROGRAMADO?');">
+                                                    <i class="fas fa-undo"></i>
+                                                    <span>Revertir</span>
                                                 </a>
                                             </div>
                                         </td>
                                         {% else %}
                                         <!-- Acciones normales para viajes simples -->
                                         <td>
-                                            <div class="btn-group btn-group-sm" role="group">
+                                            <div class="acciones-container">
+                                                <!-- Botón Registrar principal -->
                                                 <a href="{% url 'costos:registrar_completo' viaje_id=viaje.id %}" 
-                                                   class="btn btn-primary" title="Registrar Costos">
-                                                    <i class="fas fa-plus me-1"></i>Registrar
+                                                   class="btn-action-primary" title="Registrar Costos">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    <span>Registrar Costos</span>
                                                 </a>
-                                                <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
-                                                   class="btn btn-danger" title="Generar Formulario PDF" target="_blank">
-                                                    <i class="fas fa-file-pdf me-1"></i>PDF
-                                                </a>
-                                                <a href="{% url 'costos:enviar_email' viaje_id=viaje.id %}" 
-                                                   class="btn btn-success" title="Enviar formulario por correo al conductor">
-                                                    <i class="fas fa-envelope me-1"></i>Email
+                                                
+                                                <!-- Grupo de acciones secundarias -->
+                                                <div class="acciones-group">
+                                                    <a href="{% url 'costos:formulario_pdf' viaje_id=viaje.id %}" 
+                                                       class="btn btn-danger btn-sm" title="Generar Formulario PDF" target="_blank">
+                                                        <i class="fas fa-file-pdf"></i> PDF
+                                                    </a>
+                                                    <a href="{% url 'costos:enviar_email' viaje_id=viaje.id %}" 
+                                                       class="btn btn-success btn-sm" title="Enviar formulario por correo al conductor">
+                                                        <i class="fas fa-envelope"></i> Email
+                                                    </a>
+                                                </div>
+                                                
+                                                <!-- Botón Revertir -->
+                                                <a href="{% url 'viajes:revertir_viaje' viaje.pk %}" 
+                                                   class="btn-action-secondary" title="Revertir a Programado"
+                                                   onclick="return confirm('¿Revertir este viaje a estado PROGRAMADO?');">
+                                                    <i class="fas fa-undo"></i>
+                                                    <span>Revertir</span>
                                                 </a>
                                             </div>
                                         </td>
@@ -462,25 +561,82 @@
     <div class="row">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white border-0 py-3">
+                <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">
                         <i class="fas fa-clock me-2 text-info"></i>
                         Costos Registrados
                     </h5>
+                    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#searchFiltersCostos" aria-expanded="false" aria-controls="searchFiltersCostos">
+                        <i class="fas fa-filter me-2"></i>Búsqueda y Filtros
+                    </button>
                 </div>
+                
+                <!-- Sección de Búsqueda y Filtros para Costos -->
+                <div class="collapse {% if search_costos or bus_costos or conductor_costos %}show{% endif %}" id="searchFiltersCostos">
+                    <div class="card-body border-bottom bg-light">
+                        <form method="get">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label class="form-label"><i class="fas fa-search me-2"></i>Buscar en Costos</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                        <input type="text" class="form-control" name="search_costos" value="{{ search_costos }}" placeholder="Buscar por placa, modelo, conductor u origen/destino...">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="fas fa-bus me-2"></i>Bus</label>
+                                    <select class="form-select" name="bus_costos">
+                                        <option value="">Todos los buses</option>
+                                        {% for bus_item in buses_disponibles %}
+                                            <option value="{{ bus_item.id }}" {% if bus_costos == bus_item.id|stringformat:"s" %}selected{% endif %}>{{ bus_item.placa }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label"><i class="fas fa-user-tie me-2"></i>Conductor</label>
+                                    <select class="form-select" name="conductor_costos">
+                                        <option value="">Todos los conductores</option>
+                                        {% for conductor_item in conductores_disponibles %}
+                                            <option value="{{ conductor_item.id }}" {% if conductor_costos == conductor_item.id|stringformat:"s" %}selected{% endif %}>{{ conductor_item.apellido }}, {{ conductor_item.nombre }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label"><i class="fas fa-sort me-2"></i>Ordenar</label>
+                                    <select class="form-select" name="orden_costos">
+                                        <option value="-id" {% if orden_costos == '-id' %}selected{% endif %}>Más recientes</option>
+                                        <option value="id" {% if orden_costos == 'id' %}selected{% endif %}>Más antiguos</option>
+                                        <option value="viaje__bus__placa" {% if orden_costos == 'viaje__bus__placa' %}selected{% endif %}>Bus (A-Z)</option>
+                                        <option value="-costo_total" {% if orden_costos == '-costo_total' %}selected{% endif %}>Costo (Mayor-Menor)</option>
+                                        <option value="costo_total" {% if orden_costos == 'costo_total' %}selected{% endif %}>Costo (Menor-Mayor)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="d-flex gap-1">
+                                        <button type="submit" class="btn btn-primary flex-grow-1"><i class="fas fa-search"></i></button>
+                                        <a href="{% url 'costos:gestion' %}" class="btn btn-secondary"><i class="fas fa-redo"></i></a>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-striped table-bordered align-middle text-center">
                             <thead class="table-primary">
                                 <tr>
-                                    <th style="width: 10%;">Bus</th>
-                                    <th style="width: 22%;">Ruta (Timeline)</th>
-                                    <th style="width: 8%;">Fecha</th>
-                                    <th style="width: 8%;">Estado</th>
+                                    <th style="width: 8%;">Código</th>
+                                    <th style="width: 12%;">Bus</th>
+                                    <th style="width: 28%;">Ruta (Timeline)</th>
+                                    <th style="width: 10%;">Fecha</th>
+                                    <th style="width: 10%;">Estado</th>
                                     <th style="width: 6%;">Puntos</th>
                                     <th style="width: 6%;">Peajes</th>
-                                    <th style="width: 10%;">Combustible</th>
-                                    <th style="width: 10%;">Otros</th>
                                     <th style="width: 10%;">Total</th>
                                     <th style="width: 10%;">Acciones</th>
                                 </tr>
@@ -491,6 +647,10 @@
                                     <!-- Fila de IDA (o SIMPLE) -->
                                     <tr>
                                         {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
+                                        <!-- Código con rowspan para viajes de ida y vuelta -->
+                                        <td rowspan="2" class="align-middle text-center">
+                                            <span class="badge" style="background-color: #1e40af; font-size: 0.85em;">VJ-{{ costos.viaje.pk }}</span>
+                                        </td>
                                         <!-- Bus con rowspan para viajes de ida y vuelta -->
                                         <td rowspan="2" class="align-middle text-center">
                                             <div class="d-flex flex-column align-items-center">
@@ -500,6 +660,10 @@
                                             </div>
                                         </td>
                                         {% else %}
+                                        <!-- Código para viajes simples -->
+                                        <td class="align-middle text-center">
+                                            <span class="badge" style="background-color: #1e40af; font-size: 0.85em;">VJ-{{ costos.viaje.pk }}</span>
+                                        </td>
                                         <!-- Bus normal para viajes simples -->
                                         <td class="align-middle text-center">
                                             <div class="d-flex flex-column align-items-center">
@@ -541,8 +705,6 @@
                                         <td class="text-center">
                                             <span class="badge bg-warning text-dark">{{ costos.viaje.peajes.count }}</span>
                                         </td>
-                                        <td class="text-center"><strong>${{ costos.combustible|floatformat:0 }}</strong></td>
-                                        <td class="text-center"><strong>${{ costos.mantenimiento|add:costos.peajes|add:costos.otros_costos|floatformat:0 }}</strong></td>
                                         <td class="text-center"><strong class="text-success">${{ costos.costo_total|floatformat:0 }}</strong></td>
                                         
                                         {% if costos.viaje.es_ida_vuelta and costos.viaje.viaje_relacionado %}
@@ -649,8 +811,6 @@
                                             <td class="text-center">
                                                 <span class="badge bg-warning text-dark">{{ costos.viaje.viaje_relacionado.peajes.count }}</span>
                                             </td>
-                                            <td class="text-center"><strong>${{ costos.costos_vuelta.combustible|floatformat:0 }}</strong></td>
-                                            <td class="text-center"><strong>${{ costos.costos_vuelta.mantenimiento|add:costos.costos_vuelta.peajes|add:costos.costos_vuelta.otros_costos|floatformat:0 }}</strong></td>
                                             <td class="text-center"><strong class="text-success">${{ costos.costos_vuelta.costo_total|floatformat:0 }}</strong></td>
                                             {% else %}
                                             <td class="text-center"><span class="badge bg-secondary">0</span></td>

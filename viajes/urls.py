@@ -10,6 +10,8 @@ urlpatterns = [
     path('<int:pk>/', views.ViajeDetailView.as_view(), name='viaje_detail'),
     path('<int:pk>/editar/', views.ViajeUpdateView.as_view(), name='viaje_update'),
     path('<int:pk>/eliminar/', views.ViajeDeleteView.as_view(), name='viaje_delete'),
+    path('<int:pk>/iniciar/', views.iniciar_viaje, name='iniciar_viaje'),
+    path('<int:pk>/revertir/', views.revertir_viaje, name='revertir_viaje'),
     
     # Gestión de pasajeros en viajes
     path('<int:pk>/pasajeros/', views.viaje_pasajeros_view, name='viaje_pasajeros'),

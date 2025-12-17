@@ -61,7 +61,7 @@ class Viaje(models.Model):
         origen = self.origen_nombre or (self.lugar_origen.nombre if self.lugar_origen else 'Sin origen')
         destino = self.destino_nombre or (self.lugar_destino.nombre if self.lugar_destino else 'Sin destino')
         placa = self.bus.placa if self.bus else 'Sin bus'
-        return f"{placa} - {origen} -> {destino} ({self.fecha_salida.date()})"
+        return f"VJ-{self.pk} | {placa} - {origen} -> {destino} ({self.fecha_salida.date()})"
     
     def get_origen_display(self):
         """Retorna el nombre completo del origen"""

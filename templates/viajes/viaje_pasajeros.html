@@ -9,22 +9,63 @@
         display: none;
     }
     
-    /* Estilo de los botones de tipo de documento */
-    .btn-group label.btn {
+    /* Estilo de los botones de tipo de documento mejorado */
+    .doc-type-selector {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .doc-type-btn-wrapper {
+        flex: 1;
+    }
+
+    .doc-type-btn-wrapper label.btn {
+        width: 100%;
+        padding: 1.2rem 1.5rem;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 10px;
+        background: white !important;
+        color: #334155 !important;
         cursor: pointer;
         transition: all 0.3s ease;
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        position: relative;
     }
-    
-    /* Estado seleccionado */
+
+    .doc-type-btn-wrapper label.btn i {
+        font-size: 1.4rem;
+        color: #64748b !important;
+    }
+
+    .doc-type-btn-wrapper label.btn:hover {
+        border-color: #3b82f6 !important;
+        background: #eff6ff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .doc-type-btn-wrapper label.btn:hover i {
+        color: #3b82f6 !important;
+    }
+
+    /* Estado seleccionado mejorado */
     input[name="tipo_documento"]:checked + label.btn {
-        background-color: #0d6efd;
-        color: white;
-        border-color: #0d6efd;
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+        color: white !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
     }
-    
-    /* Hover en botones no seleccionados */
-    .btn-group label.btn:hover {
-        background-color: rgba(13, 110, 253, 0.1);
+
+    input[name="tipo_documento"]:checked + label.btn i {
+        color: white !important;
     }
     
     /* Iconos en input groups */
@@ -40,6 +81,24 @@
     .input-group:focus-within .input-group-text {
         border-color: #86b7fe;
         background-color: #e7f1ff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .input-group {
+        border-radius: 8px;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .input-group-text {
+        border-radius: 8px 0 0 8px;
     }
 </style>
 {% endblock %}
@@ -93,14 +152,16 @@
                 {% csrf_token %}
                 
                 <!-- Nombre Completo -->
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <label for="{{ pasajero_form.nombre_completo.id_for_label }}" class="form-label">Nombre Completo *</label>
-                        {{ pasajero_form.nombre_completo }}
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            {{ pasajero_form.nombre_completo }}
+                        </div>
                         {% if pasajero_form.nombre_completo.errors %}
-                            <div class="text-danger">
+                            <div class="text-danger mt-1">
                                 {% for error in pasajero_form.nombre_completo.errors %}
-                                    <small>{{ error }}</small>
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
@@ -108,25 +169,25 @@
                 </div>
 
                 <!-- Tipo de Documento -->
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <label class="form-label d-block mb-2">Tipo de Documento *</label>
-                        <div class="btn-group" role="group">
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="doc-type-selector">
                             {% for radio in pasajero_form.tipo_documento %}
-                                {{ radio.tag }}
-                                <label class="btn btn-outline-primary" for="{{ radio.id_for_label }}">
-                                    <i class="fas {% if radio.choice_value == 'rut' %}fa-id-card{% else %}fa-passport{% endif %} me-2"></i>
-                                    {{ radio.choice_label }}
-                                </label>
+                                <div class="doc-type-btn-wrapper">
+                                    {{ radio.tag }}
+                                    <label class="btn" for="{{ radio.id_for_label }}">
+                                        <i class="fas {% if radio.choice_value == 'rut' %}fa-id-card{% else %}fa-passport{% endif %}"></i>
+                                        {{ radio.choice_label }}
+                                    </label>
+                                </div>
                             {% endfor %}
                         </div>
                     </div>
                 </div>
 
-                <!-- Campos RUT/Pasaporte (alternos) -->
-                <div class="row">
-                    <div class="col-md-6 mb-3" id="rut_field">
-                        <label for="{{ pasajero_form.rut.id_for_label }}" class="form-label">RUT/Cédula *</label>
+                <!-- RUT y Correo -->
+                <div class="row mb-3">
+                    <div class="col-md-6" id="rut_field">
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-id-card"></i></span>
                             {{ pasajero_form.rut }}
@@ -134,13 +195,12 @@
                         {% if pasajero_form.rut.errors %}
                             <div class="text-danger mt-1">
                                 {% for error in pasajero_form.rut.errors %}
-                                    <small>{{ error }}</small>
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3" id="pasaporte_field" style="display: none;">
-                        <label for="{{ pasajero_form.pasaporte.id_for_label }}" class="form-label">Número de Pasaporte *</label>
+                    <div class="col-md-6" id="pasaporte_field" style="display: none;">
                         <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-passport"></i></span>
                             {{ pasajero_form.pasaporte }}
@@ -148,44 +208,56 @@
                         {% if pasajero_form.pasaporte.errors %}
                             <div class="text-danger mt-1">
                                 {% for error in pasajero_form.pasaporte.errors %}
-                                    <small>{{ error }}</small>
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ pasajero_form.telefono.id_for_label }}" class="form-label">Teléfono *</label>
-                        {{ pasajero_form.telefono }}
-                        {% if pasajero_form.telefono.errors %}
-                            <div class="text-danger">
-                                {% for error in pasajero_form.telefono.errors %}
-                                    <small>{{ error }}</small>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="{{ pasajero_form.correo.id_for_label }}" class="form-label">Correo Electrónico *</label>
-                        {{ pasajero_form.correo }}
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            {{ pasajero_form.correo }}
+                        </div>
                         {% if pasajero_form.correo.errors %}
-                            <div class="text-danger">
+                            <div class="text-danger mt-1">
                                 {% for error in pasajero_form.correo.errors %}
-                                    <small>{{ error }}</small>
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
                                 {% endfor %}
                             </div>
                         {% endif %}
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label for="asiento" class="form-label">Asiento (Opcional)</label>
-                        <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Ej: 12A">
+
+                <!-- Teléfono y Asiento -->
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                            {{ pasajero_form.telefono }}
+                        </div>
+                        {% if pasajero_form.telefono.errors %}
+                            <div class="text-danger mt-1">
+                                {% for error in pasajero_form.telefono.errors %}
+                                    <small><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</small>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="observaciones" class="form-label">Observaciones (Opcional)</label>
-                        <input type="text" name="observaciones" id="observaciones" class="form-control" placeholder="Observaciones adicionales">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-chair"></i></span>
+                            <input type="text" name="asiento" id="asiento" class="form-control" placeholder="Asiento">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observaciones -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-comment"></i></span>
+                            <textarea name="observaciones" id="observaciones" class="form-control" rows="3" placeholder="Observaciones"></textarea>
+                        </div>
                     </div>
                 </div>
                 <div class="d-flex justify-content-end">
@@ -204,12 +276,64 @@
         <span>
             <i class="fas fa-users me-2"></i>Pasajeros Registrados ({{ pasajeros_en_viaje|length }})
         </span>
-        {% if pasajeros_en_viaje %}
-        <a href="{% url 'viajes:generar_pdf_pasajeros' viaje.pk %}" class="btn btn-sm" target="_blank" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px; transition: all 0.3s ease;">
-            <i class="fas fa-file-pdf me-2"></i>Generar PDF
-        </a>
-        {% endif %}
+        <div class="d-flex gap-2">
+            {% if pasajeros_en_viaje %}
+            <button class="btn btn-sm btn-outline-light" type="button" data-bs-toggle="collapse" data-bs-target="#searchPasajeros" aria-expanded="false" aria-controls="searchPasajeros" style="border: 2px solid white;">
+                <i class="fas fa-search me-1"></i>Buscar
+            </button>
+            <a href="{% url 'viajes:generar_pdf_pasajeros' viaje.pk %}" class="btn btn-sm" target="_blank" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px; transition: all 0.3s ease;">
+                <i class="fas fa-file-pdf me-2"></i>Generar PDF
+            </a>
+            {% endif %}
+        </div>
     </div>
+    
+    <!-- Sección de Búsqueda y Ordenamiento -->
+    {% if pasajeros_en_viaje %}
+    <div class="collapse {% if search %}show{% endif %}" id="searchPasajeros">
+        <div class="card-body border-bottom" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+            <form method="get">
+                <div class="row g-3">
+                    <div class="col-md-7">
+                        <label class="form-label fw-bold mb-2"><i class="fas fa-search me-2"></i>Buscar Pasajero</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="search" 
+                                   value="{{ search }}" 
+                                   placeholder="Buscar por nombre, documento, teléfono, correo o asiento...">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold mb-2"><i class="fas fa-sort me-2"></i>Ordenar por</label>
+                        <select class="form-select" name="orden">
+                            <option value="-fecha_registro" {% if orden == '-fecha_registro' %}selected{% endif %}>Más recientes</option>
+                            <option value="fecha_registro" {% if orden == 'fecha_registro' %}selected{% endif %}>Más antiguos</option>
+                            <option value="pasajero__nombre_completo" {% if orden == 'pasajero__nombre_completo' %}selected{% endif %}>Nombre (A-Z)</option>
+                            <option value="-pasajero__nombre_completo" {% if orden == '-pasajero__nombre_completo' %}selected{% endif %}>Nombre (Z-A)</option>
+                            <option value="asiento" {% if orden == 'asiento' %}selected{% endif %}>Asiento (A-Z)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold mb-2">&nbsp;</label>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary flex-fill">
+                                <i class="fas fa-search"></i>
+                            </button>
+                            <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-secondary flex-fill">
+                                <i class="fas fa-redo"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
     <div class="card-body">
         {% if pasajeros_en_viaje %}
             <div class="table-responsive">
@@ -277,7 +401,14 @@
         {% else %}
             <div class="text-center py-4">
                 <i class="fas fa-users fa-3x text-muted mb-3"></i>
-                <p class="text-muted">No hay pasajeros registrados en este viaje.</p>
+                {% if search %}
+                    <p class="text-muted">No se encontraron pasajeros que coincidan con la búsqueda.</p>
+                    <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-secondary btn-sm">
+                        <i class="fas fa-redo me-2"></i>Limpiar búsqueda
+                    </a>
+                {% else %}
+                    <p class="text-muted">No hay pasajeros registrados en este viaje.</p>
+                {% endif %}
             </div>
         {% endif %}
     </div>

@@ -1,129 +1,316 @@
 {% extends 'base.html' %}
 
-{% block title %}Editar Pasajero en Viaje - Sistema de Gestión de Flota{% endblock %}
+{% block title %}Editar Información del Pasajero - Sistema de Gestión de Flota{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Ocultar radio buttons originales */
+    input[name="tipo_documento"] {
+        display: none;
+    }
+    
+    /* Estilo de los botones de tipo de documento mejorado */
+    .doc-type-selector {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .doc-type-btn-wrapper {
+        flex: 1;
+    }
+
+    .doc-type-btn-wrapper label.btn {
+        width: 100%;
+        padding: 1.2rem 1.5rem;
+        border: 2px solid #cbd5e1 !important;
+        border-radius: 10px;
+        background: white !important;
+        color: #334155 !important;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-align: center;
+        font-size: 1.05rem;
+        font-weight: 600;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        position: relative;
+    }
+
+    .doc-type-btn-wrapper label.btn i {
+        font-size: 1.4rem;
+        color: #64748b !important;
+    }
+
+    .doc-type-btn-wrapper label.btn:hover {
+        border-color: #3b82f6 !important;
+        background: #eff6ff !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+    }
+
+    .doc-type-btn-wrapper label.btn:hover i {
+        color: #3b82f6 !important;
+    }
+
+    /* Estado seleccionado mejorado */
+    input[name="tipo_documento"]:checked + label.btn {
+        background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%) !important;
+        color: white !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    input[name="tipo_documento"]:checked + label.btn i {
+        color: white !important;
+    }
+    
+    /* Iconos en input groups */
+    .input-group-text {
+        background-color: #f8f9fa;
+        border-right: none;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+    }
+    
+    .input-group:focus-within .input-group-text {
+        border-color: #86b7fe;
+        background-color: #e7f1ff;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control, .input-group {
+        border-radius: 8px;
+    }
+
+    .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+    }
+
+    .input-group-text {
+        border-radius: 8px 0 0 8px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Editar Información del Pasajero</h2>
     <div>
         <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver
+            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
         </a>
     </div>
 </div>
 
-<!-- Información del Viaje y Pasajero -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <i class="fas fa-bus me-2"></i>Información del Viaje
-            </div>
-            <div class="card-body">
-                <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
-                <p><strong>Ruta:</strong> {{ viaje.lugar_origen.nombre }} → {{ viaje.lugar_destino.nombre }}</p>
-                <p><strong>Fecha:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
-            </div>
-        </div>
+<!-- Información del Viaje -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-bus me-2"></i>Información del Viaje
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header bg-info text-white">
-                <i class="fas fa-user me-2"></i>Información del Pasajero
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Bus:</strong> {{ viaje.bus.placa }} - {{ viaje.bus.modelo }}</p>
+                <p><strong>Ruta:</strong> {{ viaje.get_origen_display }} → {{ viaje.get_destino_display }}</p>
             </div>
-            <div class="card-body">
-                <p><strong>Nombre:</strong> {{ pasajero.nombre_completo }}</p>
-                <p><strong>RUT:</strong> {{ pasajero.rut }}</p>
-                <p><strong>Teléfono:</strong> {{ pasajero.numero_telefono|default:"-" }}</p>
-                <p><strong>Correo:</strong> {{ pasajero.correo|default:"-" }}</p>
+            <div class="col-md-6">
+                <p><strong>Fecha Salida:</strong> {{ viaje.fecha_salida|date:"d/m/Y H:i" }}</p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge bg-{% if viaje.estado == 'programado' %}info{% elif viaje.estado == 'en_curso' %}warning{% elif viaje.estado == 'completado' %}success{% else %}danger{% endif %}">
+                        {{ viaje.get_estado_display }}
+                    </span>
+                </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Formulario de Edición -->
-<div class="card">
-    <div class="card-header bg-warning text-dark">
-        <i class="fas fa-edit me-2"></i>Editar Información en el Viaje
+<!-- Editar Pasajero -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-user-edit me-2"></i>Editar Información del Pasajero</span>
     </div>
     <div class="card-body">
-        <form method="post">
+        <form method="post" action="">
             {% csrf_token %}
-            <div class="row">
+            
+            <!-- Nombre Completo -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-user"></i></span>
+                        <input type="text" 
+                               name="nombre_completo" 
+                               id="nombre_completo" 
+                               class="form-control" 
+                               placeholder="Nombre completo del pasajero"
+                               value="{{ pasajero.nombre_completo }}"
+                               required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tipo de Documento -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="doc-type-selector">
+                        <!-- RUT/Cédula -->
+                        <div class="doc-type-btn-wrapper">
+                            <input type="radio" 
+                                   name="tipo_documento" 
+                                   id="tipo_rut" 
+                                   value="rut"
+                                   {% if not pasajero.pasaporte %}checked{% endif %}>
+                            <label class="btn" for="tipo_rut">
+                                <i class="fas fa-id-card"></i>
+                                RUT/Cédula
+                            </label>
+                        </div>
+                        
+                        <!-- Pasaporte -->
+                        <div class="doc-type-btn-wrapper">
+                            <input type="radio" 
+                                   name="tipo_documento" 
+                                   id="tipo_pasaporte" 
+                                   value="pasaporte"
+                                   {% if pasajero.pasaporte %}checked{% endif %}>
+                            <label class="btn" for="tipo_pasaporte">
+                                <i class="fas fa-passport"></i>
+                                Pasaporte
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RUT y Correo -->
+            <div class="row mb-3">
+                <div class="col-md-6" id="rut_field">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-id-card"></i></span>
+                        <input type="text" 
+                               name="rut" 
+                               id="rut" 
+                               class="form-control" 
+                               placeholder="RUT (ej: 12345678-9)"
+                               value="{{ pasajero.rut|default:'' }}">
+                    </div>
+                </div>
+                <div class="col-md-6" id="pasaporte_field" style="display: none;">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-passport"></i></span>
+                        <input type="text" 
+                               name="pasaporte" 
+                               id="pasaporte" 
+                               class="form-control" 
+                               placeholder="Número de pasaporte"
+                               value="{{ pasajero.pasaporte|default:'' }}">
+                    </div>
+                </div>
                 <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="asiento" class="form-label">Número de Asiento</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        <input type="email" 
+                               name="correo" 
+                               id="correo" 
+                               class="form-control" 
+                               placeholder="correo@ejemplo.com"
+                               value="{{ pasajero.correo|default:'' }}"
+                               required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Teléfono y Asiento -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                        <input type="text" 
+                               name="telefono" 
+                               id="telefono" 
+                               class="form-control" 
+                               placeholder="Número de teléfono"
+                               value="{{ pasajero.telefono|default:'' }}"
+                               required>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-chair"></i></span>
                         <input type="text" 
                                name="asiento" 
                                id="asiento" 
                                class="form-control" 
-                               value="{{ viaje_pasajero.asiento|default:'' }}" 
-                               placeholder="Ej: 12A, 5B, etc.">
-                        <div class="form-text">Opcional: Ingrese el número o código del asiento asignado.</div>
+                               placeholder="Asiento"
+                               value="{{ viaje_pasajero.asiento|default:'' }}">
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="mb-3">
-                        <label for="observaciones" class="form-label">Observaciones</label>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-comment"></i></span>
                         <textarea name="observaciones" 
                                   id="observaciones" 
                                   class="form-control" 
                                   rows="3" 
-                                  placeholder="Observaciones adicionales sobre este pasajero en el viaje">{{ viaje_pasajero.observaciones|default:'' }}</textarea>
-                        <div class="form-text">Opcional: Cualquier información adicional sobre este pasajero.</div>
+                                  placeholder="Observaciones">{{ viaje_pasajero.observaciones|default:'' }}</textarea>
                     </div>
                 </div>
             </div>
-            
-            <div class="mb-3">
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    <strong>Registro:</strong> Este pasajero fue agregado al viaje el {{ viaje_pasajero.fecha_registro|date:"d/m/Y a las H:i" }}.
-                </div>
-            </div>
-            
-            <div class="d-flex gap-2">
-                <button type="submit" class="btn btn-warning">
-                    <i class="fas fa-save me-2"></i>Guardar Cambios
-                </button>
+
+            <div class="d-flex justify-content-end gap-2">
                 <a href="{% url 'viajes:viaje_pasajeros' viaje.pk %}" class="btn btn-secondary">
                     <i class="fas fa-times me-2"></i>Cancelar
                 </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                </button>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Información adicional -->
-<div class="mt-4">
-    <div class="row">
-        <div class="col-md-4">
-            <div class="card border-success">
-                <div class="card-body text-center">
-                    <i class="fas fa-users fa-2x text-success mb-2"></i>
-                    <h6 class="card-title">Total Pasajeros</h6>
-                    <h4 class="text-success">{{ viaje.get_pasajeros_count }}</h4>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-info">
-                <div class="card-body text-center">
-                    <i class="fas fa-chair fa-2x text-info mb-2"></i>
-                    <h6 class="card-title">Capacidad Bus</h6>
-                    <h4 class="text-info">{{ viaje.bus.capacidad_pasajeros }}</h4>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-warning">
-                <div class="card-body text-center">
-                    <i class="fas fa-percentage fa-2x text-warning mb-2"></i>
-                    <h6 class="card-title">Ocupación</h6>
-                    <h4 class="text-warning">{% widthratio viaje.get_pasajeros_count viaje.bus.capacidad_pasajeros 100 %}%</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoRut = document.getElementById('tipo_rut');
+    const tipoPasaporte = document.getElementById('tipo_pasaporte');
+    const rutField = document.getElementById('rut_field');
+    const pasaporteField = document.getElementById('pasaporte_field');
+
+    function updateFields() {
+        if (tipoRut.checked) {
+            rutField.style.display = 'block';
+            pasaporteField.style.display = 'none';
+            document.getElementById('rut').required = true;
+            document.getElementById('pasaporte').required = false;
+        } else {
+            rutField.style.display = 'none';
+            pasaporteField.style.display = 'block';
+            document.getElementById('rut').required = false;
+            document.getElementById('pasaporte').required = true;
+        }
+    }
+
+    tipoRut.addEventListener('change', updateFields);
+    tipoPasaporte.addEventListener('change', updateFields);
+    
+    // Ejecutar en la carga
+    updateFields();
+});
+</script>
 {% endblock %}

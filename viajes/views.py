@@ -9,6 +9,7 @@ from django import forms
 from django.utils import timezone
 from django.http import JsonResponse, HttpResponse
 from django.db import transaction
+from django.db.models import Q
 from django.template.loader import get_template
 from io import BytesIO
 from reportlab.lib.pagesizes import letter, A4
@@ -156,11 +157,91 @@ class ViajeListView(ListView):
     model = Viaje
     template_name = 'viajes/viaje_list.html'
     context_object_name = 'viajes'
-    paginate_by = 20
+    paginate_by = 10
 
     def get_queryset(self):
+        from django.db.models import Q
         # Excluir viajes de tipo 'vuelta' ya que se mostrarán anidados en el viaje de IDA
-        return Viaje.objects.exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado').order_by('-fecha_salida')
+        queryset = Viaje.objects.exclude(tipo_trayecto='vuelta').select_related('bus', 'conductor', 'viaje_relacionado')
+        
+        # Búsqueda
+        search = self.request.GET.get('search', '')
+        if search:
+            # Si buscan por ID (ej: "VJ-56" o solo "56")
+            search_clean = search.replace('VJ-', '').replace('vj-', '').strip()
+            q_filter = Q(
+                bus__placa__icontains=search
+            ) | Q(
+                conductor__nombre__icontains=search
+            ) | Q(
+                conductor__apellido__icontains=search
+            ) | Q(
+                origen_ciudad__icontains=search
+            ) | Q(
+                destino_ciudad__icontains=search
+            ) | Q(
+                origen_nombre__icontains=search
+            ) | Q(
+                destino_nombre__icontains=search
+            )
+            
+            # Agregar búsqueda por ID si es un número
+            if search_clean.isdigit():
+                q_filter |= Q(pk=int(search_clean))
+            
+            queryset = queryset.filter(q_filter)
+        
+        # Filtros
+        estado = self.request.GET.get('estado', '')
+        if estado:
+            queryset = queryset.filter(estado=estado)
+        
+        bus = self.request.GET.get('bus', '')
+        if bus:
+            queryset = queryset.filter(bus_id=bus)
+        
+        conductor = self.request.GET.get('conductor', '')
+        if conductor:
+            queryset = queryset.filter(conductor_id=conductor)
+        
+        es_ida_vuelta = self.request.GET.get('es_ida_vuelta', '')
+        if es_ida_vuelta == 'si':
+            queryset = queryset.filter(es_ida_vuelta=True)
+        elif es_ida_vuelta == 'no':
+            queryset = queryset.filter(es_ida_vuelta=False)
+        
+        fecha_desde = self.request.GET.get('fecha_desde', '')
+        if fecha_desde:
+            queryset = queryset.filter(fecha_salida__date__gte=fecha_desde)
+        
+        fecha_hasta = self.request.GET.get('fecha_hasta', '')
+        if fecha_hasta:
+            queryset = queryset.filter(fecha_salida__date__lte=fecha_hasta)
+        
+        # Ordenamiento
+        orden = self.request.GET.get('orden', '-fecha_salida')
+        queryset = queryset.order_by(orden)
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Mantener parámetros de búsqueda y filtros en el contexto
+        context['search'] = self.request.GET.get('search', '')
+        context['estado'] = self.request.GET.get('estado', '')
+        context['bus'] = self.request.GET.get('bus', '')
+        context['conductor'] = self.request.GET.get('conductor', '')
+        context['es_ida_vuelta'] = self.request.GET.get('es_ida_vuelta', '')
+        context['fecha_desde'] = self.request.GET.get('fecha_desde', '')
+        context['fecha_hasta'] = self.request.GET.get('fecha_hasta', '')
+        context['orden'] = self.request.GET.get('orden', '-fecha_salida')
+        
+        # Listas para los filtros
+        context['buses_disponibles'] = Bus.objects.filter(estado='activo').order_by('placa')
+        context['conductores_disponibles'] = Conductor.objects.filter(activo=True).order_by('apellido', 'nombre')
+        
+        return context
 
 
 @method_decorator(usuario_or_admin_required, name='dispatch')
@@ -273,8 +354,25 @@ def viaje_pasajeros_view(request, pk):
     """
     Vista para mostrar y manejar pasajeros de un viaje específico.
     """
+    from django.db.models import Q
     viaje = get_object_or_404(Viaje, pk=pk)
-    pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
+    pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero')
+    
+    # Búsqueda
+    search = request.GET.get('search', '')
+    if search:
+        pasajeros_en_viaje = pasajeros_en_viaje.filter(
+            Q(pasajero__nombre_completo__icontains=search) |
+            Q(pasajero__rut__icontains=search) |
+            Q(pasajero__pasaporte__icontains=search) |
+            Q(pasajero__telefono__icontains=search) |
+            Q(pasajero__correo__icontains=search) |
+            Q(asiento__icontains=search)
+        )
+    
+    # Ordenamiento
+    orden = request.GET.get('orden', '-fecha_registro')
+    pasajeros_en_viaje = pasajeros_en_viaje.order_by(orden)
     
     # Formulario para crear nuevo pasajero
     pasajero_form = PasajeroForm()
@@ -283,6 +381,8 @@ def viaje_pasajeros_view(request, pk):
         'viaje': viaje,
         'pasajeros_en_viaje': pasajeros_en_viaje,
         'pasajero_form': pasajero_form,
+        'search': search,
+        'orden': orden,
     }
     return render(request, 'viajes/viaje_pasajeros.html', context)
 
@@ -360,22 +460,66 @@ def quitar_pasajero_viaje(request, pk, pasajero_pk):
 @login_required(login_url='login')
 def editar_pasajero_viaje(request, pk, pasajero_pk):
     """
-    Vista para editar información de un pasajero en un viaje.
+    Vista para editar información completa de un pasajero en un viaje.
     """
     viaje = get_object_or_404(Viaje, pk=pk)
     pasajero = get_object_or_404(Pasajero, pk=pasajero_pk)
     viaje_pasajero = get_object_or_404(ViajePasajero, viaje=viaje, pasajero=pasajero)
     
     if request.method == 'POST':
-        asiento = request.POST.get('asiento')
-        observaciones = request.POST.get('observaciones', '')
+        # Actualizar información del pasajero
+        nombre_completo = request.POST.get('nombre_completo', '').strip()
+        rut = request.POST.get('rut', '').strip() or None
+        pasaporte_num = request.POST.get('pasaporte', '').strip() or None
+        telefono = request.POST.get('telefono', '').strip()
+        correo = request.POST.get('correo', '').strip()
         
-        viaje_pasajero.asiento = asiento
-        viaje_pasajero.observaciones = observaciones
-        viaje_pasajero.save()
+        # Actualizar información del viaje-pasajero
+        asiento = request.POST.get('asiento', '').strip()
+        observaciones = request.POST.get('observaciones', '').strip()
         
-        messages.success(request, f'Información del pasajero {pasajero.nombre_completo} actualizada exitosamente.')
-        return redirect('viajes:viaje_pasajeros', pk=pk)
+        try:
+            # Validar que haya al menos nombre, teléfono y correo
+            if not nombre_completo or not telefono or not correo:
+                messages.error(request, 'El nombre completo, teléfono y correo son obligatorios.')
+                return redirect('viajes:editar_pasajero_viaje', pk=pk, pasajero_pk=pasajero_pk)
+            
+            # Verificar si el documento cambió y si el nuevo documento ya existe en este viaje
+            documento_cambio = (rut != pasajero.rut) or (pasaporte_num != pasajero.pasaporte)
+            
+            if documento_cambio:
+                # Buscar si el nuevo documento ya existe en este viaje (excluyendo el pasajero actual)
+                documento_existente = ViajePasajero.objects.filter(
+                    viaje=viaje
+                ).exclude(
+                    pasajero=pasajero
+                ).filter(
+                    Q(pasajero__rut=rut) | Q(pasajero__pasaporte=pasaporte_num)
+                ).exists()
+                
+                if documento_existente:
+                    messages.error(request, 'Este documento (RUT/Pasaporte) ya está registrado en otro pasajero de este viaje.')
+                    return redirect('viajes:editar_pasajero_viaje', pk=pk, pasajero_pk=pasajero_pk)
+            
+            # Actualizar datos del pasajero
+            pasajero.nombre_completo = nombre_completo
+            pasajero.rut = rut
+            pasajero.pasaporte = pasaporte_num
+            pasajero.telefono = telefono
+            pasajero.correo = correo
+            pasajero.save()
+            
+            # Actualizar datos del viaje-pasajero
+            viaje_pasajero.asiento = asiento if asiento else None
+            viaje_pasajero.observaciones = observaciones
+            viaje_pasajero.save()
+            
+            messages.success(request, f'Información del pasajero {pasajero.nombre_completo} actualizada exitosamente.')
+            return redirect('viajes:viaje_pasajeros', pk=pk)
+            
+        except Exception as e:
+            messages.error(request, f'Error al actualizar el pasajero: {str(e)}')
+            return redirect('viajes:editar_pasajero_viaje', pk=pk, pasajero_pk=pasajero_pk)
     
     context = {
         'viaje': viaje,
@@ -395,6 +539,28 @@ def crear_pasajero_desde_viaje(request, pk):
     viaje = get_object_or_404(Viaje, pk=pk)
     
     if request.method == 'POST':
+        # Validar que el RUT/Pasaporte no esté ya en este viaje
+        rut = request.POST.get('rut', '').strip() or None
+        pasaporte = request.POST.get('pasaporte', '').strip() or None
+        
+        # Verificar si el documento ya existe en este viaje
+        documento_existente = ViajePasajero.objects.filter(
+            viaje=viaje
+        ).filter(
+            Q(pasajero__rut=rut) | Q(pasajero__pasaporte=pasaporte)
+        ).exists()
+        
+        if documento_existente:
+            pasajeros_en_viaje = ViajePasajero.objects.filter(viaje=viaje).select_related('pasajero').order_by('-fecha_registro')
+            form = PasajeroForm(request.POST)
+            context = {
+                'viaje': viaje,
+                'pasajeros_en_viaje': pasajeros_en_viaje,
+                'pasajero_form': form,
+            }
+            messages.error(request, 'Este pasajero (con el mismo RUT/Pasaporte) ya está registrado en este viaje.')
+            return render(request, 'viajes/viaje_pasajeros.html', context)
+        
         form = PasajeroForm(request.POST)
         if form.is_valid():
             try:
@@ -575,3 +741,69 @@ def generar_pdf_pasajeros(request, pk):
     response.write(pdf)
     
     return response
+
+
+@login_required
+def iniciar_viaje(request, pk):
+    """
+    Vista para iniciar un viaje, cambiando su estado de PROGRAMADO a EN CURSO.
+    Esto hace que el viaje aparezca en la lista de viajes pendientes de registro de costos.
+    """
+    viaje = get_object_or_404(Viaje, pk=pk)
+    
+    # Solo permitir iniciar viajes en estado PROGRAMADO
+    if viaje.estado != 'programado':
+        messages.warning(request, f'El viaje ya está en estado {viaje.get_estado_display()}.')
+        return redirect('viajes:viaje_list')
+    
+    # Cambiar estado a EN CURSO
+    viaje.estado = 'en_curso'
+    viaje.save()
+    
+    # Si es un viaje de ida con viaje de vuelta relacionado, también iniciarlo
+    if viaje.es_ida_vuelta and viaje.tipo_trayecto == 'ida' and viaje.viaje_relacionado:
+        viaje_vuelta = viaje.viaje_relacionado
+        if viaje_vuelta.estado == 'programado':
+            viaje_vuelta.estado = 'en_curso'
+            viaje_vuelta.save()
+            messages.success(request, f'Viajes de IDA y VUELTA iniciados correctamente. Ahora aparecen en la lista de viajes pendientes de registro de costos.')
+    else:
+        messages.success(request, f'Viaje iniciado correctamente. Ahora aparece en la lista de viajes pendientes de registro de costos.')
+    
+    return redirect('viajes:viaje_list')
+
+
+@login_required
+def revertir_viaje(request, pk):
+    """
+    Vista para revertir un viaje de EN CURSO a PROGRAMADO.
+    Solo se puede revertir si el viaje NO tiene costos registrados.
+    """
+    viaje = get_object_or_404(Viaje, pk=pk)
+    
+    # Verificar que el viaje esté EN CURSO
+    if viaje.estado != 'en_curso':
+        messages.warning(request, f'El viaje debe estar EN CURSO para revertirlo. Estado actual: {viaje.get_estado_display()}.')
+        return redirect('costos:viajes_sin_costos')
+    
+    # Verificar que NO tenga costos registrados
+    from costos.models import CostosViaje
+    if CostosViaje.objects.filter(viaje=viaje).exists():
+        messages.error(request, 'No se puede revertir un viaje que ya tiene costos registrados.')
+        return redirect('costos:viajes_sin_costos')
+    
+    # Cambiar estado a PROGRAMADO
+    viaje.estado = 'programado'
+    viaje.save()
+    
+    # Si es un viaje de ida con viaje de vuelta relacionado, también revertirlo
+    if viaje.es_ida_vuelta and viaje.tipo_trayecto == 'ida' and viaje.viaje_relacionado:
+        viaje_vuelta = viaje.viaje_relacionado
+        if viaje_vuelta.estado == 'en_curso' and not CostosViaje.objects.filter(viaje=viaje_vuelta).exists():
+            viaje_vuelta.estado = 'programado'
+            viaje_vuelta.save()
+            messages.success(request, f'Viajes de IDA y VUELTA revertidos a PROGRAMADO correctamente.')
+    else:
+        messages.success(request, f'Viaje revertido a PROGRAMADO correctamente.')
+    
+    return redirect('costos:viajes_sin_costos')
