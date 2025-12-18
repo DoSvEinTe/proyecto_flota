@@ -20,8 +20,8 @@ class CostosViajeForm(forms.ModelForm):
         fields = ['viaje', 'mantenimientos', 'peajes', 'otros_costos', 'observaciones']
         widgets = {
             'viaje': forms.Select(attrs={'class': 'form-control'}),
-            'peajes': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '0'}),
-            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '1', 'min': '0'}),
+            'peajes': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
+            'otros_costos': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0'}),
             'observaciones': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {

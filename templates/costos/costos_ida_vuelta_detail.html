@@ -297,6 +297,10 @@
                                     </td>
                                 </tr>
                                 <tr>
+                                    <td class="text-muted">Km Ingreso a Flota:</td>
+                                    <td><strong>{{ km_ingreso_flota|floatformat:0 }} km</strong></td>
+                                </tr>
+                                <tr>
                                     <td class="text-muted">Km Inicial:</td>
                                     <td><strong>{{ costos_ida.km_inicial|floatformat:0 }} km</strong></td>
                                 </tr>
@@ -456,6 +460,10 @@
                                             <span class="badge bg-info">{{ costos_vuelta.viaje.get_estado_display }}</span>
                                         {% endif %}
                                     </td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted">Km Ingreso a Flota:</td>
+                                    <td><strong>{{ km_ingreso_flota|floatformat:0 }} km</strong></td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Km Inicial:</td>

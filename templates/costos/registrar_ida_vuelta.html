@@ -143,6 +143,10 @@
                             <strong>{{ viaje_ida.bus.placa }}</strong> - {{ viaje_ida.bus.modelo }}
                         </div>
                         <div class="mb-2">
+                            <small class="text-muted d-block">Km Ingreso a Flota</small>
+                            <strong class="text-info">{{ km_inicial_minimo }} km</strong>
+                        </div>
+                        <div class="mb-2">
                             <small class="text-muted d-block">Conductor</small>
                             <strong>{{ viaje_ida.conductor.nombre }} {{ viaje_ida.conductor.apellido }}</strong>
                         </div>
@@ -166,6 +170,10 @@
                         <div class="mb-2">
                             <small class="text-muted d-block">Bus</small>
                             <strong>{{ viaje_vuelta.bus.placa }}</strong> - {{ viaje_vuelta.bus.modelo }}
+                        </div>
+                        <div class="mb-2">
+                            <small class="text-muted d-block">Km Ingreso a Flota</small>
+                            <strong class="text-info">{{ km_inicial_minimo }} km</strong>
                         </div>
                         <div class="mb-2">
                             <small class="text-muted d-block">Conductor</small>
@@ -343,11 +351,11 @@
                                 <label class="form-label fw-bold">Monto (CLP)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" id="ida-monto-otro-costo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                                    <input type="number" id="ida-monto-otro-costo" class="form-control" step="1" min="0" placeholder="0">
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Comprobante</label>
+                                <label class="form-label fw-bold">Comprobante <span class="text-danger">*</span></label>
                                 <input type="file" id="ida-voucher-otro-costo" class="form-control" accept="image/*,.pdf">
                             </div>
                             <div class="col-md-3 mb-3">
@@ -524,11 +532,11 @@
                                 <label class="form-label fw-bold">Monto (CLP)</label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input type="number" id="vuelta-monto-otro-costo" class="form-control" step="0.01" min="0" placeholder="0.00">
+                                    <input type="number" id="vuelta-monto-otro-costo" class="form-control" step="1" min="0" placeholder="0">
                                 </div>
                             </div>
                             <div class="col-md-3 mb-3">
-                                <label class="form-label fw-bold">Comprobante</label>
+                                <label class="form-label fw-bold">Comprobante <span class="text-danger">*</span></label>
                                 <input type="file" id="vuelta-voucher-otro-costo" class="form-control" accept="image/*,.pdf">
                             </div>
                             <div class="col-md-3 mb-3">
@@ -864,6 +872,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (!descripcion) {
             alert('Por favor ingrese una descripción');
+            return;
+        }
+        if (!voucher) {
+            alert('Por favor cargue un comprobante');
             return;
         }
 

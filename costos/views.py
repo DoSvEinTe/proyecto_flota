@@ -246,6 +246,9 @@ class CostosViajeIdaVueltaDetailView(LoginRequiredMixin, DetailView):
         
         context['costos_vuelta'] = costos_vuelta
         
+        # Obtener kilometraje de ingreso del bus a la flota
+        context['km_ingreso_flota'] = costos_ida.viaje.bus.kilometraje_ingreso
+        
         # Datos de ida
         context['puntos_recarga_ida'] = costos_ida.puntos_recarga.all()
         context['total_kilometros_ida'] = sum(p.kilometros_recorridos for p in context['puntos_recarga_ida'])
@@ -1653,40 +1656,6 @@ def registrar_ida_vuelta(request, viaje_ida_id):
             }
             return render(request, 'costos/registrar_ida_vuelta.html', context)
         
-        # Validar que los kilometrajes no sean menores al kilometraje de ingreso del bus
-        try:
-            ida_km_inicial = int(request.POST.get('ida_km_inicial', 0))
-            ida_km_final = int(request.POST.get('ida_km_final', 0))
-            vuelta_km_inicial = int(request.POST.get('vuelta_km_inicial', 0))
-            vuelta_km_final = int(request.POST.get('vuelta_km_final', 0))
-            
-            bus_ida = viaje_ida.bus
-            bus_vuelta = viaje_vuelta.bus
-            
-            if bus_ida.kilometraje_ingreso and ida_km_inicial < bus_ida.kilometraje_ingreso:
-                messages.error(request, f'❌ El kilometraje inicial de IDA ({ida_km_inicial}) no puede ser menor al del bus ({bus_ida.kilometraje_ingreso}).')
-                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
-                return render(request, 'costos/registrar_ida_vuelta.html', context)
-            
-            if bus_ida.kilometraje_ingreso and ida_km_final < bus_ida.kilometraje_ingreso:
-                messages.error(request, f'❌ El kilometraje final de IDA ({ida_km_final}) no puede ser menor al del bus ({bus_ida.kilometraje_ingreso}).')
-                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
-                return render(request, 'costos/registrar_ida_vuelta.html', context)
-            
-            if bus_vuelta.kilometraje_ingreso and vuelta_km_inicial < bus_vuelta.kilometraje_ingreso:
-                messages.error(request, f'❌ El kilometraje inicial de VUELTA ({vuelta_km_inicial}) no puede ser menor al del bus ({bus_vuelta.kilometraje_ingreso}).')
-                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
-                return render(request, 'costos/registrar_ida_vuelta.html', context)
-            
-            if bus_vuelta.kilometraje_ingreso and vuelta_km_final < bus_vuelta.kilometraje_ingreso:
-                messages.error(request, f'❌ El kilometraje final de VUELTA ({vuelta_km_final}) no puede ser menor al del bus ({bus_vuelta.kilometraje_ingreso}).')
-                context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
-                return render(request, 'costos/registrar_ida_vuelta.html', context)
-        except (ValueError, TypeError):
-            messages.error(request, '❌ Los kilometrajes deben ser números enteros válidos.')
-            context = {'viaje_ida': viaje_ida, 'viaje_vuelta': viaje_vuelta}
-            return render(request, 'costos/registrar_ida_vuelta.html', context)
-        
         try:
             from django.db import transaction
             
@@ -1695,8 +1664,8 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                 if not costos_ida:
                     costos_ida = CostosViaje.objects.create(
                         viaje=viaje_ida,
-                        km_inicial=int(request.POST.get('ida_km_inicial', 0)),
-                        km_final=int(request.POST.get('ida_km_final', 0)),
+                        km_inicial=Decimal(request.POST.get('ida_km_inicial', 0)),
+                        km_final=Decimal(request.POST.get('ida_km_final', 0)),
                         observaciones=request.POST.get('ida_observaciones', '')
                     )
                 
@@ -1807,11 +1776,17 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         tipo = request.POST.get(f'ida_otro_costo_tipo_{idx}', '').strip()
                         monto = request.POST.get(f'ida_otro_costo_monto_{idx}', '').strip()
                         descripcion = request.POST.get(f'ida_otro_costo_descripcion_{idx}', '').strip()
+                        voucher = request.FILES.get(f'ida_otro_costo_voucher_{idx}')
                         
                         if tipo and monto and descripcion:
+                            if not voucher:
+                                messages.error(request, f'El comprobante es obligatorio para el costo IDA: {tipo}')
+                                return redirect('registrar_ida_vuelta', id_viaje=viaje_ida.id)
                             monto_decimal = Decimal(monto)
                             total_otros_costos_ida += monto_decimal
                             obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
+                            if voucher:
+                                obs += f" (Comprobante: {voucher.name})"
                             observaciones_otros_costos_ida.append(obs)
                 
                 costos_ida.otros_costos = total_otros_costos_ida
@@ -1828,8 +1803,8 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                 if not costos_vuelta:
                     costos_vuelta = CostosViaje.objects.create(
                         viaje=viaje_vuelta,
-                        km_inicial=int(request.POST.get('vuelta_km_inicial', 0)),
-                        km_final=int(request.POST.get('vuelta_km_final', 0)),
+                        km_inicial=Decimal(request.POST.get('vuelta_km_inicial', 0)),
+                        km_final=Decimal(request.POST.get('vuelta_km_final', 0)),
                         observaciones=request.POST.get('vuelta_observaciones', '')
                     )
                 
@@ -1940,11 +1915,17 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         tipo = request.POST.get(f'vuelta_otro_costo_tipo_{idx}', '').strip()
                         monto = request.POST.get(f'vuelta_otro_costo_monto_{idx}', '').strip()
                         descripcion = request.POST.get(f'vuelta_otro_costo_descripcion_{idx}', '').strip()
+                        voucher = request.FILES.get(f'vuelta_otro_costo_voucher_{idx}')
                         
                         if tipo and monto and descripcion:
+                            if not voucher:
+                                messages.error(request, f'El comprobante es obligatorio para el costo VUELTA: {tipo}')
+                                return redirect('registrar_ida_vuelta', id_viaje=viaje_ida.id)
                             monto_decimal = Decimal(monto)
                             total_otros_costos_vuelta += monto_decimal
                             obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
+                            if voucher:
+                                obs += f" (Comprobante: {voucher.name})"
                             observaciones_otros_costos_vuelta.append(obs)
                 
                 costos_vuelta.otros_costos = total_otros_costos_vuelta
@@ -2001,6 +1982,79 @@ def registrar_costos_completo(request, viaje_id):
     
     if request.method == 'POST':
         try:
+            # Validar kilometrajes
+            km_inicial = request.POST.get('km_inicial')
+            km_final = request.POST.get('km_final')
+            km_ingreso_flota = viaje.bus.kilometraje_ingreso if viaje.bus else 0
+            
+            # Validar que km_inicial sea proporcionado y sea válido
+            if not km_inicial:
+                messages.error(request, '❌ El kilometraje inicial es requerido.')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            try:
+                km_inicial_float = float(km_inicial)
+            except (ValueError, TypeError):
+                messages.error(request, '❌ El kilometraje inicial debe ser un número válido.')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            # Validar que km_inicial no sea menor que km_ingreso_flota
+            if km_inicial_float < km_ingreso_flota:
+                messages.error(request, f'❌ El kilometraje inicial ({km_inicial_float}) no puede ser inferior al km de ingreso a flota ({km_ingreso_flota} km).')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            # Validar que km_final sea proporcionado y sea válido
+            if not km_final:
+                messages.error(request, '❌ El kilometraje final es requerido.')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            try:
+                km_final_float = float(km_final)
+            except (ValueError, TypeError):
+                messages.error(request, '❌ El kilometraje final debe ser un número válido.')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            # Validar que km_final no sea menor que km_inicial
+            if km_final_float < km_inicial_float:
+                messages.error(request, f'❌ El kilometraje final ({km_final_float} km) no puede ser inferior al kilometraje inicial ({km_inicial_float} km).')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': False,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
             # Crear o actualizar el registro de costos
             if es_edicion:
                 costos_viaje = costos_existentes
@@ -2009,8 +2063,8 @@ def registrar_costos_completo(request, viaje_id):
                 costos_viaje = CostosViaje(viaje=viaje)
             
             # Asignar datos directamente del POST sin usar form.save()
-            costos_viaje.km_inicial = request.POST.get('km_inicial') or None
-            costos_viaje.km_final = request.POST.get('km_final') or None
+            costos_viaje.km_inicial = int(float(km_inicial))
+            costos_viaje.km_final = int(float(km_final))
             combustible = request.POST.get('combustible', '0').strip()
             costos_viaje.combustible = int(combustible) if combustible.isdigit() else 0
             
@@ -2071,6 +2125,150 @@ def registrar_costos_completo(request, viaje_id):
             if mantenimientos_list:
                 costos_viaje.mantenimientos.set(mantenimientos_list)
                 costos_viaje.mantenimiento = sum(Decimal(str(m.costo)) for m in mantenimientos_list)
+            
+            # Validar peajes antes de procesarlos
+            from datetime import datetime as dt
+            errores_peajes = []
+            for key in request.POST:
+                if key.startswith('peaje_lugar_'):
+                    idx = key.split('_')[-1]
+                    lugar = request.POST.get(f'peaje_lugar_{idx}', '').strip()
+                    monto = request.POST.get(f'peaje_monto_{idx}', '').strip()
+                    fecha_pago = request.POST.get(f'peaje_fecha_{idx}', '').strip()
+                    voucher = request.FILES.get(f'peaje_voucher_{idx}')
+                    
+                    # Solo validar si hay algún dato en el peaje
+                    if lugar or monto or fecha_pago or voucher:
+                        # Validar que Lugar sea obligatorio
+                        if not lugar:
+                            errores_peajes.append(f'Peaje {idx}: El lugar es obligatorio.')
+                        
+                        # Validar que Monto sea obligatorio y sea un número entero válido
+                        if not monto:
+                            errores_peajes.append(f'Peaje {idx}: El monto es obligatorio.')
+                        else:
+                            try:
+                                monto_val = Decimal(monto)
+                                if monto_val < 0:
+                                    errores_peajes.append(f'Peaje {idx}: El monto no puede ser negativo.')
+                                # Validar que sea entero
+                                if monto_val != monto_val.to_integral_value():
+                                    errores_peajes.append(f'Peaje {idx}: El monto debe ser un número entero.')
+                            except:
+                                errores_peajes.append(f'Peaje {idx}: El monto debe ser un número válido.')
+                        
+                        # Validar que Fecha de Pago sea obligatoria
+                        if not fecha_pago:
+                            errores_peajes.append(f'Peaje {idx}: La fecha de pago es obligatoria.')
+                        else:
+                            # Validar que la fecha de pago sea >= fecha de inicio del viaje
+                            try:
+                                fecha_pago_obj = dt.strptime(fecha_pago, '%Y-%m-%d').date()
+                                fecha_inicio_viaje = viaje.fecha_salida.date() if hasattr(viaje.fecha_salida, 'date') else viaje.fecha_salida
+                                if fecha_pago_obj < fecha_inicio_viaje:
+                                    errores_peajes.append(f'Peaje {idx}: La fecha de pago ({fecha_pago}) debe ser posterior o igual a la fecha de inicio del viaje ({fecha_inicio_viaje}).')
+                            except:
+                                errores_peajes.append(f'Peaje {idx}: La fecha de pago no tiene un formato válido.')
+                        
+                        # Validar que Voucher sea obligatorio
+                        if not voucher:
+                            errores_peajes.append(f'Peaje {idx}: El voucher/comprobante es obligatorio.')
+            
+            # Si hay errores en peajes, detener el guardado
+            if errores_peajes:
+                mensajes_error = '\n'.join(errores_peajes)
+                messages.error(request, f'❌ Errores en los peajes:\n{mensajes_error}')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': es_edicion,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
+            
+            # Validar recargas antes de procesarlas
+            errores_recargas = []
+            for key in request.POST:
+                if key.startswith('recarga_lugar_'):
+                    idx = key.split('_')[-1]
+                    lugar = request.POST.get(f'recarga_lugar_{idx}', '').strip()
+                    sucursal = request.POST.get(f'recarga_sucursal_{idx}', '').strip()
+                    km = request.POST.get(f'recarga_kilometraje_{idx}', '').strip()
+                    fecha = request.POST.get(f'recarga_fecha_{idx}', '').strip()
+                    litros = request.POST.get(f'recarga_litros_{idx}', '').strip()
+                    precio = request.POST.get(f'recarga_precio_{idx}', '').strip()
+                    voucher = request.FILES.get(f'recarga_voucher_{idx}')
+                    
+                    # Solo validar si hay algún dato en la recarga
+                    if lugar or sucursal or km or fecha or litros or precio or voucher:
+                        # Validar que Lugar sea obligatorio
+                        if not lugar:
+                            errores_recargas.append(f'Recarga {idx}: El lugar es obligatorio.')
+                        
+                        # Validar que Sucursal sea obligatoria
+                        if not sucursal:
+                            errores_recargas.append(f'Recarga {idx}: La sucursal es obligatoria.')
+                        
+                        # Validar que KM sea obligatorio y sea entero
+                        if not km:
+                            errores_recargas.append(f'Recarga {idx}: El km del camión es obligatorio.')
+                        else:
+                            try:
+                                km_val = int(km)
+                                if km_val < km_ingreso_flota:
+                                    errores_recargas.append(f'Recarga {idx}: El km ({km_val}) no puede ser menor que km de ingreso a flota ({km_ingreso_flota}).')
+                            except:
+                                errores_recargas.append(f'Recarga {idx}: El km debe ser un número entero válido.')
+                        
+                        # Validar que Fecha sea obligatoria
+                        if not fecha:
+                            errores_recargas.append(f'Recarga {idx}: La fecha de pago es obligatoria.')
+                        else:
+                            try:
+                                fecha_obj = dt.strptime(fecha, '%Y-%m-%d').date()
+                                fecha_inicio_viaje = viaje.fecha_salida.date() if hasattr(viaje.fecha_salida, 'date') else viaje.fecha_salida
+                                if fecha_obj < fecha_inicio_viaje:
+                                    errores_recargas.append(f'Recarga {idx}: La fecha ({fecha}) debe ser posterior o igual a la fecha de inicio del viaje ({fecha_inicio_viaje}).')
+                            except:
+                                errores_recargas.append(f'Recarga {idx}: La fecha no tiene un formato válido.')
+                        
+                        # Validar que Litros sea obligatorio y sea entero
+                        if not litros:
+                            errores_recargas.append(f'Recarga {idx}: Los litros son obligatorios.')
+                        else:
+                            try:
+                                litros_val = int(litros)
+                                if litros_val < 0:
+                                    errores_recargas.append(f'Recarga {idx}: Los litros no pueden ser negativos.')
+                            except:
+                                errores_recargas.append(f'Recarga {idx}: Los litros deben ser un número entero válido.')
+                        
+                        # Validar que Precio sea obligatorio y sea entero
+                        if not precio:
+                            errores_recargas.append(f'Recarga {idx}: El precio es obligatorio.')
+                        else:
+                            try:
+                                precio_val = int(precio)
+                                if precio_val < 0:
+                                    errores_recargas.append(f'Recarga {idx}: El precio no puede ser negativo.')
+                            except:
+                                errores_recargas.append(f'Recarga {idx}: El precio debe ser un número entero válido.')
+                        
+                        # Validar que Voucher sea obligatorio
+                        if not voucher:
+                            errores_recargas.append(f'Recarga {idx}: El voucher/comprobante es obligatorio.')
+            
+            # Si hay errores en recargas, detener el guardado
+            if errores_recargas:
+                mensajes_error = '\n'.join(errores_recargas)
+                messages.error(request, f'❌ Errores en los puntos de recarga:\n{mensajes_error}')
+                context = {
+                    'form': CostosViajeFormCompleto(),
+                    'viaje': viaje,
+                    'es_edicion': es_edicion,
+                    'km_ingreso_flota': km_ingreso_flota,
+                }
+                return render(request, 'costos/costos_completo_form.html', context)
             
             # Procesar peajes dinámicos
             total_peajes = Decimal('0')
@@ -2135,9 +2333,9 @@ def registrar_costos_completo(request, viaje_id):
                             PuntoRecarga.objects.create(
                                 costos_viaje=costos_viaje,
                                 orden=int(orden) if orden else int(idx),
-                                kilometraje=Decimal(kilometraje),
-                                precio_combustible=Decimal(precio),
-                                litros_cargados=Decimal(litros),
+                                kilometraje=int(kilometraje),
+                                precio_combustible=int(precio),
+                                litros_cargados=int(litros),
                                 ubicacion=ubicacion_completa,
                                 observaciones=observaciones,
                                 comprobante=voucher if voucher else ""
@@ -2161,6 +2359,9 @@ def registrar_costos_completo(request, viaje_id):
                     voucher = request.FILES.get(f'otro_costo_voucher_{idx}')
                     
                     if tipo and monto and descripcion:
+                        if not voucher:
+                            messages.error(request, f'El comprobante es obligatorio para el costo: {tipo}')
+                            return redirect('registrar_costos_completo', id_viaje=viaje.id)
                         try:
                             # Limpiar el monto de caracteres no numéricos excepto punto y coma
                             monto_limpio = monto.replace(',', '').replace('$', '').replace(' ', '')
@@ -2275,21 +2476,29 @@ def registrar_costos_completo(request, viaje_id):
                         capturando = True
                         continue
                     if capturando and linea.strip():
-                        # Formato: TIPO: Descripción - $Monto
+                        # Formato: TIPO: Descripción - $Monto (Comprobante: archivo)
                         if ':' in linea and '-' in linea and '$' in linea:
                             try:
+                                import re
+                                # Extraer tipo
                                 partes = linea.split(':', 1)
                                 tipo = partes[0].strip()
-                                resto = partes[1].split('-')
+                                
+                                # Extraer descripción y monto
+                                resto = partes[1].split('-', 1)
                                 descripcion = resto[0].strip()
-                                monto_str = resto[1].strip().replace('$', '').replace(',', '')
-                                monto = float(monto_str)
-                                otros_costos_existentes.append({
-                                    'tipo': tipo,
-                                    'descripcion': descripcion,
-                                    'monto': monto
-                                })
-                            except:
+                                
+                                # Extraer monto usando regex
+                                monto_match = re.search(r'\$[\d,]+', resto[1])
+                                if monto_match:
+                                    monto_str = monto_match.group(0).replace('$', '').replace(',', '')
+                                    monto = float(monto_str)
+                                    otros_costos_existentes.append({
+                                        'tipo': tipo,
+                                        'descripcion': descripcion,
+                                        'monto': monto
+                                    })
+                            except Exception as ex:
                                 pass
                     else:
                         if not capturando:
@@ -2305,6 +2514,9 @@ def registrar_costos_completo(request, viaje_id):
         except Exception as e:
             messages.warning(request, f'Advertencia al cargar datos anteriores: {str(e)}')
     
+    # Obtener kilometraje de ingreso del bus a la flota
+    km_ingreso_flota = viaje.bus.kilometraje_ingreso if viaje.bus else 0
+    
     context = {
         'form': form,
         'viaje': viaje,
@@ -2313,6 +2525,7 @@ def registrar_costos_completo(request, viaje_id):
         'peajes_existentes': peajes_existentes,
         'mantenimientos_existentes': mantenimientos_existentes,
         'otros_costos_existentes': otros_costos_existentes,
+        'km_ingreso_flota': km_ingreso_flota,
     }
     
     return render(request, 'costos/costos_completo_form.html', context)
