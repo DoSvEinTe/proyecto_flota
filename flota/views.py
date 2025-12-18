@@ -11,7 +11,6 @@ import os
 from .models import Bus, DocumentoVehiculo, Mantenimiento
 from .forms import BusForm, MantenimientoForm, DocumentoVehiculoForm
 from core.permissions import admin_required
-from core.access_control import check_object_access
 
 # Vistas de Buses (Proyecto Principal)
 @method_decorator(admin_required, name='dispatch')
@@ -80,11 +79,6 @@ class BusDetailView(DetailView):
     model = Bus
     template_name = 'flota/bus_detail.html'
     context_object_name = 'bus'
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -119,11 +113,6 @@ class BusUpdateView(UpdateView):
     form_class = BusForm
     template_name = 'flota/bus_form.html'
     success_url = reverse_lazy('flota:bus_list')
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
 
     def form_valid(self, form):
         messages.success(self.request, f'Bus {form.instance.placa} actualizado exitosamente.')
@@ -225,11 +214,6 @@ class MantenimientoUpdateView(UpdateView):
     form_class = MantenimientoForm
     template_name = 'flota/mantenimiento_form.html'
     
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
-    
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs['bus'] = self.object.bus
@@ -250,11 +234,6 @@ class MantenimientoUpdateView(UpdateView):
 class MantenimientoDeleteView(DeleteView):
     model = Mantenimiento
     template_name = 'flota/mantenimiento_confirm_delete.html'
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
     
     def get_success_url(self):
         messages.success(self.request, 'Mantenimiento eliminado correctamente.')
@@ -289,11 +268,6 @@ class DocumentoVehiculoUpdateView(UpdateView):
     form_class = DocumentoVehiculoForm
     template_name = 'flota/documento_form.html'
     
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
-    
     def get_success_url(self):
         messages.success(self.request, 'Documento actualizado correctamente.')
         return reverse_lazy('flota:bus_detail', kwargs={'pk': self.object.bus.pk})
@@ -309,11 +283,6 @@ class DocumentoVehiculoUpdateView(UpdateView):
 class DocumentoVehiculoDeleteView(DeleteView):
     model = DocumentoVehiculo
     template_name = 'flota/documento_confirm_delete.html'
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        check_object_access(self.request.user, obj, allow_admin=True)
-        return obj
     
     def get_success_url(self):
         messages.success(self.request, 'Documento eliminado correctamente.')

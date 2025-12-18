@@ -1,7 +1,6 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 from datetime import date
-from core.validators import validate_document_file, validate_comprobante_file
 
 class Bus(models.Model):
     """
@@ -77,12 +76,9 @@ class DocumentoVehiculo(models.Model):
     numero_documento = models.CharField(max_length=50)
     fecha_emision = models.DateField()
     fecha_vencimiento = models.DateField()
-    estado = models.CharField(max_length=20, choices=ESTADO_DOCUMENTO, default='vigente')
-    archivo = models.FileField(
-        upload_to='documentos_vehiculos/',
-        validators=[validate_document_file]
-    )
-    observaciones = models.TextField(blank=True, null=True)
+    estado = models.CharField(max_length=20, choices=ESTADO_DOCUMENTO, default='vigente')  # Nuevo campo
+    archivo = models.FileField(upload_to='documentos_vehiculos/')
+    observaciones = models.TextField(blank=True, null=True)  # Nuevo campo
     creado_en = models.DateTimeField(auto_now_add=True)
     actualizado_en = models.DateTimeField(auto_now=True)
 

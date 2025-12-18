@@ -11,7 +11,6 @@ from django.db import models
 import re
 from .models import Conductor, Lugar, Pasajero
 from .permissions import admin_required, usuario_or_admin_required
-from .access_control import check_object_access, validate_conductor_access
 
 
 class ConductorForm(ModelForm):
@@ -381,11 +380,6 @@ class ConductorDetailView(DetailView):
     model = Conductor
     template_name = 'core/conductor_detail.html'
     context_object_name = 'conductor'
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        validate_conductor_access(self.request.user, obj)
-        return obj
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -446,11 +440,6 @@ class ConductorUpdateView(UpdateView):
     template_name = 'core/conductor_form.html'
     success_url = reverse_lazy('conductor_list')
     
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        validate_conductor_access(self.request.user, obj)
-        return obj
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         from datetime import date
@@ -467,11 +456,6 @@ class ConductorDeleteView(DeleteView):
     model = Conductor
     template_name = 'core/conductor_confirm_delete.html'
     success_url = reverse_lazy('conductor_list')
-    
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        validate_conductor_access(self.request.user, obj)
-        return obj
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()

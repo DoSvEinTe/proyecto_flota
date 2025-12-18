@@ -1,6 +1,5 @@
 from django.db import models
 from datetime import date
-from .validators import validate_image_file
 
 
 class Conductor(models.Model):
@@ -10,41 +9,13 @@ class Conductor(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     cedula = models.CharField(max_length=20, unique=True)
-    cedula_frontal = models.ImageField(
-        upload_to='cedulas/', 
-        blank=False, 
-        null=False, 
-        default='', 
-        validators=[validate_image_file],
-        help_text='Foto frontal de la cédula de identidad'
-    )
-    cedula_trasera = models.ImageField(
-        upload_to='cedulas/', 
-        blank=False, 
-        null=False, 
-        default='', 
-        validators=[validate_image_file],
-        help_text='Foto trasera de la cédula de identidad'
-    )
+    cedula_frontal = models.ImageField(upload_to='cedulas/', blank=False, null=False, default='', help_text='Foto frontal de la cédula de identidad')
+    cedula_trasera = models.ImageField(upload_to='cedulas/', blank=False, null=False, default='', help_text='Foto trasera de la cédula de identidad')
     email = models.EmailField(unique=True)
     telefono = models.CharField(max_length=15)
     fecha_contratacion = models.DateField()
-    licencia_conducir_frontal = models.ImageField(
-        upload_to='licencias/', 
-        blank=False, 
-        null=False, 
-        default='', 
-        validators=[validate_image_file],
-        help_text='Foto frontal de la licencia de conducir'
-    )
-    licencia_conducir_trasera = models.ImageField(
-        upload_to='licencias/', 
-        blank=False, 
-        null=False, 
-        default='', 
-        validators=[validate_image_file],
-        help_text='Foto trasera de la licencia de conducir'
-    )
+    licencia_conducir_frontal = models.ImageField(upload_to='licencias/', blank=False, null=False, default='', help_text='Foto frontal de la licencia de conducir')
+    licencia_conducir_trasera = models.ImageField(upload_to='licencias/', blank=False, null=False, default='', help_text='Foto trasera de la licencia de conducir')
     licencias = models.CharField(
         max_length=50,
         help_text='Tipos de licencias (A, B, C, etc.)',

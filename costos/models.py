@@ -1,6 +1,5 @@
 from django.db import models
 from viajes.models import Viaje
-from core.validators import validate_comprobante_file
 
 
 class CostosViaje(models.Model):
@@ -66,13 +65,7 @@ class PuntoRecarga(models.Model):
     kilometros_recorridos = models.IntegerField(editable=False, default=0, help_text='Kilómetros desde el punto anterior')
     costo_total = models.IntegerField(editable=False, default=0, help_text='Costo total de esta recarga en pesos')
     ubicacion = models.CharField(max_length=200, blank=True, help_text='Nombre o ubicación del punto de recarga')
-    comprobante = models.FileField(
-        upload_to='combustible/comprobantes/', 
-        blank=True, 
-        null=True, 
-        validators=[validate_comprobante_file],
-        help_text='Comprobante de recarga'
-    )
+    comprobante = models.FileField(upload_to='combustible/comprobantes/', blank=True, null=True, help_text='Comprobante de recarga')
     observaciones = models.TextField(blank=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 
@@ -119,12 +112,7 @@ class Peaje(models.Model):
     lugar = models.CharField(max_length=150)
     monto = models.IntegerField(help_text='Monto del peaje en pesos')
     fecha_pago = models.DateTimeField()
-    comprobante = models.FileField(
-        upload_to='peajes/vouchers/', 
-        blank=True, 
-        null=True,
-        validators=[validate_comprobante_file]
-    )
+    comprobante = models.FileField(upload_to='peajes/vouchers/', blank=True, null=True)
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:
