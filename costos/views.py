@@ -1,9 +1,16 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import DeleteView
 from .models import Peaje
+from core.access_control import check_object_access
+
 class PeajeDeleteView(LoginRequiredMixin, DeleteView):
     model = Peaje
     template_name = 'costos/peaje_confirm_delete.html'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        check_object_access(self.request.user, obj, allow_admin=True)
+        return obj
 
     def delete(self, request, *args, **kwargs):
         peaje = self.get_object()
@@ -36,6 +43,7 @@ from .forms import CostosViajeForm, PuntoRecargaForm, KmInicialForm, KmFinalForm
 from flota.models import Mantenimiento
 from flota.forms import MantenimientoForm
 from viajes.models import Viaje
+from core.access_control import check_object_access, validate_costos_access
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
@@ -198,6 +206,11 @@ class CostosViajeDetailView(LoginRequiredMixin, DetailView):
     model = CostosViaje
     template_name = 'costos/costos_detail.html'
     context_object_name = 'costos'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_costos_access(self.request.user, obj)
+        return obj
 
     def get_context_data(self, **kwargs):
         # Cambiar estado del viaje a COMPLETADO cuando se accede al detalle
@@ -302,6 +315,11 @@ class CostosViajeUpdateView(LoginRequiredMixin, UpdateView):
     model = CostosViaje
     form_class = CostosViajeForm
     template_name = 'costos/costos_form.html'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_costos_access(self.request.user, obj)
+        return obj
 
     def get_success_url(self):
         return reverse_lazy('costos:detalle', kwargs={'pk': self.object.pk})
@@ -316,6 +334,11 @@ class CostosViajeDeleteView(LoginRequiredMixin, DeleteView):
     model = CostosViaje
     template_name = 'costos/costos_confirm_delete.html'
     success_url = reverse_lazy('costos:gestion')
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_costos_access(self.request.user, obj)
+        return obj
 
     def post(self, request, *args, **kwargs):
         """Aceptar POST del formulario del modal."""
@@ -400,6 +423,11 @@ class PuntoRecargaUpdateView(LoginRequiredMixin, UpdateView):
     model = PuntoRecarga
     form_class = PuntoRecargaForm
     template_name = 'costos/punto_recarga_form.html'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        check_object_access(self.request.user, obj, allow_admin=True)
+        return obj
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -429,6 +457,11 @@ class PuntoRecargaDeleteView(LoginRequiredMixin, DeleteView):
     """Vista para eliminar un punto de recarga."""
     model = PuntoRecarga
     template_name = 'costos/punto_recarga_confirm_delete.html'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        check_object_access(self.request.user, obj, allow_admin=True)
+        return obj
 
     def delete(self, request, *args, **kwargs):
         punto = self.get_object()

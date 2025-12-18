@@ -23,6 +23,7 @@ from core.models import Conductor, Lugar, Pasajero
 from core.views import PasajeroForm
 from flota.models import Bus
 from core.permissions import admin_required, usuario_or_admin_required
+from core.access_control import check_object_access, validate_viaje_access
 
 
 class ViajeForm(ModelForm):
@@ -299,6 +300,11 @@ class ViajeDetailView(DetailView):
     model = Viaje
     template_name = 'viajes/viaje_detail.html'
     context_object_name = 'viaje'
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_viaje_access(self.request.user, obj)
+        return obj
 
 
 @method_decorator(usuario_or_admin_required, name='dispatch')
@@ -374,6 +380,11 @@ class ViajeUpdateView(UpdateView):
     form_class = ViajeForm
     template_name = 'viajes/viaje_form.html'
     success_url = reverse_lazy('viajes:viaje_list')
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_viaje_access(self.request.user, obj)
+        return obj
 
     def form_valid(self, form):
         messages.success(
@@ -388,6 +399,11 @@ class ViajeDeleteView(DeleteView):
     model = Viaje
     template_name = 'viajes/viaje_confirm_delete.html'
     success_url = reverse_lazy('viajes:viaje_list')
+    
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        validate_viaje_access(self.request.user, obj)
+        return obj
 
     def delete(self, request, *args, **kwargs):
         self.object = self.get_object()
