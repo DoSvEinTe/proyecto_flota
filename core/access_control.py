@@ -79,62 +79,51 @@ def object_access_required(allow_admin=True, allow_owner=True):
     return decorator
 
 
-def validate_viaje_access(request, viaje):
+def validate_viaje_access(user, viaje):
     """
     Validar acceso a un viaje.
     
     - Admin: acceso completo
-    - Usuario: solo sus viajes
+    - Usuario: solo acceso a viajes (es lectura pública)
     """
-    if request.user.is_superuser:
+    if user.is_superuser:
         return True
     
-    if request.user.groups.filter(name='Admin').exists():
+    if user.groups.filter(name='Admin').exists():
         return True
     
-    # Usuario: solo sus viajes
-    if hasattr(viaje, 'usuario') and viaje.usuario == request.user:
-        return True
-    
-    raise PermissionDenied('No tienes permiso para acceder a este viaje.')
+    # Para viajes, todos los usuarios pueden verlos (lectura pública)
+    # La restricción se puede aplicar por rol/grupo
+    return True
 
 
-def validate_conductor_access(request, conductor):
+def validate_conductor_access(user, conductor):
     """
     Validar acceso a un conductor.
     
     - Admin: acceso completo
-    - Conductor: solo se ve a sí mismo (opcional)
+    - Otros usuarios: 403 Forbidden (solo admin puede ver conductores)
     """
-    if request.user.is_superuser:
+    if user.is_superuser:
         return True
     
-    if request.user.groups.filter(name='Admin').exists():
+    if user.groups.filter(name='Admin').exists():
         return True
-    
-    # Opcional: permitir que conductor se vea a sí mismo
-    # if hasattr(conductor, 'user') and conductor.user == request.user:
-    #     return True
     
     raise PermissionDenied('No tienes permiso para acceder a este conductor.')
 
 
-def validate_costos_access(request, costos):
+def validate_costos_access(user, costos):
     """
     Validar acceso a costos de viaje.
     
     - Admin: acceso completo
-    - Usuario: solo costos de sus viajes
+    - Otros: 403 Forbidden (solo admin puede ver costos)
     """
-    if request.user.is_superuser:
+    if user.is_superuser:
         return True
     
-    if request.user.groups.filter(name='Admin').exists():
+    if user.groups.filter(name='Admin').exists():
         return True
-    
-    # Usuario: solo costos de sus viajes
-    if hasattr(costos, 'viaje') and hasattr(costos.viaje, 'usuario'):
-        if costos.viaje.usuario == request.user:
-            return True
     
     raise PermissionDenied('No tienes permiso para acceder a estos costos.')
