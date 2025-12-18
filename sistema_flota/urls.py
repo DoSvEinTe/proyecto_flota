@@ -25,7 +25,7 @@ urlpatterns = [
     path('', home_view, name='home'),
     path('core/', include('core.urls')),
     path('flota/', include('flota.urls', namespace='flota')),
-    path('viajes/', include('viajes.urls')),
+    path('viajes/', include('viajes.urls', namespace='viajes')),
     path('costos/', include('costos.urls')),
 ]
 

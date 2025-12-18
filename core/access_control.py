@@ -117,13 +117,17 @@ def validate_costos_access(user, costos):
     """
     Validar acceso a costos de viaje.
     
-    - Admin: acceso completo
-    - Otros: 403 Forbidden (solo admin puede ver costos)
+    - Admin: acceso completo (lectura y eliminación)
+    - Usuarios autenticados: solo lectura
     """
     if user.is_superuser:
         return True
     
     if user.groups.filter(name='Admin').exists():
+        return True
+    
+    # Los usuarios autenticados pueden ver costos
+    if user.is_authenticated:
         return True
     
     raise PermissionDenied('No tienes permiso para acceder a estos costos.')

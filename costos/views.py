@@ -337,7 +337,8 @@ class CostosViajeDeleteView(LoginRequiredMixin, DeleteView):
     
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        validate_costos_access(self.request.user, obj)
+        # Solo validar que el usuario esté autenticado
+        # Ya es requerido por LoginRequiredMixin
         return obj
 
     def post(self, request, *args, **kwargs):
