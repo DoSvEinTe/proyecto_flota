@@ -1684,7 +1684,7 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         kilometraje = request.POST.get(f'ida_mant_kilometraje_{idx}', '').strip()
                         taller = request.POST.get(f'ida_mant_taller_{idx}', '').strip()
                         
-                        if fecha and tipo:
+                        if fecha and tipo and descripcion:
                             costo_mant = Decimal(costo) if costo else Decimal('0')
                             km_mant = int(kilometraje) if kilometraje else 0
                             
@@ -1776,17 +1776,17 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         tipo = request.POST.get(f'ida_otro_costo_tipo_{idx}', '').strip()
                         monto = request.POST.get(f'ida_otro_costo_monto_{idx}', '').strip()
                         descripcion = request.POST.get(f'ida_otro_costo_descripcion_{idx}', '').strip()
-                        voucher = request.FILES.get(f'ida_otro_costo_voucher_{idx}')
+                        voucher_nombre = request.POST.get(f'ida_otro_costo_voucher_{idx}', '').strip()
                         
                         if tipo and monto and descripcion:
-                            if not voucher:
+                            if not voucher_nombre:
                                 messages.error(request, f'El comprobante es obligatorio para el costo IDA: {tipo}')
-                                return redirect('registrar_ida_vuelta', id_viaje=viaje_ida.id)
+                                return redirect('costos:registrar_ida_vuelta', viaje_ida_id=viaje_ida.id)
                             monto_decimal = Decimal(monto)
                             total_otros_costos_ida += monto_decimal
                             obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
-                            if voucher:
-                                obs += f" (Comprobante: {voucher.name})"
+                            if voucher_nombre:
+                                obs += f" (Comprobante: {voucher_nombre})"
                             observaciones_otros_costos_ida.append(obs)
                 
                 costos_ida.otros_costos = total_otros_costos_ida
@@ -1823,7 +1823,7 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         kilometraje = request.POST.get(f'vuelta_mant_kilometraje_{idx}', '').strip()
                         taller = request.POST.get(f'vuelta_mant_taller_{idx}', '').strip()
                         
-                        if fecha and tipo:
+                        if fecha and tipo and descripcion:
                             costo_mant = Decimal(costo) if costo else Decimal('0')
                             km_mant = int(kilometraje) if kilometraje else 0
                             
@@ -1915,17 +1915,17 @@ def registrar_ida_vuelta(request, viaje_ida_id):
                         tipo = request.POST.get(f'vuelta_otro_costo_tipo_{idx}', '').strip()
                         monto = request.POST.get(f'vuelta_otro_costo_monto_{idx}', '').strip()
                         descripcion = request.POST.get(f'vuelta_otro_costo_descripcion_{idx}', '').strip()
-                        voucher = request.FILES.get(f'vuelta_otro_costo_voucher_{idx}')
+                        voucher_nombre = request.POST.get(f'vuelta_otro_costo_voucher_{idx}', '').strip()
                         
                         if tipo and monto and descripcion:
-                            if not voucher:
+                            if not voucher_nombre:
                                 messages.error(request, f'El comprobante es obligatorio para el costo VUELTA: {tipo}')
-                                return redirect('registrar_ida_vuelta', id_viaje=viaje_ida.id)
+                                return redirect('costos:registrar_ida_vuelta', viaje_ida_id=viaje_ida.id)
                             monto_decimal = Decimal(monto)
                             total_otros_costos_vuelta += monto_decimal
                             obs = f"{tipo.upper()}: {descripcion} - ${monto_decimal}"
-                            if voucher:
-                                obs += f" (Comprobante: {voucher.name})"
+                            if voucher_nombre:
+                                obs += f" (Comprobante: {voucher_nombre})"
                             observaciones_otros_costos_vuelta.append(obs)
                 
                 costos_vuelta.otros_costos = total_otros_costos_vuelta

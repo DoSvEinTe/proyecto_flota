@@ -607,6 +607,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Arrays para almacenar datos de otros costos
     let otrosCostosIdaData = [];
     let otrosCostosVueltaData = [];
+    
+    // Fechas de los viajes para validación
+    const fechaIdaMin = "{{ viaje_ida.fecha_salida|date:'Y-m-d' }}";
+    const fechaVueltaMin = "{{ viaje_vuelta.fecha_salida|date:'Y-m-d' }}";
+    
+    // Km minimos para mantenimiento
+    const kmMinimoIda = {{ km_inicial_minimo }};
+    const kmMinimoVuelta = {{ km_inicial_minimo }};
 
     // ==================== FUNCIONES AUXILIARES ====================
     
@@ -634,6 +642,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const noMsg = document.getElementById(`no-mant-${tipo}-msg`);
         if (noMsg) noMsg.style.display = 'none';
         
+        const minFecha = tipo === 'ida' ? fechaIdaMin : fechaVueltaMin;
+        const fechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+        const minKm = tipo === 'ida' ? kmMinimoIda : kmMinimoVuelta;
+        
         const newMant = document.createElement('div');
         newMant.className = 'item-container';
         newMant.setAttribute('data-index', index);
@@ -647,7 +659,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Fecha de Mantenimiento</label>
-                    <input type="date" name="${tipo}_mant_fecha_${index}" class="form-control">
+                    <input type="date" name="${tipo}_mant_fecha_${index}" class="form-control mant-fecha-input" min="${minFecha}" data-min-fecha="${minFecha}">
+                    <small class="text-muted d-block">Mínimo: ${fechaFormato}</small>
+                    <div class="error-mant-fecha text-danger small mt-1" style="display:none;"></div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label">Tipo</label>
@@ -673,7 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label class="form-label">Costo</label>
                     <div class="input-group">
                         <span class="input-group-text">$</span>
-                        <input type="number" name="${tipo}_mant_costo_${index}" class="form-control" step="0.01" min="0" placeholder="0.00">
+                        <input type="number" name="${tipo}_mant_costo_${index}" class="form-control" step="1" min="0" placeholder="0">
                     </div>
                 </div>
                 <div class="col-md-4 mb-3">
@@ -682,11 +696,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Kilometraje</label>
-                    <input type="number" name="${tipo}_mant_kilometraje_${index}" class="form-control" min="0">
+                    <input type="number" name="${tipo}_mant_kilometraje_${index}" class="form-control mant-km-input" min="0" data-min-km="${minKm}">
+                    <small class="text-muted d-block">Mínimo: ${minKm} km</small>
+                    <div class="error-mant-km text-danger small mt-1" style="display:none;"></div>
                 </div>
                 <div class="col-md-12 mb-3">
                     <label class="form-label">Taller</label>
                     <input type="text" name="${tipo}_mant_taller_${index}" class="form-control">
+                </div>
+                <div class="col-md-12 text-end">
+                    <button type="button" class="btn btn-secondary me-2 cancel-mant-${tipo}">
+                        <i class="fas fa-arrow-left me-1"></i>Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success save-mant-${tipo}" data-index="${index}">
+                        <i class="fas fa-wrench me-1"></i>Registrar Mantenimiento
+                    </button>
                 </div>
             </div>
         `;
@@ -711,6 +735,83 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         }
+        
+        // Guardar mantenimiento (validar campos)
+        if (e.target.closest('.save-mant-ida') || e.target.closest('.save-mant-vuelta')) {
+            const btn = e.target.closest('.save-mant-ida') || e.target.closest('.save-mant-vuelta');
+            const tipo = e.target.closest('.save-mant-ida') ? 'ida' : 'vuelta';
+            const index = btn.getAttribute('data-index');
+            const item = document.querySelector(`.item-container[data-index="${index}"]`);
+            
+            // Validar campos requeridos
+            const fecha = item.querySelector(`input[name="${tipo}_mant_fecha_${index}"]`).value;
+            const tipoSelect = item.querySelector(`select[name="${tipo}_mant_tipo_${index}"]`).value;
+            const descripcion = item.querySelector(`textarea[name="${tipo}_mant_descripcion_${index}"]`).value;
+            
+            if (!fecha || !tipoSelect || !descripcion) {
+                alert('Por favor complete los campos obligatorios: Fecha, Tipo y Descripción');
+                return;
+            }
+            
+            // Validar que la fecha no sea anterior a la fecha de inicio del viaje
+            const fechaInput = item.querySelector(`input[name="${tipo}_mant_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            if (fecha < minFecha) {
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha de mantenimiento (${new Date(fecha + 'T00:00:00').toLocaleDateString('es-ES')}) no puede ser anterior a la fecha de inicio del viaje (${minFechaFormato}).`);
+                fechaInput.classList.add('is-invalid');
+                const errorDiv = fechaInput.parentElement.querySelector('.error-mant-fecha');
+                if (errorDiv) {
+                    errorDiv.textContent = `La fecha de mantenimiento no puede ser anterior a la fecha de inicio del viaje (${minFechaFormato}).`;
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+            
+            // Validar kilometraje si está presente
+            const kmInput = item.querySelector(`input[name="${tipo}_mant_kilometraje_${index}"]`);
+            if (kmInput && kmInput.value !== '') {
+                const km = parseFloat(kmInput.value);
+                const minKm = parseFloat(kmInput.getAttribute('data-min-km'));
+                
+                if (isNaN(km) || km < minKm) {
+                    alert(`❌ El kilometraje del mantenimiento (${km} km) no puede ser inferior a ${minKm} km (km de ingreso a flota).`);
+                    kmInput.classList.add('is-invalid');
+                    const errorDiv = kmInput.parentElement.querySelector('.error-mant-km');
+                    if (errorDiv) {
+                        errorDiv.textContent = `El kilometraje no puede ser inferior a ${minKm} km (km de ingreso a flota).`;
+                        errorDiv.style.display = 'block';
+                    }
+                    return;
+                }
+            }
+            
+            // Cambiar apariencia para indicar que está guardado
+            item.style.backgroundColor = '#d1f2eb';
+            item.style.border = '2px solid #0f5132';
+            btn.innerHTML = '<i class="fas fa-check me-1"></i>Guardado';
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-outline-success');
+            btn.disabled = true;
+            
+            // Ocultar botón cancelar
+            const cancelBtn = item.querySelector(`.cancel-mant-${tipo}`);
+            if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+        
+        // Cancelar mantenimiento
+        if (e.target.closest('.cancel-mant-ida') || e.target.closest('.cancel-mant-vuelta')) {
+            const tipo = e.target.closest('.cancel-mant-ida') ? 'ida' : 'vuelta';
+            const btn = e.target.closest(`.cancel-mant-${tipo}`);
+            const item = btn.closest('.item-container');
+            item.remove();
+            
+            const container = document.getElementById(`mantenimientos-${tipo}-container`);
+            if (container.children.length === 0 || !container.querySelector('.item-container')) {
+                const noMsg = document.getElementById(`no-mant-${tipo}-msg`);
+                if (noMsg) noMsg.style.display = 'block';
+            }
+        }
     });
 
     // ==================== PEAJES ====================
@@ -720,24 +821,31 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById(`peajes-${tipo}-container`);
         ocultarMensajeVacio(`no-peajes-${tipo}-msg`);
         
+        // Calcular el orden basado en los peajes existentes
+        const peajesExistentes = container.querySelectorAll('.peaje-item').length;
+        const orden = peajesExistentes + 1;
+        
+        // Obtener la fecha mínima según el tipo de viaje
+        const minFecha = tipo === 'ida' ? fechaIdaMin : fechaVueltaMin;
+        
         const newRow = document.createElement('tr');
         newRow.className = 'peaje-item';
         newRow.setAttribute('data-index', index);
         newRow.innerHTML = `
             <td>
-                <input type="number" name="${tipo}_peaje_orden_${index}" class="form-control form-control-sm" value="${index}" readonly>
+                <input type="number" name="${tipo}_peaje_orden_${index}" class="form-control form-control-sm peaje-orden" value="${orden}" readonly>
             </td>
             <td>
-                <input type="text" name="${tipo}_peaje_lugar_${index}" class="form-control form-control-sm" placeholder="Nombre del peaje">
+                <input type="text" name="${tipo}_peaje_lugar_${index}" class="form-control form-control-sm" placeholder="Nombre del peaje" required>
             </td>
             <td>
-                <input type="number" name="${tipo}_peaje_monto_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+                <input type="number" name="${tipo}_peaje_monto_${index}" class="form-control form-control-sm" step="1" min="0" placeholder="0" required>
             </td>
             <td>
-                <input type="date" name="${tipo}_peaje_fecha_${index}" class="form-control form-control-sm">
+                <input type="date" name="${tipo}_peaje_fecha_${index}" class="form-control form-control-sm peaje-fecha-input" min="${minFecha}" data-min-fecha="${minFecha}" required>
             </td>
             <td>
-                <input type="file" name="${tipo}_peaje_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf">
+                <input type="file" name="${tipo}_peaje_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf" required>
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-danger btn-sm remove-peaje-${tipo}">
@@ -759,10 +867,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 const row = e.target.closest('.peaje-item');
                 row.remove();
                 
-                // Reordenar
+                // Reordenar consecutivamente
                 const peajes = document.querySelectorAll(`#peajes-${tipo}-container .peaje-item`);
                 peajes.forEach((peaje, idx) => {
-                    const ordenInput = peaje.querySelector(`input[name^="${tipo}_peaje_orden_"]`);
+                    const ordenInput = peaje.querySelector('.peaje-orden');
                     if (ordenInput) ordenInput.value = idx + 1;
                 });
                 
@@ -780,18 +888,25 @@ document.addEventListener('DOMContentLoaded', function() {
         const container = document.getElementById(`recargas-${tipo}-container`);
         ocultarMensajeVacio(`no-recargas-${tipo}-msg`);
         
+        // Calcular el orden basado en las recargas existentes
+        const recargasExistentes = container.querySelectorAll('.recarga-item').length;
+        const orden = recargasExistentes + 1;
+        
+        // Obtener km mínimo
+        const kmMinimo = kmMinimoIda;
+        
         const newRow = document.createElement('tr');
         newRow.className = 'recarga-item';
         newRow.setAttribute('data-index', index);
         newRow.innerHTML = `
             <td>
-                <input type="number" name="${tipo}_recarga_orden_${index}" class="form-control form-control-sm text-center" value="${index}" readonly>
+                <input type="number" name="${tipo}_recarga_orden_${index}" class="form-control form-control-sm text-center recarga-orden" value="${orden}" readonly>
             </td>
             <td>
-                <input type="text" name="${tipo}_recarga_lugar_${index}" class="form-control form-control-sm" placeholder="Lugar">
+                <input type="text" name="${tipo}_recarga_lugar_${index}" class="form-control form-control-sm" placeholder="Lugar" required>
             </td>
             <td>
-                <select name="${tipo}_recarga_sucursal_${index}" class="form-select form-select-sm">
+                <select name="${tipo}_recarga_sucursal_${index}" class="form-select form-select-sm" required>
                     <option value="">-- Seleccione --</option>
                     <option value="COPEC">COPEC</option>
                     <option value="Shell">Shell</option>
@@ -802,19 +917,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 </select>
             </td>
             <td>
-                <input type="number" name="${tipo}_recarga_kilometraje_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+                <input type="number" name="${tipo}_recarga_kilometraje_${index}" class="form-control form-control-sm recarga-km-input" step="1" min="0" placeholder="0" data-min-km="${kmMinimo}" required>
+                <div class="error-recarga-km text-danger small mt-1" style="display:none;"></div>
             </td>
             <td>
-                <input type="date" name="${tipo}_recarga_fecha_${index}" class="form-control form-control-sm">
+                <input type="date" name="${tipo}_recarga_fecha_${index}" class="form-control form-control-sm recarga-fecha-input" min="${tipo === 'ida' ? fechaIdaMin : fechaVueltaMin}" data-min-fecha="${tipo === 'ida' ? fechaIdaMin : fechaVueltaMin}" required>
             </td>
             <td>
-                <input type="number" name="${tipo}_recarga_litros_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+                <input type="number" name="${tipo}_recarga_litros_${index}" class="form-control form-control-sm" step="1" min="0" placeholder="0" required>
             </td>
             <td>
-                <input type="number" name="${tipo}_recarga_precio_${index}" class="form-control form-control-sm" step="0.01" min="0" placeholder="0.00">
+                <input type="number" name="${tipo}_recarga_precio_${index}" class="form-control form-control-sm" step="1" min="0" placeholder="0" required>
             </td>
             <td>
-                <input type="file" name="${tipo}_recarga_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf">
+                <input type="file" name="${tipo}_recarga_voucher_${index}" class="form-control form-control-sm" accept="image/*,.pdf" required>
             </td>
             <td class="text-center">
                 <button type="button" class="btn btn-danger btn-sm remove-recarga-${tipo}">
@@ -838,13 +954,87 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const recargas = document.querySelectorAll(`#recargas-${tipo}-container .recarga-item`);
                 recargas.forEach((recarga, idx) => {
-                    const ordenInput = recarga.querySelector(`input[name^="${tipo}_recarga_orden_"]`);
+                    const ordenInput = recarga.querySelector('.recarga-orden');
                     if (ordenInput) ordenInput.value = idx + 1;
                 });
                 
                 if (recargas.length === 0) {
                     mostrarMensajeVacio(`no-recargas-${tipo}-msg`);
                 }
+            }
+        }
+    });
+    
+    // Validar km de recarga en tiempo real
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('recarga-km-input')) {
+            const kmInput = e.target;
+            const minKm = parseFloat(kmInput.getAttribute('data-min-km'));
+            const kmValue = parseFloat(kmInput.value);
+            const errorDiv = kmInput.parentElement.querySelector('.error-recarga-km');
+            
+            if (kmInput.value !== '' && (isNaN(kmValue) || kmValue < minKm)) {
+                kmInput.classList.add('is-invalid');
+                if (errorDiv) {
+                    errorDiv.textContent = `El km debe ser >= ${minKm}`;
+                    errorDiv.style.display = 'block';
+                }
+            } else {
+                kmInput.classList.remove('is-invalid');
+                if (errorDiv) {
+                    errorDiv.style.display = 'none';
+                }
+            }
+        }
+    });
+
+    // Validar fecha de recarga en tiempo real (prevenir selección de fechas anteriores)
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('recarga-fecha-input')) {
+            const fechaInput = e.target;
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            const fechaValue = fechaInput.value;
+            
+            if (fechaValue !== '' && fechaValue < minFecha) {
+                fechaInput.classList.add('is-invalid');
+                fechaInput.setCustomValidity(`La fecha no puede ser anterior a ${minFecha}`);
+            } else {
+                fechaInput.classList.remove('is-invalid');
+                fechaInput.setCustomValidity('');
+            }
+        }
+    });
+
+    // Validar fecha de peaje en tiempo real (prevenir selección de fechas anteriores)
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('peaje-fecha-input')) {
+            const fechaInput = e.target;
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            const fechaValue = fechaInput.value;
+            
+            if (fechaValue !== '' && fechaValue < minFecha) {
+                fechaInput.classList.add('is-invalid');
+                fechaInput.setCustomValidity(`La fecha no puede ser anterior a ${minFecha}`);
+            } else {
+                fechaInput.classList.remove('is-invalid');
+                fechaInput.setCustomValidity('');
+            }
+        }
+    });
+
+    // Validar fecha de mantenimiento en tiempo real (prevenir selección de fechas anteriores)
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('mant-fecha-input')) {
+            const fechaInput = e.target;
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            const fechaValue = fechaInput.value;
+            
+            if (fechaValue !== '' && fechaValue < minFecha) {
+                fechaInput.classList.add('is-invalid');
+                fechaInput.setCustomValidity(`La fecha no puede ser anterior a ${minFecha}`);
+            } else {
+                fechaInput.classList.remove('is-invalid');
+                fechaInput.setCustomValidity('');
             }
         }
     });
@@ -919,6 +1109,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <input type="hidden" name="${tipo}_otro_costo_tipo_${index}" value="${tipoValue}">
                 <input type="hidden" name="${tipo}_otro_costo_monto_${index}" value="${monto}">
                 <input type="hidden" name="${tipo}_otro_costo_descripcion_${index}" value="${descripcion}">
+                <input type="hidden" name="${tipo}_otro_costo_voucher_${index}" value="${voucher ? voucher.name : ''}">
             </div>
         `;
         container.appendChild(newItem);
@@ -1113,6 +1304,218 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!esValido) {
             e.preventDefault();
             alert('Por favor corrige los errores en los kilometrajes');
+            return false;
+        }
+        
+        // Validar mantenimientos
+        const mantIdaContainers = document.querySelectorAll('#mantenimientos-ida-container .item-container');
+        mantIdaContainers.forEach(function(item) {
+            const index = item.getAttribute('data-index');
+            const fecha = item.querySelector(`input[name="ida_mant_fecha_${index}"]`).value;
+            const tipo = item.querySelector(`select[name="ida_mant_tipo_${index}"]`).value;
+            const descripcion = item.querySelector(`textarea[name="ida_mant_descripcion_${index}"]`).value;
+            const kmInput = item.querySelector(`input[name="ida_mant_kilometraje_${index}"]`);
+            
+            // Validar campos requeridos
+            if (!fecha || !tipo || !descripcion) {
+                esValido = false;
+                alert('❌ Todos los mantenimientos de IDA deben tener: Fecha, Tipo y Descripción completos.');
+                document.getElementById('ida-tab').click();
+            }
+            
+            // Validar kilometraje si está presente
+            if (kmInput && kmInput.value !== '') {
+                const km = parseFloat(kmInput.value);
+                const minKm = parseFloat(kmInput.getAttribute('data-min-km'));
+                if (isNaN(km) || km < minKm) {
+                    esValido = false;
+                    alert(`❌ El kilometraje del mantenimiento IDA (${km} km) no puede ser inferior a ${minKm} km.`);
+                    document.getElementById('ida-tab').click();
+                }
+            }
+            
+            // Validar fecha
+            const fechaInput = item.querySelector(`input[name="ida_mant_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            if (fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha de mantenimiento IDA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('ida-tab').click();
+            }
+        });
+        
+        const mantVueltaContainers = document.querySelectorAll('#mantenimientos-vuelta-container .item-container');
+        mantVueltaContainers.forEach(function(item) {
+            const index = item.getAttribute('data-index');
+            const fecha = item.querySelector(`input[name="vuelta_mant_fecha_${index}"]`).value;
+            const tipo = item.querySelector(`select[name="vuelta_mant_tipo_${index}"]`).value;
+            const descripcion = item.querySelector(`textarea[name="vuelta_mant_descripcion_${index}"]`).value;
+            const kmInput = item.querySelector(`input[name="vuelta_mant_kilometraje_${index}"]`);
+            
+            // Validar campos requeridos
+            if (!fecha || !tipo || !descripcion) {
+                esValido = false;
+                alert('❌ Todos los mantenimientos de VUELTA deben tener: Fecha, Tipo y Descripción completos.');
+                document.getElementById('vuelta-tab').click();
+            }
+            
+            // Validar kilometraje si está presente
+            if (kmInput && kmInput.value !== '') {
+                const km = parseFloat(kmInput.value);
+                const minKm = parseFloat(kmInput.getAttribute('data-min-km'));
+                if (isNaN(km) || km < minKm) {
+                    esValido = false;
+                    alert(`❌ El kilometraje del mantenimiento VUELTA (${km} km) no puede ser inferior a ${minKm} km.`);
+                    document.getElementById('vuelta-tab').click();
+                }
+            }
+            
+            // Validar fecha
+            const fechaInput = item.querySelector(`input[name="vuelta_mant_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            if (fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha de mantenimiento VUELTA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('vuelta-tab').click();
+            }
+        });
+        
+        // Validar peajes - todos los campos obligatorios
+        const peajesIdaContainers = document.querySelectorAll('#peajes-ida-container .peaje-item');
+        peajesIdaContainers.forEach(function(row) {
+            const index = row.getAttribute('data-index');
+            const lugar = row.querySelector(`input[name="ida_peaje_lugar_${index}"]`).value.trim();
+            const monto = row.querySelector(`input[name="ida_peaje_monto_${index}"]`).value.trim();
+            const fecha = row.querySelector(`input[name="ida_peaje_fecha_${index}"]`).value.trim();
+            const voucher = row.querySelector(`input[name="ida_peaje_voucher_${index}"]`).files.length;
+            const fechaInput = row.querySelector(`input[name="ida_peaje_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            
+            if (!lugar || !monto || !fecha || !voucher) {
+                esValido = false;
+                alert('❌ Todos los campos de los peajes de IDA son obligatorios: Lugar, Monto, Fecha y Voucher.');
+                document.getElementById('ida-tab').click();
+            }
+            
+            // Validar que la fecha no sea anterior a la fecha de inicio del viaje
+            if (fecha && minFecha && fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha de pago del peaje IDA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('ida-tab').click();
+            }
+        });
+        
+        const peajesVueltaContainers = document.querySelectorAll('#peajes-vuelta-container .peaje-item');
+        peajesVueltaContainers.forEach(function(row) {
+            const index = row.getAttribute('data-index');
+            const lugar = row.querySelector(`input[name="vuelta_peaje_lugar_${index}"]`).value.trim();
+            const monto = row.querySelector(`input[name="vuelta_peaje_monto_${index}"]`).value.trim();
+            const fecha = row.querySelector(`input[name="vuelta_peaje_fecha_${index}"]`).value.trim();
+            const voucher = row.querySelector(`input[name="vuelta_peaje_voucher_${index}"]`).files.length;
+            const fechaInput = row.querySelector(`input[name="vuelta_peaje_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            
+            if (!lugar || !monto || !fecha || !voucher) {
+                esValido = false;
+                alert('❌ Todos los campos de los peajes de VUELTA son obligatorios: Lugar, Monto, Fecha y Voucher.');
+                document.getElementById('vuelta-tab').click();
+            }
+            
+            // Validar que la fecha no sea anterior a la fecha de inicio del viaje
+            if (fecha && minFecha && fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha de pago del peaje VUELTA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('vuelta-tab').click();
+            }
+        });
+        
+        // Validar recargas - todos los campos obligatorios y km progresivo
+        const recargasIdaContainers = document.querySelectorAll('#recargas-ida-container .recarga-item');
+        let kmAnteriorIda = kmMinimoIda;
+        recargasIdaContainers.forEach(function(row, idx) {
+            const index = row.getAttribute('data-index');
+            const lugar = row.querySelector(`input[name="ida_recarga_lugar_${index}"]`).value.trim();
+            const sucursal = row.querySelector(`select[name="ida_recarga_sucursal_${index}"]`).value.trim();
+            const km = row.querySelector(`input[name="ida_recarga_kilometraje_${index}"]`).value.trim();
+            const fecha = row.querySelector(`input[name="ida_recarga_fecha_${index}"]`).value.trim();
+            const litros = row.querySelector(`input[name="ida_recarga_litros_${index}"]`).value.trim();
+            const precio = row.querySelector(`input[name="ida_recarga_precio_${index}"]`).value.trim();
+            const voucher = row.querySelector(`input[name="ida_recarga_voucher_${index}"]`).files.length;
+            const fechaInput = row.querySelector(`input[name="ida_recarga_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            
+            if (!lugar || !sucursal || !km || !fecha || !litros || !precio || !voucher) {
+                esValido = false;
+                alert('❌ Todos los campos de los puntos de recarga de IDA son obligatorios.');
+                document.getElementById('ida-tab').click();
+            }
+            
+            // Validar km >= km anterior
+            if (km) {
+                const kmNumero = parseFloat(km);
+                if (kmNumero < kmAnteriorIda) {
+                    esValido = false;
+                    alert(`❌ El km del punto de recarga ${idx + 1} de IDA (${kmNumero} km) no puede ser inferior al anterior (${kmAnteriorIda} km).`);
+                    document.getElementById('ida-tab').click();
+                }
+                kmAnteriorIda = kmNumero;
+            }
+            
+            // Validar fecha
+            if (fecha && minFecha && fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha del punto de recarga ${idx + 1} de IDA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('ida-tab').click();
+            }
+        });
+        
+        const recargasVueltaContainers = document.querySelectorAll('#recargas-vuelta-container .recarga-item');
+        let kmAnteriorVuelta = kmMinimoVuelta;
+        recargasVueltaContainers.forEach(function(row, idx) {
+            const index = row.getAttribute('data-index');
+            const lugar = row.querySelector(`input[name="vuelta_recarga_lugar_${index}"]`).value.trim();
+            const sucursal = row.querySelector(`select[name="vuelta_recarga_sucursal_${index}"]`).value.trim();
+            const km = row.querySelector(`input[name="vuelta_recarga_kilometraje_${index}"]`).value.trim();
+            const fecha = row.querySelector(`input[name="vuelta_recarga_fecha_${index}"]`).value.trim();
+            const litros = row.querySelector(`input[name="vuelta_recarga_litros_${index}"]`).value.trim();
+            const precio = row.querySelector(`input[name="vuelta_recarga_precio_${index}"]`).value.trim();
+            const voucher = row.querySelector(`input[name="vuelta_recarga_voucher_${index}"]`).files.length;
+            const fechaInput = row.querySelector(`input[name="vuelta_recarga_fecha_${index}"]`);
+            const minFecha = fechaInput.getAttribute('data-min-fecha');
+            
+            if (!lugar || !sucursal || !km || !fecha || !litros || !precio || !voucher) {
+                esValido = false;
+                alert('❌ Todos los campos de los puntos de recarga de VUELTA son obligatorios.');
+                document.getElementById('vuelta-tab').click();
+            }
+            
+            // Validar km >= km anterior
+            if (km) {
+                const kmNumero = parseFloat(km);
+                if (kmNumero < kmAnteriorVuelta) {
+                    esValido = false;
+                    alert(`❌ El km del punto de recarga ${idx + 1} de VUELTA (${kmNumero} km) no puede ser inferior al anterior (${kmAnteriorVuelta} km).`);
+                    document.getElementById('vuelta-tab').click();
+                }
+                kmAnteriorVuelta = kmNumero;
+            }
+            
+            // Validar fecha
+            if (fecha && minFecha && fecha < minFecha) {
+                esValido = false;
+                const minFechaFormato = new Date(minFecha + 'T00:00:00').toLocaleDateString('es-ES');
+                alert(`❌ La fecha del punto de recarga ${idx + 1} de VUELTA no puede ser anterior a ${minFechaFormato}.`);
+                document.getElementById('vuelta-tab').click();
+            }
+        });
+        
+        if (!esValido) {
+            e.preventDefault();
             return false;
         }
 
