@@ -1,0 +1,75 @@
+====================================================================
+                 🚌 SISTEMA FLOTAGEST 🚌
+          INSTALACIÓN SIMPLIFICADA PARA USUARIOS
+====================================================================
+
+¡BIENVENIDO! Tu sistema está LISTO para usar.
+
+====================================================================
+                    COMIENZA AQUÍ ⬇️
+====================================================================
+
+📋 PASO 1: LEE ESTO PRIMERO
+   └─ Abre: INICIO_RAPIDO.txt
+
+🔧 PASO 2: INSTALA (UNA SOLA VEZ)
+   └─ Doble click en: INSTALAR.bat
+   └─ Espera a que termine (5-10 minutos)
+
+🚀 PASO 3: EJECUTA
+   └─ Doble click en: EJECUTAR.bat
+   └─ Haz click en "▶ INICIAR SISTEMA"
+   └─ Espera 3 segundos
+
+🌐 PASO 4: ACCEDE
+   └─ Tu navegador abre automáticamente
+   └─ O ve a: http://127.0.0.1:8000/
+
+====================================================================
+                        ARCHIVOS ÚTILES
+====================================================================
+
+📖 DOCUMENTACIÓN:
+   • INICIO_RAPIDO.txt ........... Guía en 3 pasos
+   • INDICE_INSTALACION.txt ...... Índice completo
+   • GUIA_INSTALACION.md ......... Guía detallada
+   • SOLUCION_PROBLEMAS.md ....... Para solucionar errores
+
+🔧 EJECUTABLES:
+   • INSTALAR.bat ............... Instalación automática
+   • EJECUTAR.bat ............... Inicia el sistema
+   • GENERAR_EXE.bat ............ Para crear EXE profesional
+
+====================================================================
+                      PRÓXIMOS PASOS
+====================================================================
+
+1️⃣  Lee el archivo: INICIO_RAPIDO.txt
+2️⃣  Ejecuta: INSTALAR.bat (primera vez)
+3️⃣  Ejecuta: EJECUTAR.bat (cada vez que lo necesites)
+
+====================================================================
+                    ¿TIENES PROBLEMAS?
+====================================================================
+
+Si algo falla:
+   ▶ Revisa: SOLUCION_PROBLEMAS.md
+   ▶ Verifica: MySQL está ejecutándose
+   ▶ Reinicia la computadora e intenta nuevamente
+
+====================================================================
+                         IMPORTANTE
+====================================================================
+
+✅ Todos los archivos son SEGUROS (sin virus)
+✅ No necesitas conocimientos técnicos
+✅ Todo está automático y fácil
+✅ La instalación toma 5-10 minutos
+
+====================================================================
+                     ¡A EMPEZAR! 🚀
+====================================================================
+
+Abre ahora: INICIO_RAPIDO.txt
+
+====================================================================

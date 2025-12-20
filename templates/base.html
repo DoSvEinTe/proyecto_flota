@@ -511,7 +511,45 @@
                             {% endif %}
                         </div>
                     </div>
-                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                    
+                    <!-- Menú Dropdown de Usuario -->
+                    <div class="dropdown ms-3">
+                        <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user-circle"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'settings' %}">
+                                    <i class="fas fa-cog"></i> Configuración
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'change_password' %}">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                </a>
+                            </li>
+                            {% if user.is_staff or user.is_superuser %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'user_list_admin' %}">
+                                    <i class="fas fa-users"></i> Gestionar Usuarios
+                                </a>
+                            </li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="dropdown-item text-danger">
+                                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botón de logout original (opcional, para compatibilidad) -->
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0; display: none;">
                         {% csrf_token %}
                         <button type="submit" class="btn-logout" title="Cerrar sesión">
                             <i class="fas fa-sign-out-alt"></i>
