@@ -591,6 +591,7 @@ class PasajeroDeleteView(DeleteView):
 
 # Vista Home - Dashboard con estadísticas
 @login_required(login_url='login')
+@login_required(login_url='login')
 def home_view(request):
     from flota.models import Bus, DocumentoVehiculo
     from viajes.models import Viaje

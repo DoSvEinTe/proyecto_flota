@@ -1,0 +1,87 @@
+# 🚌 SISTEMA DE GESTIÓN DE FLOTA - INICIO RÁPIDO
+
+## ⚡ Para Usuarios (Sin conocimientos técnicos)
+
+### **Primer uso (UNA SOLA VEZ):**
+
+1. **Abre**: `INSTALAR.bat`
+2. Espera a que termine (5-10 minutos)
+3. Se crearán automáticamente los usuarios:
+   - Usuario: `usuario` / Contraseña: `usuario123`
+   - Admin: `admin` / Contraseña: `admin123`
+4. Verás: ✅ Hecho
+
+### **Cada vez que quieras usar:**
+
+1. **Abre**: `EJECUTAR.bat`
+2. Verás una ventana con botones
+3. Haz click en: **▶ INICIAR SISTEMA**
+4. Espera 3-5 segundos
+5. **Abre tu navegador**: http://127.0.0.1:8000/
+6. Inicia sesión con las credenciales arriba
+7. ¡Listo!
+
+---
+
+## 🔐 CREDENCIALES POR DEFECTO
+
+**Usuario Regular:**
+- Usuario: `usuario`
+- Contraseña: `usuario123`
+
+**Administrador:**
+- Usuario: `admin`
+- Contraseña: `admin123`
+
+**Contraseña Maestra** (para configuración del sistema):
+- `XXXDDD23` (puedes cambiarla en Sistema → Configuración)
+
+---
+
+## ✅ CHECKLIST ANTES DE EMPEZAR
+
+**Debes tener instalado:**
+- [ ] Python (https://www.python.org/)
+- [ ] MySQL ejecutándose (XAMPP, WAMP o MySQL directo)
+
+**Debes saber:**
+- Usuario MySQL: `root`
+- Contraseña MySQL: `Contra.12`
+
+---
+
+## 🆘 SI ALGO FALLA
+
+### **"Python no encontrado"**
+→ Instala Python desde https://www.python.org/  
+→ Marca "Add Python to PATH" durante instalación
+
+### **"Error de base de datos"**
+→ Abre MySQL (XAMPP o WAMP)  
+→ Verifica que MySQL esté corriendo
+
+### **"El navegador no abre"**
+→ Abre manualmente: http://127.0.0.1:8000/
+
+### **"Dice que puerto 8000 está en uso"**
+→ Cierra otras instancias del sistema
+
+---
+
+## 📞 PREGUNTAS FRECUENTES
+
+**P: ¿Qué es MySQL?**  
+R: La base de datos donde se guarda toda la información. Debe estar ejecutándose siempre.
+
+**P: ¿Debo estar conectado a internet?**  
+R: Solo para correos. La aplicación funciona sin internet.
+
+**P: ¿Puedo compartir este sistema?**  
+R: Sí, pero todos los usuarios deben seguir estos mismos pasos.
+
+**P: ¿Se borra la información al reiniciar?**  
+R: No, todo se guarda en MySQL. Es permanente.
+
+---
+
+**¡Listo para usar! Si tienes dudas, consulta a tu administrador.** 🎉

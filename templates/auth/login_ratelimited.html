@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Login - Sistema Flotagest{% endblock %}
+
+{% block content %}
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <!-- Card de Error -->
+                <div class="card shadow-lg" style="border: none; border-radius: 15px; overflow: hidden;">
+                    <!-- Header Rojo -->
+                    <div style="background: linear-gradient(135deg, #FF6B6B 0%, #EE5A52 100%); padding: 2rem; color: white; text-align: center;">
+                        <i class="fas fa-lock" style="font-size: 3.5rem; display: block; margin-bottom: 1rem;"></i>
+                        <h2 class="mb-0" style="font-weight: 700;">Acceso Bloqueado Temporalmente</h2>
+                    </div>
+
+                    <!-- Body -->
+                    <div class="card-body p-5">
+                        <div class="alert alert-danger mb-4" style="border-radius: 10px; border: none;">
+                            <h5 class="alert-heading mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Demasiados intentos fallidos
+                            </h5>
+                            <p class="mb-0">
+                                Has superado el límite de 5 intentos de login fallidos en 15 minutos.
+                            </p>
+                        </div>
+
+                        <div class="bg-light p-4" style="border-radius: 10px; border-left: 4px solid #FF6B6B;">
+                            <h6 class="mb-3" style="color: #333;">
+                                <i class="fas fa-hourglass-half me-2"></i>¿Qué hacer ahora?
+                            </h6>
+                            <ol style="color: #666; margin-bottom: 0;">
+                                <li class="mb-2">Espera <strong>15 minutos</strong> antes de intentar nuevamente</li>
+                                <li class="mb-2">Verifica que tu usuario y contraseña sean correctos</li>
+                                <li class="mb-0">Si olvidaste tu contraseña, contacta al administrador</li>
+                            </ol>
+                        </div>
+
+                        <div class="mt-4">
+                            <p class="text-muted text-center mb-0">
+                                <small>
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Este bloqueo es una medida de seguridad para proteger tu cuenta
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="card-footer bg-light p-4 text-center" style="border-top: 1px solid #ddd;">
+                        <a href="{% url 'login' %}" class="btn btn-primary" style="border-radius: 8px;">
+                            <i class="fas fa-redo me-2"></i>Volver a intentar
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Help Text -->
+                <div class="text-white mt-4 text-center">
+                    <small>
+                        <i class="fas fa-info-circle me-2"></i>
+                        ¿Problemas? Contacta al administrador del sistema
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+    }
+
+    .alert {
+        animation: slideDown 0.5s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .col-md-5 {
+            max-width: 100%;
+            padding: 1rem;
+        }
+    }
+</style>
+
+{% endblock %}

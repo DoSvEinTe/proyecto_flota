@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'core.rate_limit_middleware.RateLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'sistema_flota.urls'
@@ -149,13 +150,50 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ==================================================
+# CONFIGURACIÓN DE CONTRASEÑA MAESTRA
+# ==================================================
+# Contraseña maestra para autorizar cambios de contraseña
+# IMPORTANTE: Cambia esto en producción por una contraseña segura
+MASTER_PASSWORD = config('MASTER_PASSWORD', default='admin123')
+
 # Email Configuration (Gmail)
 # IMPORTANTE: En desarrollo, se usa console backend para no enviar emails reales
 # Para producción, cambiar a 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+
+# Valores por defecto - se pueden cambiar dinámicamente
+DEFAULT_EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+DEFAULT_EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 DEFAULT_FROM_EMAIL = config('EMAIL_HOST_USER', default='noreply@flotagest.com')
+
+# Función para obtener email dinámicamente (sin reiniciar)
+def get_email_config():
+    """Lee configuración de email del .env sin reiniciar servidor"""
+    import os
+    from pathlib import Path
+    
+    env_file = Path(BASE_DIR) / '.env'
+    email_user = DEFAULT_EMAIL_HOST_USER
+    email_pass = DEFAULT_EMAIL_HOST_PASSWORD
+    
+    if env_file.exists():
+        try:
+            with open(env_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('EMAIL_HOST_USER='):
+                        email_user = line.split('=', 1)[1].strip()
+                    elif line.startswith('EMAIL_HOST_PASSWORD='):
+                        email_pass = line.split('=', 1)[1].strip()
+        except Exception as e:
+            print(f"Error leyendo .env: {e}")
+    
+    return email_user, email_pass
+
+# Aplicar valores iniciales
+EMAIL_HOST_USER = DEFAULT_EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = DEFAULT_EMAIL_HOST_PASSWORD

@@ -3,6 +3,25 @@ from django.views.generic import DeleteView
 from .models import Peaje
 from core.access_control import check_object_access
 
+def refresh_email_config():
+    """Actualiza la configuración de email dinámicamente desde .env"""
+    from django.conf import settings
+    from pathlib import Path
+    
+    env_file = Path(settings.BASE_DIR) / '.env'
+    if env_file.exists():
+        try:
+            with open(env_file, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith('EMAIL_HOST_USER='):
+                        settings.EMAIL_HOST_USER = line.split('=', 1)[1].strip()
+                        settings.DEFAULT_FROM_EMAIL = settings.EMAIL_HOST_USER
+                    elif line.startswith('EMAIL_HOST_PASSWORD='):
+                        settings.EMAIL_HOST_PASSWORD = line.split('=', 1)[1].strip()
+        except Exception as e:
+            print(f"Error leyendo .env para email: {e}")
+
 class PeajeDeleteView(LoginRequiredMixin, DeleteView):
     model = Peaje
     template_name = 'costos/peaje_confirm_delete.html'
@@ -18,7 +37,8 @@ class PeajeDeleteView(LoginRequiredMixin, DeleteView):
         response = super().delete(request, *args, **kwargs)
         # Recalcular el total de peajes
         if costos_viaje:
-            costos_viaje.peajes = sum(p.monto for p in peaje.viaje.peajes.all())
+            peajes = Peaje.objects.filter(viaje=peaje.viaje)
+            costos_viaje.peajes = sum(p.monto for p in peajes)
             costos_viaje.save()
         messages.success(request, 'Peaje eliminado exitosamente.')
         return response
@@ -1228,6 +1248,9 @@ Quedamos atentos a cualquier consulta.
 Cordialmente,
 Sistema de Gestión de Flota - FlotaGest"""
         
+        # Actualizar configuración de email dinámicamente
+        refresh_email_config()
+        
         email = EmailMessage(
             subject=subject,
             body=body,
@@ -1544,6 +1567,9 @@ Quedamos atentos a cualquier consulta.
 
 Cordialmente,
 Sistema de Gestión de Flota - FlotaGest"""
+        
+        # Actualizar configuración de email dinámicamente
+        refresh_email_config()
         
         email = EmailMessage(
             subject=subject,

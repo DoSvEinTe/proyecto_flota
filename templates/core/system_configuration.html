@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Configuración del Sistema{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5" style="background: #f8f9fa; min-height: 100vh;">
+    <div class="container">
+        <!-- Header -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold mb-2" style="color: #2c3e50;">
+                <i class="fas fa-cog me-3" style="font-size: 2.5rem; color: #3498db;"></i>Configuración del Sistema
+            </h1>
+            <p class="lead" style="color: #7f8c8d;">Administra los parámetros críticos de tu aplicación</p>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mx-auto" role="alert" style="max-width: 600px; border-radius: 12px; border-left: 5px solid; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem;">
+                    <strong>
+                        {% if message.tags == 'success' %}
+                            <i class="fas fa-check-circle me-2"></i>
+                        {% elif message.tags == 'error' %}
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fas fa-info-circle me-2"></i>
+                        {% endif %}
+                    </strong>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="row g-4 justify-content-center">
+            <!-- Tarjeta 1: Contraseña Maestra -->
+            <div class="col-lg-5">
+                <div class="card h-100 shadow-sm" style="border: none; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; border-top: 5px solid #e74c3c;">
+                    <div style="background: linear-gradient(135deg, #e8f4f8 0%, #f0f8fb 100%); padding: 2rem; color: #2c3e50; text-align: center; border-bottom: 1px solid #e0e0e0;">
+                        <i class="fas fa-key" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: #e74c3c;"></i>
+                        <h4 class="mb-0" style="font-weight: 700; font-size: 1.3rem; color: #2c3e50;">Contraseña Maestra</h4>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <p class="text-muted" style="font-size: 0.95rem; line-height: 1.6;">
+                            Actualiza tu contraseña maestra. Es fundamental para proteger el acceso a funciones administrativas críticas.
+                        </p>
+
+                        <form method="post" novalidate class="mt-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_master_password">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" style="color: #2c3e50; font-size: 0.9rem;">
+                                    Contraseña Actual
+                                </label>
+                                <input type="password" name="current_master_password" class="form-control" placeholder="Ingresa contraseña actual" required style="border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem;">
+                                {% if master_password_form.current_master_password.errors %}
+                                    <small class="text-danger d-block mt-2">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        {% for error in master_password_form.current_master_password.errors %}{{ error }}{% endfor %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" style="color: #2c3e50; font-size: 0.9rem;">
+                                    Nueva Contraseña
+                                </label>
+                                <input type="password" name="new_master_password" class="form-control" placeholder="Mínimo 8 caracteres" required style="border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem;">
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i> Debe tener al menos 8 caracteres
+                                </small>
+                                {% if master_password_form.new_master_password.errors %}
+                                    <small class="text-danger d-block mt-2">
+                                        {% for error in master_password_form.new_master_password.errors %}{{ error }}{% endfor %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold" style="color: #2c3e50; font-size: 0.9rem;">
+                                    Confirmar Contraseña
+                                </label>
+                                <input type="password" name="confirm_master_password" class="form-control" placeholder="Repite la nueva contraseña" required style="border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem;">
+                                {% if master_password_form.confirm_master_password.errors %}
+                                    <small class="text-danger d-block mt-2">
+                                        {% for error in master_password_form.confirm_master_password.errors %}{{ error }}{% endfor %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn w-100" style="background: #e74c3c; color: white; font-weight: 600; border: none; padding: 0.85rem; border-radius: 8px; transition: all 0.3s ease; font-size: 0.95rem;">
+                                <i class="fas fa-save me-2"></i> Actualizar Contraseña
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: Configuración de Email -->
+            <div class="col-lg-5">
+                <div class="card h-100 shadow-sm" style="border: none; border-radius: 12px; overflow: hidden; transition: all 0.3s ease; border-top: 5px solid #27ae60;">
+                    <div style="background: linear-gradient(135deg, #e8f8f3 0%, #f0faf7 100%); padding: 2rem; color: #2c3e50; text-align: center; border-bottom: 1px solid #e0e0e0;">
+                        <i class="fas fa-envelope" style="font-size: 3rem; display: block; margin-bottom: 1rem; color: #27ae60;"></i>
+                        <h4 class="mb-0" style="font-weight: 700; font-size: 1.3rem; color: #2c3e50;">Configuración de Email</h4>
+                    </div>
+
+                    <div class="card-body p-4">
+                        <p class="text-muted" style="font-size: 0.95rem; line-height: 1.6;">
+                            Configura tu cuenta de Gmail para enviar correos automáticos desde el sistema.
+                        </p>
+
+                        <!-- Alert informativo -->
+                        <div class="alert" style="background-color: #fef8e7; border-left: 4px solid #f39c12; border-radius: 6px; padding: 1rem; margin: 1rem 0; font-size: 0.9rem;">
+                            <strong style="color: #d68910;"><i class="fas fa-warning me-2"></i> Importante</strong><br>
+                            <small style="color: #7d6608;">
+                                No uses tu contraseña normal. Necesitas una <strong>Contraseña de Aplicación</strong> de Google.
+                            </small>
+                        </div>
+
+                        <form method="post" novalidate class="mt-4">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="change_email_config">
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold" style="color: #2c3e50; font-size: 0.9rem;">
+                                    Correo Gmail
+                                </label>
+                                <input type="email" name="email_host_user" class="form-control" placeholder="tu_correo@gmail.com" required style="border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem;">
+                                <small class="text-muted d-block mt-2">
+                                    Ej: miempresa@gmail.com
+                                </small>
+                                {% if email_form.email_host_user.errors %}
+                                    <small class="text-danger d-block mt-2">
+                                        {% for error in email_form.email_host_user.errors %}{{ error }}{% endfor %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold" style="color: #2c3e50; font-size: 0.9rem;">
+                                    Contraseña de Aplicación
+                                </label>
+                                <input type="password" name="email_host_password" class="form-control" placeholder="Contraseña de 16 caracteres" required style="border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem;">
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-lightbulb me-1" style="color: #f39c12;"></i>
+                                    <a href="https://myaccount.google.com/security" target="_blank" style="color: #27ae60; text-decoration: none; font-weight: 500;">Generar en Google Account</a>
+                                </small>
+                                {% if email_form.email_host_password.errors %}
+                                    <small class="text-danger d-block mt-2">
+                                        {% for error in email_form.email_host_password.errors %}{{ error }}{% endfor %}
+                                    </small>
+                                {% endif %}
+                            </div>
+
+                            <button type="submit" class="btn w-100" style="background: #27ae60; color: white; font-weight: 600; border: none; padding: 0.85rem; border-radius: 8px; transition: all 0.3s ease; font-size: 0.95rem;">
+                                <i class="fas fa-save me-2"></i> Guardar Email
+                            </button>
+                        </form>
+
+                        <!-- Pasos para generar contraseña -->
+                        <div style="background-color: #ecf0f1; border-left: 4px solid #27ae60; padding: 1rem; border-radius: 6px; margin-top: 1.5rem;">
+                            <small style="color: #2c3e50; font-weight: 600;"><i class="fas fa-question-circle me-2"></i> ¿Cómo generar la contraseña?</small>
+                            <ol style="margin-bottom: 0; margin-top: 0.5rem; padding-left: 1.5rem;">
+                                <li style="font-size: 0.85rem; color: #34495e; line-height: 1.4;">Ve a Google Account (myaccount.google.com)</li>
+                                <li style="font-size: 0.85rem; color: #34495e; line-height: 1.4;">Seguridad → Verificación en 2 pasos</li>
+                                <li style="font-size: 0.85rem; color: #34495e; line-height: 1.4;">Contraseñas de aplicaciones</li>
+                                <li style="font-size: 0.85rem; color: #34495e; line-height: 1.4;">Elige Correo y tu dispositivo</li>
+                                <li style="font-size: 0.85rem; color: #34495e; line-height: 1.4;">Copia la contraseña generada</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control {
+        transition: all 0.3s ease;
+        background-color: #fff;
+    }
+
+    .form-control:focus {
+        border-color: #3498db !important;
+        box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.15) !important;
+        background-color: #f8fbff;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn:active {
+        transform: translateY(0px);
+    }
+
+    .card {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (max-width: 768px) {
+        .display-5 {
+            font-size: 2rem;
+        }
+
+        .col-lg-5 {
+            max-width: 100%;
+        }
+    }
+</style>
+
+{% endblock %}

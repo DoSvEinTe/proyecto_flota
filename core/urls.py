@@ -1,11 +1,18 @@
 from django.urls import path
 from . import views
 from . import auth_views
+from . import password_views
 
 urlpatterns = [
     # Autenticación
     path('login/', auth_views.login_view, name='login'),
     path('logout/', auth_views.logout_view, name='logout'),
+    
+    # Gestión de Contraseñas
+    path('cambiar-contrasena/', password_views.change_password_view, name='change_password'),
+    path('usuarios/listar/', password_views.list_users_admin_view, name='user_list_admin'),
+    path('usuarios/<str:username>/cambiar-contrasena/', password_views.change_user_password_admin_view, name='admin_change_user_password'),
+    path('sistema/configuracion/', password_views.system_configuration_view, name='system_configuration'),
     
     # Conductores
     path('conductores/', views.ConductorListView.as_view(), name='conductor_list'),

@@ -24,49 +24,137 @@
 
         .login-container {
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
         }
 
         .login-card {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
 
         .login-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 40px 30px;
+            padding: 45px 30px;
             text-align: center;
         }
 
         .login-header i {
-            font-size: 48px;
+            font-size: 56px;
             margin-bottom: 15px;
             display: block;
         }
 
         .login-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
         }
 
         .login-header p {
-            font-size: 14px;
-            opacity: 0.9;
+            font-size: 15px;
+            opacity: 0.95;
             margin: 0;
+            font-weight: 300;
         }
 
         .login-body {
-            padding: 40px 30px;
+            padding: 35px 30px;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+            border-left: 5px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: #0c5aa0;
+        }
+
+        .info-box strong {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .info-box small {
+            display: block;
+            line-height: 1.8;
+        }
+
+        .login-options-section {
+            margin-bottom: 25px;
+        }
+
+        .login-options-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+            display: block;
+            font-size: 15px;
+        }
+
+        .login-options {
+            background: #f8f9fa;
+            padding: 0;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        .login-option {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e9ecef;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .login-option:last-child {
+            border-bottom: none;
+        }
+
+        .login-option:hover {
+            background: #fff;
+        }
+
+        .login-option input[type="radio"] {
+            cursor: pointer;
+            margin-right: 12px;
+            width: 18px;
+            height: 18px;
+            accent-color: #667eea;
+        }
+
+        .login-option label {
+            cursor: pointer;
+            margin-bottom: 0;
+            font-weight: 500;
+            color: #333;
+            display: inline;
+        }
+
+        .login-option .form-check-label {
+            margin-left: 0;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .login-option-desc {
+            font-size: 12px;
+            color: #999;
+            margin-left: 30px;
+            margin-top: 4px;
+            display: block;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
 
         .form-group label {
@@ -74,23 +162,26 @@
             color: #333;
             margin-bottom: 8px;
             display: block;
+            font-size: 14px;
         }
 
         .form-control {
-            border: 1px solid #ddd;
-            border-radius: 6px;
+            border: 1.5px solid #ddd;
+            border-radius: 8px;
             padding: 12px 15px;
             font-size: 14px;
             transition: all 0.3s ease;
+            background: #fff;
         }
 
         .form-control:focus {
             border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            background: #fff;
         }
 
         .form-control::placeholder {
-            color: #999;
+            color: #aaa;
         }
 
         .btn-login {
@@ -98,18 +189,18 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px;
-            border-radius: 6px;
+            padding: 13px 20px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
             color: white;
             text-decoration: none;
         }
@@ -119,61 +210,39 @@
         }
 
         .error-message {
-            color: #dc3545;
-            font-size: 14px;
-            padding: 12px;
+            color: #721c24;
+            font-size: 13px;
+            padding: 12px 15px;
             background: #f8d7da;
             border: 1px solid #f5c6cb;
             border-radius: 6px;
-            margin-bottom: 20px;
-        }
-
-        .error-list {
-            margin: 0;
-            padding-left: 20px;
-        }
-
-        .error-list li {
-            margin: 4px 0;
+            margin-bottom: 15px;
         }
 
         .login-footer {
-            padding: 20px 30px;
+            padding: 18px 30px;
             background: #f8f9fa;
             text-align: center;
-            font-size: 13px;
-            color: #666;
-        }
-
-        .form-group input {
-            width: 100%;
-        }
-
-        .info-box {
-            background: #e7f3ff;
-            border-left: 4px solid #2196F3;
-            padding: 15px;
-            border-radius: 4px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #0c5aa0;
+            font-size: 12px;
+            color: #999;
+            border-top: 1px solid #e9ecef;
         }
 
         @media (max-width: 480px) {
             .login-header {
-                padding: 30px 20px;
+                padding: 35px 20px;
             }
 
             .login-header h1 {
-                font-size: 24px;
+                font-size: 26px;
             }
 
             .login-header i {
-                font-size: 40px;
+                font-size: 45px;
             }
 
             .login-body {
-                padding: 30px 20px;
+                padding: 25px 20px;
             }
 
             .login-container {
@@ -194,14 +263,10 @@
 
             <!-- Body -->
             <div class="login-body">
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Credenciales de Prueba:</strong><br>
-                    <small>Admin: admin / admin123<br>Usuario: usuario / usuario123</small>
-                </div>
 
                 {% if form.non_field_errors %}
                     <div class="error-message">
+                        <i class="fas fa-exclamation-circle"></i>
                         {% for error in form.non_field_errors %}
                             {{ error }}
                         {% endfor %}
@@ -211,24 +276,61 @@
                 <form method="post" novalidate>
                     {% csrf_token %}
 
+                    <!-- Tipo de Login -->
+                    <div class="login-options-section">
+                        <label class="login-options-label">
+                            <i class="fas fa-lock"></i> Tipo de Inicio de Sesión
+                        </label>
+                        <div class="login-options">
+                            {% for option in form.login_type %}
+                                <div class="login-option">
+                                    <div class="form-check">
+                                        {{ option.tag }}
+                                        <label class="form-check-label" for="{{ option.id_for_label }}">
+                                            {{ option.choice_label }}
+                                        </label>
+                                    </div>
+                                    {% if option.choice_value == 'master' %}
+                                        <span class="login-option-desc">
+                                            <i class="fas fa-shield-alt"></i> Solo administradores
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.login_type.errors %}
+                            <div class="error-message mt-2">
+                                {{ form.login_type.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+
                     <!-- Usuario -->
-                    <div class="form-group">
-                        {{ form.username.label_tag }}
+                    <div class="form-group" id="username-group">
+                        <label for="{{ form.username.id_for_label }}">
+                            <i class="fas fa-user"></i> {{ form.username.label }}
+                        </label>
                         {{ form.username }}
                         {% if form.username.errors %}
-                            <div class="error-message">
-                                {{ form.username.errors }}
+                            <div class="error-message mt-2">
+                                {% for error in form.username.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}<br>
+                                {% endfor %}
                             </div>
                         {% endif %}
                     </div>
 
                     <!-- Contraseña -->
                     <div class="form-group">
-                        {{ form.password.label_tag }}
+                        <label for="{{ form.password.id_for_label }}" id="password-label">
+                            <i class="fas fa-lock"></i> {{ form.password.label }}
+                        </label>
                         {{ form.password }}
                         {% if form.password.errors %}
-                            <div class="error-message">
-                                {{ form.password.errors }}
+                            <div class="error-message mt-2">
+                                {% for error in form.password.errors %}
+                                    <i class="fas fa-exclamation-circle"></i> {{ error }}<br>
+                                {% endfor %}
                             </div>
                         {% endif %}
                     </div>
@@ -238,11 +340,41 @@
                         <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
                     </button>
                 </form>
+
+                <script>
+                    const loginTypeRadios = document.querySelectorAll('input[name="login_type"]');
+                    const usernameInput = document.querySelector('input[name="username"]');
+                    const passwordLabel = document.getElementById('password-label');
+
+                    function updateFormByLoginType() {
+                        const selectedType = document.querySelector('input[name="login_type"]:checked').value;
+                        
+                        if (selectedType === 'usuario') {
+                            // Usuario normal: autorrellenar "usuario"
+                            usernameInput.setAttribute('required', 'required');
+                            usernameInput.value = 'usuario';
+                            passwordLabel.innerHTML = '<i class="fas fa-lock"></i> Contraseña';
+                        } else if (selectedType === 'admin') {
+                            // Admin: autorrellenar "admin"
+                            usernameInput.setAttribute('required', 'required');
+                            usernameInput.value = 'admin';
+                            passwordLabel.innerHTML = '<i class="fas fa-lock"></i> Contraseña';
+                        }
+                    }
+
+                    // Agregar listeners a los radio buttons
+                    loginTypeRadios.forEach(radio => {
+                        radio.addEventListener('change', updateFormByLoginType);
+                    });
+
+                    // Ejecutar al cargar la página
+                    updateFormByLoginType();
+                </script>
             </div>
 
             <!-- Footer -->
             <div class="login-footer">
-                <p>Sistema de Gestión de Flota de Buses v1.0</p>
+                <p><i class="fas fa-copyright"></i> Sistema de Gestión de Flota de Buses v1.0</p>
             </div>
         </div>
     </div>

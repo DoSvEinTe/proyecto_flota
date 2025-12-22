@@ -2,6 +2,20 @@
 
 Sistema completo de gestión de flota de buses desarrollado con Django, que incluye gestión de conductores, buses, viajes y costos operacionales.
 
+## ⚡ INSTALACIÓN RÁPIDA (Windows)
+
+**Para instalar en otra PC, solo necesitas:**
+
+1. Tener **Python 3.8+** instalado (descárgalo de https://www.python.org/)
+2. Tener **MySQL ejecutándose** (XAMPP, WAMP o instalación directa)
+3. Ejecutar: **`INSTALAR.bat`** (doble click)
+4. Esperar a que termine (5-10 minutos)
+5. Ejecutar: **`EJECUTAR.bat`** (doble click)
+6. Hacer click en **"INICIAR SISTEMA"**
+7. Abrir navegador en: **http://127.0.0.1:8000/**
+
+> **Para instrucciones detalladas**, ver: `GUIA_INSTALACION.md`
+
 ## 🌟 Características Principales
 
 ### 👥 Gestión de Conductores
@@ -93,7 +107,7 @@ python verificar_instalacion.py
 python manage.py runserver
 ```
 
-Ver `INSTALACION.md` para instrucciones detalladas.
+Ver `GUIA_INSTALACION.md` para instrucciones detalladas.
 
 ## 📦 Dependencias Principales
 
